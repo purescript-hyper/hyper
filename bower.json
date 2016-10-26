@@ -1,0 +1,17 @@
+{
+  "name": "middlewarez",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^2.0.0",
+    "purescript-maps": "^2.0.0",
+    "purescript-eff": "^2.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^2.0.0"
+  }
+}
