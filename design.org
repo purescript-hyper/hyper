@@ -1,0 +1,35 @@
+#+TITLE: Middlewarez
+#+AUTHOR: owickstrom
+
+* Design
+
+** Connection
+
+Foo bar baz.
+
+
+* Use Cases
+
+** ResponseWriter
+
+A function which a writes a complete response could take a connection with an
+empty response.
+
+#+BEGIN_SRC purescript
+  class ResponseWriter w where
+    writeResponse :: String
+                  -> w
+                  -> Conn { response :: Complete }
+#+END_SRC
+
+** PartialWriter
+
+A function which writes a partial response could take a connection of either an
+empty or a partial response.
+
+#+BEGIN_SRC purescript
+  class PartialWriter w where
+    writePartial :: String
+                 -> w
+                 -> Conn { response :: Partial }
+#+END_SRC
