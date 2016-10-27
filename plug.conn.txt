@@ -1,0 +1,610 @@
+Plug.Conn
+
+The Plug connection.
+
+This module defines a Plug.Conn struct and the main functions for working with Plug connections.
+
+Note request headers are normalized to lowercase and response headers are expected to have lower-case keys.
+Request fields
+
+These fields contain request information:
+
+    host - the requested host as a binary, example: "www.example.com"
+    method - the request method as a binary, example: "GET"
+    path_info - the path split into segments, example: ["hello", "world"]
+    script_name - the initial portion of the URL’s path that corresponds to the application routing, as segments, example: ["sub","app"].
+    request_path - the requested path, example: /trailing/and//double//slashes/
+    port - the requested port as an integer, example: 80
+    peer - the actual TCP peer that connected, example: {{127, 0, 0, 1}, 12345}. Often this is not the actual IP and port of the client, but rather of a load-balancer or request-router.
+    remote_ip - the IP of the client, example: {151, 236, 219, 228}. This field is meant to be overwritten by plugs that understand e.g. the X-Forwarded-For header or HAProxy’s PROXY protocol. It defaults to peer’s IP.
+    req_headers - the request headers as a list, example: [{"content-type", "text/plain"}]. Note all headers will be downcased.
+    scheme - the request scheme as an atom, example: :http
+    query_string - the request query string as a binary, example: "foo=bar"
+
+Fetchable fields
+
+The request information in these fields is not populated until it is fetched using the associated fetch_ function. For example, the cookies field uses fetch_cookies/2.
+
+If you access these fields before fetching them, they will be returned as Plug.Conn.Unfetched structs.
+
+    cookies- the request cookies with the response cookies
+    query_params - the request query params
+    params - the request params. Usually populated by a plug, like Plug.Parsers
+    req_cookies - the request cookies (without the response ones)
+
+Response fields
+
+These fields contain response information:
+
+    resp_body - the response body, by default is an empty string. It is set to nil after the response is set, except for test connections.
+    resp_charset - the response charset, defaults to “utf-8”
+    resp_cookies - the response cookies with their name and options
+    resp_headers - the response headers as a list of tuples, by default cache-control is set to "max-age=0, private, must-revalidate". Note, response headers are expected to have lower-case keys.
+    status - the response status
+
+Furthermore, the before_send field stores callbacks that are invoked before the connection is sent. Callbacks are invoked in the reverse order they are registered (callbacks registered first are invoked last) in order to reproduce a pipeline ordering.
+Connection fields
+
+    assigns - shared user data as a map
+    owner - the Elixir process that owns the connection
+    halted - the boolean status on whether the pipeline was halted
+    secret_key_base - a secret key used to verify and encrypt cookies. the field must be set manually whenever one of those features are used. This data must be kept in the connection and never used directly, always use Plug.Crypto.KeyGenerator.generate/3 to derive keys from it
+    state - the connection state
+
+The connection state is used to track the connection lifecycle. It starts as :unset but is changed to :set (via Plug.Conn.resp/3 or :file (when invoked via Plug.Conn.send_file/3). Its final result is :sent or :chunked depending on the response model.
+Private fields
+
+These fields are reserved for libraries/framework usage.
+
+    adapter - holds the adapter information in a tuple
+    private - shared library data as a map
+
+Protocols
+
+Plug.Conn implements both the Collectable and Inspect protocols out of the box. The inspect protocol provides a nice representation of the connection while the collectable protocol allows developers to easily chunk data. For example:
+
+# Send the chunked response headers
+conn = send_chunked(conn, 200)
+
+# Pipe the given list into a connection
+# Each item is emitted as a chunk
+Enum.into(~w(each chunk as a word), conn)
+
+Summary
+Types
+adapter()
+assigns()
+before_send()
+body()
+cookies()
+halted()
+headers()
+host()
+int_status()
+method()
+owner()
+param()
+params()
+peer()
+port_number()
+query_string()
+resp_cookies()
+scheme()
+secret_key_base()
+segments()
+state()
+status()
+t()
+Functions
+assign(conn, key, value)
+
+Assigns a value to a key in the connection
+async_assign(conn, key, fun)
+
+Starts a task to assign a value to a key in the connection
+await_assign(conn, key, timeout \\ 5000)
+
+Awaits the completion of an async assign
+chunk(conn, chunk)
+
+Sends a chunk as part of a chunked response
+clear_session(conn)
+
+Clears the entire session
+configure_session(conn, opts)
+
+Configures the session
+delete_req_header(conn, key)
+
+Deletes a request header if present
+delete_resp_cookie(conn, key, opts \\ [])
+
+Deletes a response cookie
+delete_resp_header(conn, key)
+
+Deletes a response header if present
+delete_session(conn, key)
+
+Deletes the session for the given key
+fetch_cookies(conn, opts \\ [])
+
+Fetches cookies from the request headers
+fetch_query_params(conn, opts \\ [])
+
+Fetches query parameters from the query string
+fetch_session(conn, opts \\ [])
+
+Fetches the session from the session store. Will also fetch cookies
+get_req_header(conn, key)
+
+Returns the values of the request header specified by key
+get_resp_header(conn, key)
+
+Returns the values of the response header specified by key
+get_session(conn, key)
+
+Returns session value for the given key
+halt(conn)
+
+Halts the Plug pipeline by preventing further plugs downstream from being invoked. See the docs for Plug.Builder for more information on halting a plug pipeline
+merge_resp_headers(conn, headers)
+
+Merges a series of response headers into the connection
+put_private(conn, key, value)
+
+Assigns a new private key and value in the connection
+put_req_header(conn, key, value)
+
+Adds a new request header (key) if not present, otherwise replaces the previous value of that header with value
+put_resp_content_type(conn, content_type, charset \\ "utf-8")
+
+Sets the value of the "content-type" response header taking into account the charset
+put_resp_cookie(conn, key, value, opts \\ [])
+
+Puts a response cookie
+put_resp_header(conn, key, value)
+
+Adds a new response header (key) if not present, otherwise replaces the previous value of that header with value
+put_session(conn, key, value)
+
+Puts the specified value in the session for the given key
+put_status(conn, status)
+
+Stores the given status code in the connection
+read_body(conn, opts \\ [])
+
+Reads the request body
+register_before_send(conn, callback)
+
+Registers a callback to be invoked before the response is sent
+resp(conn, status, body)
+
+Sets the response to the given status and body
+send_chunked(conn, status)
+
+Sends the response headers as a chunked response
+send_file(conn, status, file, offset \\ 0, length \\ :all)
+
+Sends a file as the response body with the given status and optionally starting at the given offset until the given length
+send_resp(conn)
+
+Sends a response to the client
+send_resp(conn, status, body)
+
+Sends a response with the given status and body
+update_req_header(conn, key, initial, fun)
+
+Updates a request header if present, otherwise it sets it to an initial value
+update_resp_header(conn, key, initial, fun)
+
+Updates a response header if present, otherwise it sets it to an initial value
+Types
+adapter()
+
+adapter :: {module, term}
+
+assigns()
+
+assigns :: %{optional(atom) => any}
+
+before_send()
+
+before_send :: [(t -> t)]
+
+body()
+
+body :: iodata | nil
+
+cookies()
+
+cookies :: %{optional(binary) => binary}
+
+halted()
+
+halted :: boolean
+
+headers()
+
+headers :: [{binary, binary}]
+
+host()
+
+host :: binary
+
+int_status()
+
+int_status :: non_neg_integer | nil
+
+method()
+
+method :: binary
+
+owner()
+
+owner :: pid
+
+param()
+
+param :: binary | %{optional(binary) => param} | [param]
+
+params()
+
+params :: %{optional(binary) => param}
+
+peer()
+
+peer :: {:inet.ip_address, :inet.port_number}
+
+port_number()
+
+port_number :: :inet.port_number
+
+query_string()
+
+query_string :: String.t
+
+resp_cookies()
+
+resp_cookies :: %{optional(binary) => %{}}
+
+scheme()
+
+scheme :: :http | :https
+
+secret_key_base()
+
+secret_key_base :: binary | nil
+
+segments()
+
+segments :: [binary]
+
+state()
+
+state :: :unset | :set | :file | :chunked | :sent
+
+status()
+
+status :: atom | int_status
+
+t()
+
+t :: %Plug.Conn{adapter: adapter, assigns: assigns, before_send: before_send, body_params: params | Plug.Conn.Unfetched.t, cookies: cookies | Plug.Conn.Unfetched.t, halted: term, host: host, method: method, owner: owner, params: params | Plug.Conn.Unfetched.t, path_info: segments, peer: peer, port: :inet.port_number, private: assigns, query_params: params | Plug.Conn.Unfetched.t, query_string: query_string, remote_ip: :inet.ip_address, req_cookies: cookies | Plug.Conn.Unfetched.t, req_headers: headers, request_path: binary, resp_body: body, resp_cookies: resp_cookies, resp_headers: headers, scheme: scheme, script_name: segments, secret_key_base: secret_key_base, state: state, status: int_status}
+
+Functions
+assign(conn, key, value)
+
+assign(t, atom, term) :: t
+
+Assigns a value to a key in the connection
+Examples
+
+iex> conn.assigns[:hello]
+nil
+iex> conn = assign(conn, :hello, :world)
+iex> conn.assigns[:hello]
+:world
+
+async_assign(conn, key, fun)
+
+async_assign(t, atom, (() -> term)) :: t
+
+Starts a task to assign a value to a key in the connection.
+
+await_assign/2 can be used to wait for the async task to complete and retrieve the resulting value.
+
+Behind the scenes, it uses Task.async/1.
+Examples
+
+iex> conn.assigns[:hello]
+nil
+iex> conn = async_assign(conn, :hello, fn -> :world end)
+iex> conn.assigns[:hello]
+%Task{...}
+
+await_assign(conn, key, timeout \\ 5000)
+
+await_assign(t, atom, timeout) :: t
+
+Awaits the completion of an async assign.
+
+Returns a connection with the value resulting from the async assignment placed under key in the :assigns field.
+
+Behind the scenes, it uses Task.await/2.
+Examples
+
+iex> conn.assigns[:hello]
+nil
+iex> conn = async_assign(conn, :hello, fn -> :world end)
+iex> conn = await_assign(conn, :hello) # blocks until `conn.assigns[:hello]` is available
+iex> conn.assigns[:hello]
+:world
+
+chunk(conn, chunk)
+
+chunk(t, body) :: {:ok, t} | {:error, term} | no_return
+
+Sends a chunk as part of a chunked response.
+
+It expects a connection with state :chunked as set by send_chunked/2. It returns {:ok, conn} in case of success, otherwise {:error, reason}.
+clear_session(conn)
+
+clear_session(t) :: t
+
+Clears the entire session.
+
+This function removes every key from the session, clearing the session.
+
+Note that, even if clear_session/1 is used, the session is still sent to the client. If the session should be effectively dropped, configure_session/2 should be used with the :drop option set to true.
+configure_session(conn, opts)
+
+configure_session(t, Keyword.t) :: t
+
+Configures the session.
+Options
+
+    :renew - generates a new session id for the cookie
+    :drop - drops the session, a session cookie will not be included in the response
+    :ignore - ignores all changes made to the session in this request cycle
+
+delete_req_header(conn, key)
+
+delete_req_header(t, binary) :: t
+
+Deletes a request header if present.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+delete_resp_cookie(conn, key, opts \\ [])
+
+delete_resp_cookie(t, binary, Keyword.t) :: t
+
+Deletes a response cookie.
+
+Deleting a cookie requires the same options as to when the cookie was put. Check put_resp_cookie/4 for more information.
+delete_resp_header(conn, key)
+
+delete_resp_header(t, binary) :: t
+
+Deletes a response header if present.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+delete_session(conn, key)
+
+delete_session(t, String.t | atom) :: t
+
+Deletes the session for the given key.
+
+The key can be a string or an atom, where atoms are automatically converted to strings.
+fetch_cookies(conn, opts \\ [])
+
+fetch_cookies(t, Keyword.t) :: t
+
+Fetches cookies from the request headers.
+fetch_query_params(conn, opts \\ [])
+
+fetch_query_params(t, Keyword.t) :: t
+
+Fetches query parameters from the query string.
+
+This function does not fetch parameters from the body. To fetch parameters from the body, use the Plug.Parsers plug.
+fetch_session(conn, opts \\ [])
+
+fetch_session(t, Keyword.t) :: t
+
+Fetches the session from the session store. Will also fetch cookies.
+get_req_header(conn, key)
+
+get_req_header(t, binary) :: [binary]
+
+Returns the values of the request header specified by key.
+get_resp_header(conn, key)
+
+get_resp_header(t, binary) :: [binary]
+
+Returns the values of the response header specified by key.
+Examples
+
+iex> conn = %{conn | resp_headers: [{"content-type", "text/plain"}]}
+iex> conn |> get_resp_header("content-type")
+["text/plain"]
+
+get_session(conn, key)
+
+get_session(t, String.t | atom) :: any
+
+Returns session value for the given key.
+
+The key can be a string or an atom, where atoms are automatically converted to strings.
+halt(conn)
+
+halt(t) :: t
+
+Halts the Plug pipeline by preventing further plugs downstream from being invoked. See the docs for Plug.Builder for more information on halting a plug pipeline.
+merge_resp_headers(conn, headers)
+
+merge_resp_headers(t, Enum.t) :: t
+
+Merges a series of response headers into the connection.
+put_private(conn, key, value)
+
+put_private(t, atom, term) :: t
+
+Assigns a new private key and value in the connection.
+
+This storage is meant to be used by libraries and frameworks to avoid writing to the user storage (the :assigns field). It is recommended for libraries/frameworks to prefix the keys with the library name.
+
+For example, if some plug needs to store a :hello key, it should do so as :plug_hello:
+
+iex> conn.private[:plug_hello]
+nil
+iex> conn = put_private(conn, :plug_hello, :world)
+iex> conn.private[:plug_hello]
+:world
+
+put_req_header(conn, key, value)
+
+put_req_header(t, binary, binary) :: t
+
+Adds a new request header (key) if not present, otherwise replaces the previous value of that header with value.
+
+It is recommended for header keys to be in lower-case, to avoid sending duplicate keys in a request. As a convenience, this is validated during testing which raises a Plug.Conn.InvalidHeaderError if the header key is not lowercase.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+put_resp_content_type(conn, content_type, charset \\ "utf-8")
+
+put_resp_content_type(t, binary, binary | nil) :: t
+
+Sets the value of the "content-type" response header taking into account the charset.
+put_resp_cookie(conn, key, value, opts \\ [])
+
+put_resp_cookie(t, binary, binary, Keyword.t) :: t
+
+Puts a response cookie.
+Options
+
+    :domain - the domain the cookie applies to
+    :max_age - the cookie max-age
+    :path - the path the cookie applies to
+    :http_only - when false, the cookie is accessible beyond http
+    :secure - if the cookie must be sent only over https. Defaults to true when the connection is https
+
+put_resp_header(conn, key, value)
+
+put_resp_header(t, binary, binary) :: t
+
+Adds a new response header (key) if not present, otherwise replaces the previous value of that header with value.
+
+It is recommended for header keys to be in lower-case, to avoid sending duplicate keys in a request. As a convenience, this is validated during testing which raises a Plug.Conn.InvalidHeaderError if the header key is not lowercase.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+
+Raises a Plug.Conn.InvalidHeaderError if the header value contains control feed (\r) or newline (\n) characters.
+put_session(conn, key, value)
+
+put_session(t, String.t | atom, any) :: t
+
+Puts the specified value in the session for the given key.
+
+The key can be a string or an atom, where atoms are automatically converted to strings. Can only be invoked on unsent conns. Will raise otherwise.
+put_status(conn, status)
+
+put_status(t, status) :: t
+
+Stores the given status code in the connection.
+
+The status code can be nil, an integer or an atom. The list of allowed atoms is available in Plug.Conn.Status.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+read_body(conn, opts \\ [])
+
+read_body(t, Keyword.t) ::
+  {:ok, binary, t} |
+  {:more, binary, t} |
+  {:error, term}
+
+Reads the request body.
+
+This function reads a chunk of the request body up to a given :length. If there is more data to be read, then {:more, partial_body, conn} is returned. Otherwise {:ok, body, conn} is returned. In case of an error reading the socket, {:error, reason} is returned as per :gen_tcp.recv/2.
+
+In order to, for instance, support slower clients you can tune the :read_length and :read_timeout options. These specify how much time should be allowed to pass for each read from the underlying socket.
+
+Because the request body can be of any size, reading the body will only work once, as Plug will not cache the result of these operations. If you need to access the body multiple times, it is your responsibility to store it. Finally keep in mind some plugs like Plug.Parsers may read the body, so the body may be unavailable after being accessed by such plugs.
+
+This function is able to handle both chunked and identity transfer-encoding by default.
+Options
+
+    :length - sets the maximum number of bytes to read from the body for each chunk, defaults to 8_000_000 bytes
+    :read_length - sets the amount of bytes to read at one time from the underlying socket to fill the chunk, defaults to 1_000_000 bytes
+    :read_timeout - sets the timeout for each socket read, defaults to 15_000 ms
+
+The values above are not meant to be exact. For example, setting the length to 8_000_000 may end up reading some hundred bytes more from the socket until we halt.
+Examples
+
+{:ok, body, conn} = Plug.Conn.read_body(conn, length: 1_000_000)
+
+register_before_send(conn, callback)
+
+register_before_send(t, (t -> t)) :: t
+
+Registers a callback to be invoked before the response is sent.
+
+Callbacks are invoked in the reverse order they are defined (callbacks defined first are invoked last).
+resp(conn, status, body)
+
+resp(t, status, body) :: t
+
+Sets the response to the given status and body.
+
+It sets the connection state to :set (if not already :set) and raises Plug.Conn.AlreadySentError if it was already :sent.
+send_chunked(conn, status)
+
+send_chunked(t, status) :: t | no_return
+
+Sends the response headers as a chunked response.
+
+It expects a connection that has not been :sent yet and sets its state to :chunked afterwards. Otherwise raises Plug.Conn.AlreadySentError.
+send_file(conn, status, file, offset \\ 0, length \\ :all)
+
+send_file(t, status, filename :: binary, offset :: integer, length :: integer | :all) ::
+  t |
+  no_return
+
+Sends a file as the response body with the given status and optionally starting at the given offset until the given length.
+
+If available, the file is sent directly over the socket using the operating system sendfile operation.
+
+It expects a connection that has not been :sent yet and sets its state to :sent afterwards. Otherwise raises Plug.Conn.AlreadySentError.
+Examples
+
+Plug.Conn.send_file(conn, 200, "README.md")
+
+send_resp(conn)
+
+send_resp(t) :: t | no_return
+
+Sends a response to the client.
+
+It expects the connection state to be :set, otherwise raises an ArgumentError for :unset connections or a Plug.Conn.AlreadySentError for already :sent connections.
+
+At the end sets the connection state to :sent.
+send_resp(conn, status, body)
+
+send_resp(t, status, body) :: t | no_return
+
+Sends a response with the given status and body.
+
+See send_resp/1 for more information.
+update_req_header(conn, key, initial, fun)
+
+update_req_header(t, binary, binary, (binary -> binary)) :: t
+
+Updates a request header if present, otherwise it sets it to an initial value.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.
+update_resp_header(conn, key, initial, fun)
+
+update_resp_header(t, binary, binary, (binary -> binary)) :: t
+
+Updates a response header if present, otherwise it sets it to an initial value.
+
+Raises a Plug.Conn.AlreadySentError if the connection has already been :sent.

@@ -4,3 +4,6 @@
 /output/
 /.psci*
 /src/.webpack.js
+
+/design.pdf
+/design.html
