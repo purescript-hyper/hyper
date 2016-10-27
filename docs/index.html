@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Oskar Wickström">
+  <title>Middlewarez Design</title>
+<link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
+<link rel="stylesheet" href="vendor/tomorrow.min.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body itemscope itemtype="http://schema.org/TechArticle">
+<header>
+<h1 class="title" itemprop="name">Middlewarez Design</h1>
+<cite class="author" itemprop="author">By Oskar Wickström</cite>
+</header>
+<figure id="header-image">
+</figure>
+<h2 id="contents">Contents</h2>
+<nav id="TOC">
+<ul>
+<li><a href="#design">Design</a><ul>
+<li><a href="#connection">Connection</a></li>
+</ul></li>
+<li><a href="#use-cases">Use Cases</a><ul>
+<li><a href="#writing-a-full-response">Writing a Full Response</a></li>
+<li><a href="#writing-a-partial-response">Writing a Partial Response</a></li>
+<li><a href="#parsing-the-request-body">Parsing the Request Body</a></li>
+</ul></li>
+</ul>
+</nav>
+<h2 id="design">Design</h2>
+<h3 id="connection">Connection</h3>
+<p>A connection models the entirety of a connection between the HTTP server and the user agent - both request and response. This design is adopted from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate.</p>
+<h2 id="use-cases">Use Cases</h2>
+<h3 id="writing-a-full-response">Writing a Full Response</h3>
+<p>A function which writes a complete response could take a connection with an empty response.</p>
+<pre class="purescript"><code>class ResponseWriter w where
+  writeResponse :: String
+                -&gt; w
+                -&gt; Conn { response :: Complete }
+
+instance forall r. ResponseWriter (Conn { response :: Empty } | r) where
+  writeResponse r conn = ...</code></pre>
+<h3 id="writing-a-partial-response">Writing a Partial Response</h3>
+<p>A function which writes a partial response could take a connection of either an empty or a partial response.</p>
+<pre class="purescript"><code>class PartialWriter w where
+  writePartial :: String
+               -&gt; w
+               -&gt; Conn { response :: Partial }</code></pre>
+<h3 id="parsing-the-request-body">Parsing the Request Body</h3>
+<p>The request body is a stream in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting this change.</p>
+<pre class="purescript"><code>class BodyParser t p where
+  parse ∷ forall r. Conn { bodyStream ∷ Stream Unconsumed | r }
+        -&gt; Conn { bodyStream ∷ Stream Consumed, body ∷ t | r }
+
+instance BodyParser Form HttpFormParamsParser where
+  parse conn = ...</code></pre>
+<p>Given this type, the request body can neither be read more than once, nor can the connection’s <code>body</code> be overwritten.</p>
+<footer>
+  Copyright &copy; 2016 Oskar Wickström
+</footer>
+<script src="vendor/jquery.js"></script>
+<script src="vendor/highlight.min.js"></script>
+<script src="vendor/haskell.min.js"></script>
+<script src="highlight.js"></script>
+</body>
+</html>
