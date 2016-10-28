@@ -32,8 +32,7 @@ class PartialWriter w where
 The request body is a stream in the connection. It might not always be
 of interest, thus it is not read, and not parsed, by default. Instead,
 the user explicitly chooses to read and parse the body with a given
-parser, which returns a new connection of a type reflecting this
-change.
+parser, which returns a new connection of a type reflecting the action.
 
 ```purescript
 class BodyParser t p where

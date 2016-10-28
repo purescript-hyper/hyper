@@ -53,7 +53,7 @@ instance forall r. ResponseWriter (Conn { response :: Empty } | r) where
                -&gt; w
                -&gt; Conn { response :: Partial }</code></pre>
 <h3 id="parsing-the-request-body">Parsing the Request Body</h3>
-<p>The request body is a stream in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting this change.</p>
+<p>The request body is a stream in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action.</p>
 <pre class="purescript"><code>class BodyParser t p where
   parse ∷ forall r. Conn { bodyStream ∷ Stream Unconsumed | r }
         -&gt; Conn { bodyStream ∷ Stream Consumed, body ∷ t | r }
