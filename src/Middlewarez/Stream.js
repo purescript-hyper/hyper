@@ -1,3 +1,3 @@
-exports.stdin = function (s) {
+exports.someStream = function (s) {
     return process.stdin;
 };

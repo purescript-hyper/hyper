@@ -3,10 +3,11 @@ module Middlewarez.Stream where
 foreign import data Stream :: * -> *
 
 -- | Marks a stream in its initial state.
-foreign import data Initial :: *
+data Initial
 -- | Marks an open stream.
-foreign import data Open :: *
+data Open
 -- | Marks a closed stream.
-foreign import data Closed :: *
+data Closed
 
-foreign import stdin :: Stream Initial
+-- Temporary hack.
+foreign import someStream :: Stream Initial
