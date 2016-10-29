@@ -24,18 +24,21 @@ data FormParser = FormParser
 instance bodyParserFormParser :: BodyParser FormParser Form where
   parse _ = parseBodyFromString (\_ -> Form [])
 
-formParser :: forall req.
-              RequestMiddleware { bodyStream :: Stream Initial
-                                , headers :: { "content-type" :: String
-                                             , "content-length" :: String
-                                             }
-                                | req
-                                }
-                                { bodyStream :: Stream Closed
-                                , headers :: { "content-type" :: String
-                                             , "content-length" :: String
-                                             }
-                                , body :: Form
-                                | req
-                                }
+
+formParser :: forall e req.
+              RequestMiddleware
+              e
+              { bodyStream :: Stream Initial
+              , headers :: { "content-type" :: String
+                           , "content-length" :: String
+                           }
+              | req
+              }
+              { bodyStream :: Stream Closed
+              , headers :: { "content-type" :: String
+                           , "content-length" :: String
+                           }
+              , body :: Form
+              | req
+              }
 formParser = parse FormParser
