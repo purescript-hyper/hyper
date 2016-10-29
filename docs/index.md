@@ -1,4 +1,4 @@
 ---
-title: Hyper - Design
+title: Hyper
 author: Oskar Wickström
 ---

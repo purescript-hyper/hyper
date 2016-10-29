@@ -5,7 +5,7 @@
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <meta name="author" content="Oskar Wickström">
-  <title>PureScript Hyper - Design</title>
+  <title>Hyper</title>
 <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
 <link rel="stylesheet" href="vendor/tomorrow.min.css">
   <!--[if lt IE 9]>
@@ -15,8 +15,8 @@
 </head>
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
-<h1 class="title" itemprop="name">PureScript Hyper - Design</h1>
-<p class="version" itemprop="version">Version ac38796</p>
+<h1 class="title" itemprop="name">Hyper</h1>
+<p class="version" itemprop="version">Version 7a77104</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -37,7 +37,7 @@
 </nav>
 <h2 id="goals">Goals</h2>
 <p>Composing middleware in NodeJS is a risky business. They mutate the HTTP request and response objects freely, and are often dependent on each others’ side-effects. There are no guarantees that you have stacked the middleware functions in a sensible order, and it is often the case, in my experience, that misconfigured middleware takes a lot of time and effort to debug.</p>
-<p>The goals of this little hack is to make use of row polymorphism in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that otherwise common mistakes cannot be made. A few examples could be:</p>
+<p>The goals of this little hack, called <em>Hyper</em>, is to make use of row polymorphism and other tasty type system features in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that otherwise common mistakes cannot be made. A few examples could be:</p>
 <ul>
 <li>Trying to consume a non-parsed request body</li>
 <li>Consuming a request body parsed as the wrong type</li>
@@ -49,6 +49,7 @@
 </ul>
 <p>Can we, using the PureScript type system, eradicate this class of errors? Let’s find out!</p>
 <h2 id="design">Design</h2>
+<p>These are the central components of <em>Hyper</em>.</p>
 <h3 id="conn">Conn</h3>
 <p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent - both request and response. This design is adopted from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate.</p>
 <h3 id="middleware">Middleware</h3>
@@ -56,7 +57,7 @@
 <pre class="purescript"><code>type Middleware e req req&#39; res res&#39; =
   Conn req res -&gt; Aff (http :: HTTP | e) (Conn req&#39; res&#39;)</code></pre>
 <h2 id="use-cases">Use Cases</h2>
-<p><em>Here follows a collection of still loosely organized thoughts on how to implement safe middleware. Very much work-in-progress.</em></p>
+<p><em>Here follows a collection of still loosely organized thoughts on how to implement safe middleware in Hyper. Very much work-in-progress.</em></p>
 <h3 id="writing-a-full-response">Writing a Full Response</h3>
 <p>A function which writes a complete response could take a <code>Conn</code> with an empty response.</p>
 <pre class="purescript"><code>respond s :: forall e res h. String

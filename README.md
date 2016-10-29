@@ -6,7 +6,7 @@
 
 This is an **experiment**, trying to improve correctness in web server
 programming, and in HTTP middleware specifically. To read about the goals and
-design of Hyper, see the [Design document](https://owickstrom.github.io/hyper/).
+design of Hyper, see the [owickstrom.github.io/hyper](https://owickstrom.github.io/hyper/).
 
 ## Build
 
