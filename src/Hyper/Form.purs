@@ -1,6 +1,6 @@
 module Hyper.Form (
   Form(..),
-  formParser
+  FormParser(..)
   ) where
 
 import Prelude
@@ -12,9 +12,7 @@ import Data.String (joinWith, Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
-import Hyper.BodyParser (parseBodyFromString, parse, class BodyParser)
-import Hyper.Conn (RequestMiddleware)
-import Hyper.Stream (Closed, Initial, Stream)
+import Hyper.BodyParser (parseBodyFromString, class BodyParser)
 
 newtype Form = Form (Array (Tuple String String))
 
@@ -36,27 +34,8 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
           parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
       splitPair = split (Pattern "=")
       splitPairs ∷ String → Either Error Form
-      splitPairs s = do
-        pairs ← sequence $ map toTuple $ map splitPair $ split (Pattern "&") s
-        pure (Form pairs)
-
-
-formParser :: forall e req h.
-              RequestMiddleware
-              e
-              { bodyStream :: Stream Initial
-              , headers :: { "content-type" :: String
-                           , "content-length" :: String
-                           | h
-                           }
-              | req
-              }
-              { bodyStream :: Stream Closed
-              , headers :: { "content-type" :: String
-                           , "content-length" :: String
-                           | h
-                           }
-              , body :: Form
-              | req
-              }
-formParser = parse FormParser
+      splitPairs = (<$>) Form
+                   <<< sequence
+                   <<< map toTuple
+                   <<< map splitPair
+                   <<< split (Pattern "&")

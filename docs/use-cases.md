@@ -58,49 +58,37 @@ class BodyParser p t | p -> t where
 
 Given this type, the request body can neither be read more than once,
 nor can the connection's `body` be overwritten. An example parser is
-the `FormParser`.
+the `BodyParser` instance for `FormParser` and `Form`.
 
 ``` purescript
+-- | A form represents a "www-form-urlencoded" form.
+newtype Form = Form (Array (Tuple String String))
+
+-- | Placeholder constructor without any options.
 data FormParser = FormParser
 
 instance bodyParserFormParser :: BodyParser FormParser Form where
-  parse _ = parseBodyFromString splitEntries
+  parse _ = parseBodyFromString splitPairs
     where
-      toTuple :: Array String -> Tuple String String
-      toTuple [key, value] = Tuple (decodeURIComponent key)
-                                   (decodeURIComponent value)
-      toTuple _ = Tuple "omg" "no" -- TODO: Implement error handling
-                                   --       in body parsers
-      splitEntry = split (Pattern "=")
-      splitEntries = Form <<<
-                     map toTuple <<<
-                     map splitEntry <<<
-                     split (Pattern "&")
-
-formParser :: forall e req h.
-              RequestMiddleware
-              e
-              { bodyStream :: Stream Read Initial
-              , headers :: { "content-type" :: String
-                           , "content-length" :: String
-                           | h
-                           }
-              | req
-              }
-              { bodyStream :: Stream Read Closed
-              , headers :: { "content-type" :: String
-                           , "content-length" :: String
-                           | h
-                           }
-              , body :: Form
-              | req
-              }
-formParser = parse FormParser
+      toTuple :: Array String -> Either Error (Tuple String String)
+      toTuple kv =
+        case kv of
+          [key, value] → Right (Tuple (decodeURIComponent key)
+                                      (decodeURIComponent value))
+          parts        → Left (error ("Invalid form key-value pair: "
+                                      <> joinWith " " parts))
+      splitPair = split (Pattern "=")
+      splitPairs ∷ String → Either Error Form
+      splitPairs = (<$>) Form
+                   <<< sequence
+                   <<< map toTuple
+                   <<< map splitPair
+                   <<< split (Pattern "&")
 ```
 
-It uses the helper `parseBodyFromString` to parse the body as a
-`www-form-urlencoded` form. Any invalid body will throw an error
-in the Aff monad, which can be caught and handled.
+This instance uses the helper `parseBodyFromString` to first read the body as a
+string, then parse that string as a `www-form-urlencoded` form. Any invalid form
+will throw an error in the Aff monad, which can be caught and handled.
 
 ## Enforcing Error Handling
 
