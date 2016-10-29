@@ -4,9 +4,12 @@ module Hyper.Form (
   ) where
 
 import Prelude
+import Control.Monad.Eff.Exception (error, Error)
+import Data.Either (Either(Left, Right))
 import Data.Generic (class Generic)
 import Data.Monoid (class Monoid)
-import Data.String (Pattern(Pattern), split)
+import Data.String (joinWith, Pattern(Pattern), split)
+import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
 import Hyper.BodyParser (parseBodyFromString, parse, class BodyParser)
@@ -24,13 +27,18 @@ derive newtype instance monoidForm :: Monoid Form
 data FormParser = FormParser
 
 instance bodyParserFormParser :: BodyParser FormParser Form where
-  parse _ = parseBodyFromString splitEntries
+  parse _ = parseBodyFromString splitPairs
     where
-      toTuple :: Array String -> Tuple String String
-      toTuple [key, value] = Tuple (decodeURIComponent key) (decodeURIComponent value)
-      toTuple _ = Tuple "omg" "no" -- TODO: Implement error handling in body parsers
-      splitEntry = split (Pattern "=")
-      splitEntries = Form <<< map toTuple <<< map splitEntry <<< split (Pattern "&")
+      toTuple :: Array String -> Either Error (Tuple String String)
+      toTuple kv =
+        case kv of
+          [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
+          parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
+      splitPair = split (Pattern "=")
+      splitPairs ∷ String → Either Error Form
+      splitPairs s = do
+        pairs ← sequence $ map toTuple $ map splitPair $ split (Pattern "&") s
+        pure (Form pairs)
 
 
 formParser :: forall e req h.

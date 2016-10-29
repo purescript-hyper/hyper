@@ -7,6 +7,7 @@ import Hyper.Form (formParser, Form(Form))
 import Hyper.Stream (fromString)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.Assertions.Aff (expectError)
 
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec =
@@ -25,3 +26,13 @@ spec =
               , response: {}
               }
       conn.request.body `shouldEqual` Form [Tuple "foo" "bar"]
+    it "fails to parse request body as a form when invalid" $ expectError $
+      formParser
+      { request: { bodyStream: fromString "foo=bar=baz"
+                   -- Headers required by formParser (content-type, content-length):
+                 , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"
+                            , "content-length": "11"
+                            }
+                 }
+        , response: {}
+        }
