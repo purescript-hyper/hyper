@@ -4,22 +4,25 @@ module Middlewarez.Form (
   ) where
 
 import Prelude
-import Middlewarez.BodyParser (parse, unsafeParseBody, class BodyParser)
+import Data.Generic (class Generic)
+import Data.Monoid (class Monoid)
+import Data.Tuple (Tuple)
+import Middlewarez.BodyParser (parseBodyFromString, parse, class BodyParser)
 import Middlewarez.Conn (RequestMiddleware)
 import Middlewarez.Stream (Closed, Initial, Stream)
 
-data Form = Form
+newtype Form = Form (Array (Tuple String String))
 
-instance showForm :: Show Form where
-  show _ = "Form"
-
-instance eqForm :: Eq Form where
-  eq Form Form = true
+derive instance genericForm :: Generic Form
+derive newtype instance eqForm :: Eq Form
+derive newtype instance ordForm :: Ord Form
+derive newtype instance showForm :: Show Form
+derive newtype instance monoidForm :: Monoid Form
 
 data FormParser = FormParser
 
 instance bodyParserFormParser :: BodyParser FormParser Form where
-  parse _ = unsafeParseBody (\_ -> Form)
+  parse _ = parseBodyFromString (\_ -> Form [])
 
 formParser :: forall req.
               RequestMiddleware { bodyStream :: Stream Initial | req }

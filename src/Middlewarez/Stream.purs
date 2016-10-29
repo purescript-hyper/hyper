@@ -9,5 +9,4 @@ data Open
 -- | Marks a closed stream.
 data Closed
 
--- Temporary hack.
-foreign import someStream :: Stream Initial
+foreign import fromString :: String -> Stream Initial

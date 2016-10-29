@@ -1,13 +1,13 @@
-exports.unsafeParseBody = function (f) {
-  return function (c) {
-    // Random temporary stuff, just to test.
-    
-    if (c.request.body) {
+// var rawBody = require('raw-body');
+
+exports.parseBodyFromString = function (f) {
+  return function (conn) {
+       if (conn.request.body) {
       throw new Error('.request.body already set on Conn!');
     }
-    
-    c.request.body = f("testing");
 
-    return c;
+    conn.request.body = f('');
+
+    return conn;
   };
 };
