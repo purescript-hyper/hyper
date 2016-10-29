@@ -16,6 +16,22 @@ A *middleware* is a function transforming a `Conn` to another
 handling, as well as communicating the `HTTP` effect of applying middleware.
 
 ``` purescript
+-- | The basic middleware type for transforming possibly both request and
+-- | response.
 type Middleware e req req' res res' =
   Conn req res -> Aff (http :: HTTP | e) (Conn req' res')
+```
+
+Many middleware transform either the request or the response. It is less common
+that a single middleware transform both. Thus, Hyper provides two less general
+type synonyms.
+
+``` purescript
+-- | A middleware that only transforms the request.
+type RequestMiddleware e req req' =
+  forall res. Middleware e req req' res res
+
+-- | A middleware that only transforms the response.
+type ResponseMiddleware e res res' =
+  forall req. Middleware e req req res res'
 ```
