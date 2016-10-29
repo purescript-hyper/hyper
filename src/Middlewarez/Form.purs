@@ -33,18 +33,20 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
       splitEntries = Form <<< map toTuple <<< map splitEntry <<< split (Pattern "&")
 
 
-formParser :: forall e req.
+formParser :: forall e req h.
               RequestMiddleware
               e
               { bodyStream :: Stream Initial
               , headers :: { "content-type" :: String
                            , "content-length" :: String
+                           | h
                            }
               | req
               }
               { bodyStream :: Stream Closed
               , headers :: { "content-type" :: String
                            , "content-length" :: String
+                           | h
                            }
               , body :: Form
               | req

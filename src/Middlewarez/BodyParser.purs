@@ -8,24 +8,26 @@ import Middlewarez.Conn (HTTP, Conn, RequestMiddleware)
 import Middlewarez.Stream (Closed, Initial, Stream)
 
 class BodyParser p t | p -> t where
-  parse :: forall e req. p
+  parse :: forall e req h. p
         -> RequestMiddleware
            e
            { bodyStream :: Stream Initial
            , headers :: { "content-type" :: String
                         , "content-length" :: String
+                        | h
                         }
            | req
            }
            { bodyStream :: Stream Closed
            , headers :: { "content-type" :: String
                         , "content-length" :: String
+                        | h
                         }
            , body :: t
            | req
            }
 
-foreign import _parseBodyFromString :: forall e req res t.
+foreign import _parseBodyFromString :: forall e req res h t.
                                        -- Converter function.
                                        (String -> t)
                                        -- Conn to parse body from.
@@ -33,6 +35,7 @@ foreign import _parseBodyFromString :: forall e req res t.
                                        { bodyStream :: Stream Initial
                                        , headers :: { "content-type" :: String
                                                     , "content-length" :: String
+                                                    | h
                                                     }
                                        | req
                                        }
@@ -44,6 +47,7 @@ foreign import _parseBodyFromString :: forall e req res t.
                                         { bodyStream :: Stream Closed
                                         , headers :: { "content-type" :: String
                                                      , "content-length" :: String
+                                                     | h
                                                      }
                                         , body :: t
                                         | req
@@ -53,19 +57,21 @@ foreign import _parseBodyFromString :: forall e req res t.
                                        -- Effect of parsing.
                                     -> Eff (http :: HTTP | e) Unit
 
-parseBodyFromString :: forall e req t.
+parseBodyFromString :: forall e req h t.
                        (String -> t)
                        -> RequestMiddleware
                        e
                        { bodyStream :: Stream Initial
                        , headers :: { "content-type" :: String
                                     , "content-length" :: String
+                                    | h
                                     }
                        | req
                        }
                        { bodyStream :: Stream Closed
                        , headers :: { "content-type" :: String
                                     , "content-length" :: String
+                                    | h
                                     }
                        , body :: t
                        | req

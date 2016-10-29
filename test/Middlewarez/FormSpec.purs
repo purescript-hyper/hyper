@@ -14,8 +14,12 @@ spec =
     it "can parse the request body as a form" do
       conn <- formParser
               { request: { bodyStream: fromString "foo=bar"
+                           -- Headers required by formParser (content-type, content-length):
                          , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"
                                     , "content-length": "7"
+                                    -- Other headers are OK too.
+                                    , "host": "localhost"
+                                    , "user-agent": "test"
                                     }
                          }
               , response: {}
