@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version 63e266b</p>
+<p class="version" itemprop="version">Version 0b82b4f</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -32,6 +32,7 @@
 <li><a href="#use-cases">Use Cases</a><ul>
 <li><a href="#writing-a-full-response">Writing a Full Response</a></li>
 <li><a href="#parsing-the-request-body">Parsing the Request Body</a></li>
+<li><a href="#enforcing-error-handling">Enforcing Error Handling</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -143,8 +144,9 @@ formParser :: forall e req h.
               | req
               }
 formParser = parse FormParser</code></pre>
-<p>It uses the helper <code>parseBodyFromString</code> to parse the body as a <code>www-form-urlencoded</code> form.</p>
-<p><strong>TODO: Error handling!</strong></p>
+<p>It uses the helper <code>parseBodyFromString</code> to parse the body as a <code>www-form-urlencoded</code> form. Any invalid body will throw an error in the Aff monad, which can be caught and handled.</p>
+<h3 id="enforcing-error-handling">Enforcing Error Handling</h3>
+<p><em>TODO!</em></p>
 <footer>
   Copyright &copy; 2016 Oskar Wickström
 </footer>

@@ -99,6 +99,9 @@ formParser = parse FormParser
 ```
 
 It uses the helper `parseBodyFromString` to parse the body as a
-`www-form-urlencoded` form.
+`www-form-urlencoded` form. Any invalid body will throw an error
+in the Aff monad, which can be caught and handled.
 
-**TODO: Error handling!**
+## Enforcing Error Handling
+
+*TODO!*
