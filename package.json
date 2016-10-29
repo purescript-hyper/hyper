@@ -1,6 +1,6 @@
 {
   "name": "hyper",
-  "description": "Type-safe, statically checked stacking of HTTP middlware, using PureScript.",
+  "description": "Type-safe, statically checked stacking of HTTP middleware, using PureScript.",
   "main": " ",
   "directories": {
     "doc": "docs",

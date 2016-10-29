@@ -1,11 +1,12 @@
 # Hyper
 
-*Type-safe, statically checked stacking of HTTP middlware, using PureScript.*
+*Type-safe, statically checked stacking of HTTP middleware, using PureScript.*
 
 ## What is this?
 
-To read about the goals and design of Hyper, see the [Design
-document](https://owickstrom.github.io/hyper/).
+This is an **experiment**, trying to improve correctness in web server
+programming, and in HTTP middleware specifically. To read about the goals and
+design of Hyper, see the [Design document](https://owickstrom.github.io/hyper/).
 
 ## Build
 
