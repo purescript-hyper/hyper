@@ -1,4 +1,4 @@
-module Middlewarez.Stream where
+module Hyper.Stream where
 
 foreign import data Stream :: * -> *
 

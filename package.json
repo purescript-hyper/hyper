@@ -1,6 +1,5 @@
 {
   "name": "purescript-middlewarez",
-  "version": "0.1.0",
   "description": "Type-safe middlewares for PureScript",
   "main": " ",
   "directories": {

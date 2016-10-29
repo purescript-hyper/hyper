@@ -1,4 +1,4 @@
 ---
-title: Middlewarez Design
+title: Hyper - Design
 author: Oskar Wickström
 ---

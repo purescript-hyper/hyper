@@ -155,7 +155,9 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
+.version,
 .author {
+  text-align: center;
   font-style: normal;
 }
 

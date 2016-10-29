@@ -10,4 +10,4 @@ import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (run)
 
 main :: Eff (fs :: FS, process :: PROCESS, console :: CONSOLE) Unit
-main = discover "Middlewarez\\..*Spec" >>= run [consoleReporter]
+main = discover "Hyper\\..*Spec" >>= run [consoleReporter]

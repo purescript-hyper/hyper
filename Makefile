@@ -1,3 +1,5 @@
+VERSION=$(shell git rev-parse --short HEAD)
+
 MD_SOURCES=docs/index.md \
 		docs/goals.md \
 		docs/design.md \

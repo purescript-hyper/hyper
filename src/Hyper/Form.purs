@@ -1,4 +1,4 @@
-module Middlewarez.Form (
+module Hyper.Form (
   Form(..),
   formParser
   ) where
@@ -9,9 +9,9 @@ import Data.Monoid (class Monoid)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
-import Middlewarez.BodyParser (parseBodyFromString, parse, class BodyParser)
-import Middlewarez.Conn (RequestMiddleware)
-import Middlewarez.Stream (Closed, Initial, Stream)
+import Hyper.BodyParser (parseBodyFromString, parse, class BodyParser)
+import Hyper.Conn (RequestMiddleware)
+import Hyper.Stream (Closed, Initial, Stream)
 
 newtype Form = Form (Array (Tuple String String))
 

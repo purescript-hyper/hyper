@@ -6,9 +6,10 @@ side-effects. There are no guarantees that you have stacked the middleware
 functions in a sensible order, and it is often the case, in my experience, that
 misconfigured middleware takes a lot of time and effort to debug.
 
-The goals of this little hack is to make use of row polymorphism in PureScript
-to enforce correctly stacked middleware in HTTP server applications. All effects
-of middleware should be reflected in the types to ensure that otherwise common
+The goals of this little hack, called *Hyper*, is to make use of row
+polymorphism and other tasty type system features in PureScript to enforce
+correctly stacked middleware in HTTP server applications. All effects of
+middleware should be reflected in the types to ensure that otherwise common
 mistakes cannot be made. A few examples could be:
 
 * Trying to consume a non-parsed request body

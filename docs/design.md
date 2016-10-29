@@ -1,5 +1,7 @@
 # Design
 
+These are the central components of *Hyper*.
+
 ## Conn
 
 A *Conn*, short for "connection", models the entirety of a connection

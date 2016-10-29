@@ -1,4 +1,4 @@
-module Middlewarez.Conn (
+module Hyper.Conn (
   Conn,
   HTTP,
   Middleware,

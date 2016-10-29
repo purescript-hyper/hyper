@@ -1,7 +1,7 @@
 # Use Cases
 
 *Here follows a collection of still loosely organized thoughts on how
-to implement safe middleware. Very much work-in-progress.*
+to implement safe middleware in Hyper. Very much work-in-progress.*
 
 ## Writing a Full Response
 

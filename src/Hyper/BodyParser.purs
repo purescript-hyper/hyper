@@ -1,11 +1,11 @@
-module Middlewarez.BodyParser where
+module Hyper.BodyParser where
 
 import Control.Monad.Aff (makeAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Exception (Error)
 import Data.Unit (Unit)
-import Middlewarez.Conn (HTTP, Conn, RequestMiddleware)
-import Middlewarez.Stream (Closed, Initial, Stream)
+import Hyper.Conn (HTTP, Conn, RequestMiddleware)
+import Hyper.Stream (Closed, Initial, Stream)
 
 class BodyParser p t | p -> t where
   parse :: forall e req h. p
