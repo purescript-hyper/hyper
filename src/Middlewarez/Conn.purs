@@ -5,7 +5,7 @@ module Middlewarez.Conn (
   ResponseMiddleware
   ) where
 
--- TODO: Might add default labels here later.
+-- Might add default labels here later, like headers.
 type Conn req res = { request :: req
                     , response :: res
                     }
