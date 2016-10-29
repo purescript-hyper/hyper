@@ -23,44 +23,116 @@
 <h2 id="contents">Contents</h2>
 <nav id="TOC">
 <ul>
+<li><a href="#goals">Goals</a></li>
 <li><a href="#design">Design</a><ul>
-<li><a href="#connection">Connection</a></li>
+<li><a href="#conn">Conn</a></li>
+<li><a href="#middleware">Middleware</a></li>
 </ul></li>
 <li><a href="#use-cases">Use Cases</a><ul>
 <li><a href="#writing-a-full-response">Writing a Full Response</a></li>
-<li><a href="#writing-a-partial-response">Writing a Partial Response</a></li>
 <li><a href="#parsing-the-request-body">Parsing the Request Body</a></li>
 </ul></li>
 </ul>
 </nav>
+<h2 id="goals">Goals</h2>
+<p>Composing middleware in NodeJS is a risky business. They mutate the HTTP request and response objects freely, and are often dependent on each others’ side-effects. There are no guarantees that you have stacked the middleware functions in a sensible order, and it is often the case, in my experience, that misconfigured middleware takes a lot of time and effort to debug.</p>
+<p>The goals of this little hack is to make use of row polymorphism in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that otherwise common mistakes cannot be made. A few examples could be:</p>
+<ul>
+<li>Trying to consume a non-parsed request body</li>
+<li>Consuming a request body parsed as the wrong type</li>
+<li>Overwriting headers</li>
+<li>Writing multiple responses</li>
+<li>Incorrect ordering of error handling middleware</li>
+<li>Incorrect ordering of middleware for sessions, authentication, authorization</li>
+<li>Missing authentication and/or authorization checks</li>
+</ul>
+<p>Can we, using the PureScript type system, eradicate this class of errors? Let’s find out!</p>
 <h2 id="design">Design</h2>
-<h3 id="connection">Connection</h3>
-<p>A connection models the entirety of a connection between the HTTP server and the user agent - both request and response. This design is adopted from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate.</p>
+<h3 id="conn">Conn</h3>
+<p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent - both request and response. This design is adopted from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate.</p>
+<h3 id="middleware">Middleware</h3>
+<p>A <em>middleware</em> is a function transforming a <code>Conn</code> to another <code>Conn</code>. The <code>Aff</code> monad encapsulates asynchronicity and error handling, as well as communicating the <code>HTTP</code> effect of applying middleware.</p>
+<pre class="purescript"><code>type Middleware e req req&#39; res res&#39; =
+  Conn req res -&gt; Aff (http :: HTTP | e) (Conn req&#39; res&#39;)</code></pre>
 <h2 id="use-cases">Use Cases</h2>
+<p><em>Here follows a collection of still loosely organized thoughts on how to implement safe middleware. Very much work-in-progress.</em></p>
 <h3 id="writing-a-full-response">Writing a Full Response</h3>
-<p>A function which writes a complete response could take a connection with an empty response.</p>
-<pre class="purescript"><code>class ResponseWriter w where
-  writeResponse :: String
-                -&gt; w
-                -&gt; Conn { response :: Complete }
-
-instance forall r. ResponseWriter (Conn { response :: Empty } | r) where
-  writeResponse r conn = ...</code></pre>
-<h3 id="writing-a-partial-response">Writing a Partial Response</h3>
-<p>A function which writes a partial response could take a connection of either an empty or a partial response.</p>
-<pre class="purescript"><code>class PartialWriter w where
-  writePartial :: String
-               -&gt; w
-               -&gt; Conn { response :: Partial }</code></pre>
+<p>A function which writes a complete response could take a <code>Conn</code> with an empty response.</p>
+<pre class="purescript"><code>respond s :: forall e res h. String
+          -&gt; ResponseMiddleware
+             e
+             { headers :: {
+                          | h
+                          }
+             , body :: Stream Write Initial
+             | res
+             }
+             { headers :: { &quot;content-type&quot; :: String
+                          , &quot;content-length&quot; :: String
+                          | h
+                          }
+             , body :: Stream Write Closed
+             | res
+             }</code></pre>
 <h3 id="parsing-the-request-body">Parsing the Request Body</h3>
-<p>The request body is a stream in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action.</p>
-<pre class="purescript"><code>class BodyParser t p where
-  parse ∷ forall r. Conn { bodyStream ∷ Stream Unconsumed | r }
-        -&gt; Conn { bodyStream ∷ Stream Consumed, body ∷ t | r }
+<p>The request body is initially a <code>Stream Read Initial</code> in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action.</p>
+<pre class="purescript"><code>class BodyParser p t | p -&gt; t where
+  parse :: forall e req h. p
+        -&gt; RequestMiddleware
+           e
+           { bodyStream :: Stream Read Initial
+           , headers :: { &quot;content-type&quot; :: String
+                        , &quot;content-length&quot; :: String
+                        | h
+                        }
+           | req
+           }
+           { bodyStream :: Stream Read Closed
+           , headers :: { &quot;content-type&quot; :: String
+                        , &quot;content-length&quot; :: String
+                        | h
+                        }
+           , body :: t
+           | req
+           }</code></pre>
+<p>Given this type, the request body can neither be read more than once, nor can the connection’s <code>body</code> be overwritten. An example parser is the <code>FormParser</code>.</p>
+<pre class="purescript"><code>data FormParser = FormParser
 
-instance BodyParser Form HttpFormParamsParser where
-  parse conn = ...</code></pre>
-<p>Given this type, the request body can neither be read more than once, nor can the connection’s <code>body</code> be overwritten.</p>
+instance bodyParserFormParser :: BodyParser FormParser Form where
+  parse _ = parseBodyFromString splitEntries
+    where
+      toTuple :: Array String -&gt; Tuple String String
+      toTuple [key, value] = Tuple (decodeURIComponent key)
+                                   (decodeURIComponent value)
+      toTuple _ = Tuple &quot;omg&quot; &quot;no&quot; -- TODO: Implement error handling
+                                   --       in body parsers
+      splitEntry = split (Pattern &quot;=&quot;)
+      splitEntries = Form &lt;&lt;&lt;
+                     map toTuple &lt;&lt;&lt;
+                     map splitEntry &lt;&lt;&lt;
+                     split (Pattern &quot;&amp;&quot;)
+
+formParser :: forall e req h.
+              RequestMiddleware
+              e
+              { bodyStream :: Stream Read Initial
+              , headers :: { &quot;content-type&quot; :: String
+                           , &quot;content-length&quot; :: String
+                           | h
+                           }
+              | req
+              }
+              { bodyStream :: Stream Read Closed
+              , headers :: { &quot;content-type&quot; :: String
+                           , &quot;content-length&quot; :: String
+                           | h
+                           }
+              , body :: Form
+              | req
+              }
+formParser = parse FormParser</code></pre>
+<p>It uses the helper <code>parseBodyFromString</code> to parse the body as a <code>www-form-urlencoded</code> form.</p>
+<p><strong>TODO: Error handling!</strong></p>
 <footer>
   Copyright &copy; 2016 Oskar Wickström
 </footer>

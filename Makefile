@@ -1,7 +1,7 @@
-MD_SOURCES=\
-				docs/index.md \
-				docs/design.md \
-				docs/use-cases.md
+MD_SOURCES=docs/index.md \
+		docs/goals.md \
+		docs/design.md \
+		docs/use-cases.md
 
 .PHONY: docs
 docs: docs/index.html
