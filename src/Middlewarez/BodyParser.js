@@ -1,4 +1,5 @@
-// var rawBody = require('raw-body');
+var rawBody = require('raw-body');
+var typer = require('media-typer');
 
 exports._parseBodyFromString = function (f) {
   return function (conn) {
@@ -8,10 +9,23 @@ exports._parseBodyFromString = function (f) {
           if (conn.request.body) {
             return error(new Error('.request.body already set on Conn!'));
           }
-          console.log(conn.request.headers);
-          conn.request.body = f('');
-
-          return success(conn);
+          try {
+            var charset = typer.parse(conn.request.headers['content-type']).parameters.charset;
+            rawBody(conn.request.bodyStream, {
+              length: parseInt(conn.request.headers['content-length']),
+              limit: '1mb',
+              encoding: charset
+            }, function (err, str) {
+              if (err) {
+                error(err)();
+              } else {
+                conn.request.body = f(str);
+                success(conn)();
+              }
+            });
+          } catch (e) {
+            error(e)();
+          }
         };
       };
     };

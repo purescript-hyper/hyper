@@ -10,7 +10,9 @@
     "purescript-prelude": "^2.0.0",
     "purescript-maps": "^2.0.0",
     "purescript-eff": "^2.0.0",
-    "purescript-generics": "^3.1.0"
+    "purescript-generics": "^3.1.0",
+    "purescript-strings": "^2.0.2",
+    "purescript-foldable-traversable": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0",

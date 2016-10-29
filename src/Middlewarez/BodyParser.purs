@@ -26,16 +26,20 @@ class BodyParser p t | p -> t where
            }
 
 foreign import _parseBodyFromString :: forall e req res t.
+                                       -- Converter function.
                                        (String -> t)
-                                    -> (Conn
-                                        { bodyStream :: Stream Initial
-                                        , headers :: { "content-type" :: String
-                                                     , "content-length" :: String
-                                                     }
-                                        | req
-                                        }
-                                        res)
+                                       -- Conn to parse body from.
+                                    -> Conn
+                                       { bodyStream :: Stream Initial
+                                       , headers :: { "content-type" :: String
+                                                    , "content-length" :: String
+                                                    }
+                                       | req
+                                       }
+                                       res
+                                       -- Error callback.
                                     -> (Error -> Eff (http :: HTTP | e) Unit)
+                                       -- Success callback.
                                     -> (Conn
                                         { bodyStream :: Stream Closed
                                         , headers :: { "content-type" :: String
@@ -46,6 +50,7 @@ foreign import _parseBodyFromString :: forall e req res t.
                                         }
                                         res
                                        -> Eff (http :: HTTP | e) Unit)
+                                       -- Effect of parsing.
                                     -> Eff (http :: HTTP | e) Unit
 
 parseBodyFromString :: forall e req t.

@@ -1,0 +1,25 @@
+{
+  "name": "purescript-middlewarez",
+  "version": "0.1.0",
+  "description": "Type-safe middlewares for PureScript",
+  "main": " ",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "pulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/owickstrom/purescript-middlewarez.git"
+  },
+  "author": "oskar.wickstrom@gmail.com",
+  "license": "MPL-2.0",
+  "homepage": "https://bitbucket.org/owickstrom/purescript-middlewarez#readme",
+  "dependencies": {
+    "media-typer": "^0.3.0",
+    "raw-body": "^2.1.7",
+    "string-to-stream": "^1.1.0"
+  }
+}

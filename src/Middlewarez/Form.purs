@@ -6,7 +6,9 @@ module Middlewarez.Form (
 import Prelude
 import Data.Generic (class Generic)
 import Data.Monoid (class Monoid)
-import Data.Tuple (Tuple)
+import Data.String (Pattern(Pattern), split)
+import Data.Tuple (Tuple(Tuple))
+import Global (decodeURIComponent)
 import Middlewarez.BodyParser (parseBodyFromString, parse, class BodyParser)
 import Middlewarez.Conn (RequestMiddleware)
 import Middlewarez.Stream (Closed, Initial, Stream)
@@ -22,7 +24,13 @@ derive newtype instance monoidForm :: Monoid Form
 data FormParser = FormParser
 
 instance bodyParserFormParser :: BodyParser FormParser Form where
-  parse _ = parseBodyFromString (\_ -> Form [])
+  parse _ = parseBodyFromString splitEntries
+    where
+      toTuple :: Array String -> Tuple String String
+      toTuple [key, value] = Tuple (decodeURIComponent key) (decodeURIComponent value)
+      toTuple _ = Tuple "omg" "no" -- TODO: Implement error handling in body parsers
+      splitEntry = split (Pattern "=")
+      splitEntries = Form <<< map toTuple <<< map splitEntry <<< split (Pattern "&")
 
 
 formParser :: forall e req.
