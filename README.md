@@ -21,7 +21,7 @@ pulp build
 Running tests:
 
 ```bash
-pulp teset
+pulp test
 ```
 
 ## License
