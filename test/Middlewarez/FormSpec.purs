@@ -12,7 +12,9 @@ spec =
     it "can parse the request body as a form" do
       let conn = formParser
                  { request: { bodyStream: fromString "foo=bar"
-                            , headers: {}
+                            , headers: { "content-type": "www-form-urlencoded"
+                                       , "content-length": "7"
+                                       }
                             }
                  , response: {}
                  }

@@ -26,11 +26,15 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 
 formParser :: forall req.
               RequestMiddleware { bodyStream :: Stream Initial
-                                , headers :: {}
+                                , headers :: { "content-type" :: String
+                                             , "content-length" :: String
+                                             }
                                 | req
                                 }
                                 { bodyStream :: Stream Closed
-                                , headers :: {}
+                                , headers :: { "content-type" :: String
+                                             , "content-length" :: String
+                                             }
                                 , body :: Form
                                 | req
                                 }
