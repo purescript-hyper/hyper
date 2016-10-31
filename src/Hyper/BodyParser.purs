@@ -10,7 +10,7 @@ import Hyper.Conn (HTTP, Conn, RequestMiddleware)
 import Hyper.Stream (Closed, Initial, Stream)
 
 class BodyParser p t | p -> t where
-  parse :: forall e req h. p
+  parse :: forall e req c h. p
         -> RequestMiddleware
            e
            -- Input:
@@ -28,6 +28,7 @@ class BodyParser p t | p -> t where
            , body :: t
            | req
            }
+           c
 
 foreign import _parseBodyAsString :: forall e req res c h.
                                      -- Conn to parse body from.
@@ -58,7 +59,7 @@ foreign import _parseBodyAsString :: forall e req res c h.
                                      -- Effect of parsing.
                                   -> Eff (http :: HTTP | e) Unit
 
-parseBodyFromString :: forall e req h t.
+parseBodyFromString :: forall e req h c t.
                        (String -> Either Error t)
                        -> RequestMiddleware
                        e
@@ -76,6 +77,7 @@ parseBodyFromString :: forall e req h t.
                                     }
                        | req
                        }
+                       c
 parseBodyFromString f conn = do
   conn' ← makeAff (_parseBodyAsString conn)
   body ← case f conn'.request.body of

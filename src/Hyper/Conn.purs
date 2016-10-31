@@ -21,9 +21,9 @@ type Middleware e req req' res res' c c' =
   Conn req res c -> Aff (http :: HTTP | e) (Conn req' res' c')
 
 -- | A middleware that only transforms the request.
-type RequestMiddleware e req req' = 
-  forall res c. Middleware e req req' res res c c
+type RequestMiddleware e req req' c = 
+  forall res. Middleware e req req' res res c c
 
 -- | A middleware that only transforms the response.
-type ResponseMiddleware e res res' =
-  forall req c. Middleware e req req res res' c c
+type ResponseMiddleware e res res' c =
+  forall req. Middleware e req req res res' c c
