@@ -101,9 +101,9 @@ web application that does not exist. Neither should it be possible to create
 a form that posts to a non-existing resource. The *Router* module of Hyper
 should encode all the application route information as a component on the Conn.
 A separate DSL for writing HTML can, based on the links and forms used in the
-markup, create a type describing which resources must be routed. A mismatch in
-those types would give a compile error, as the user have references a
-non-existing route in the web application.
+markup, create a type describing which resources must be present in the routing
+component. A mismatch between those types would give a compile error, as the
+user has referenced a non-existing route in the web application.
 
 ### Open Issues
 

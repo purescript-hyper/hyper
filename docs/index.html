@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version 7e789ff</p>
+<p class="version" itemprop="version">Version 187ae36</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -139,7 +139,7 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 <h3 id="enforcing-error-handling">Enforcing Error Handling</h3>
 <p><em>TODO!</em></p>
 <h3 id="cohesion-of-links-forms-and-routes">Cohesion of Links, Forms, and Routes</h3>
-<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist. Neither should it be possible to create a form that posts to a non-existing resource. The <em>Router</em> module of Hyper should encode all the application route information as a component on the Conn. A separate DSL for writing HTML can, based on the links and forms used in the markup, create a type describing which resources must be routed. A mismatch in those types would give a compile error, as the user have references a non-existing route in the web application.</p>
+<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist. Neither should it be possible to create a form that posts to a non-existing resource. The <em>Router</em> module of Hyper should encode all the application route information as a component on the Conn. A separate DSL for writing HTML can, based on the links and forms used in the markup, create a type describing which resources must be present in the routing component. A mismatch between those types would give a compile error, as the user has referenced a non-existing route in the web application.</p>
 <h4 id="open-issues">Open Issues</h4>
 <ul>
 <li>How to handle external links</li>
