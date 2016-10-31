@@ -26,6 +26,7 @@ spec =
                                     }
                          }
               , response: {}
+              , components: {}
               }
       conn.request.body `shouldEqual` Form [Tuple "foo" "bar"]
     it "fails to parse request body as a form when invalid" $ expectError $
@@ -38,4 +39,5 @@ spec =
                             }
                  }
         , response: {}
+        , components: {}
         }

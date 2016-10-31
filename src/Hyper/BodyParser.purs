@@ -30,7 +30,7 @@ class BodyParser p t | p -> t where
            | req
            }
 
-foreign import _parseBodyAsString :: forall e req res h.
+foreign import _parseBodyAsString :: forall e req res c h.
                                      -- Conn to parse body from.
                                      Conn
                                      { bodyStream :: Stream Initial
@@ -41,6 +41,7 @@ foreign import _parseBodyAsString :: forall e req res h.
                                      | req
                                      }
                                      res
+                                     c
                                      -- Error callback.
                                   -> (Error -> Eff (http :: HTTP | e) Unit)
                                      -- Success callback.
@@ -54,7 +55,8 @@ foreign import _parseBodyAsString :: forall e req res h.
                                       | req
                                       }
                                       res
-                                     -> Eff (http :: HTTP | e) Unit)
+                                      c
+                                      -> Eff (http :: HTTP | e) Unit)
                                      -- Effect of parsing.
                                   -> Eff (http :: HTTP | e) Unit
 
