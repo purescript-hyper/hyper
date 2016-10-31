@@ -46,11 +46,4 @@ router :: forall rs e req res c.
           { routes :: rs | c }
 router routes conn = 
   _addRoutes routes <$> _runRoutes routes (show conn.request.method) conn
-  
 
-type Handler e = forall b res c.
-  ResponseMiddleware
-  e
-  { body :: b | res }
-  { body :: String | res }
-  c

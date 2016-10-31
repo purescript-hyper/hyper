@@ -1,13 +1,14 @@
 module Hyper.RouterSpec where
 
 import Prelude
-import Hyper.Conn (HTTP)
+import Hyper.Conn (ResponseMiddleware, HTTP)
 import Hyper.Method (Method(POST, GET))
-import Hyper.Router (Handler, router)
+import Hyper.Router (router)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-respond :: forall e. String -> Handler e
+respond :: forall e res b c. String
+           -> ResponseMiddleware e { body :: b | res } { body :: String | res } c
 respond s conn@{ response: r } = 
   pure (conn { response = ( r { body = s }) })
 
