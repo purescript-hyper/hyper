@@ -45,7 +45,7 @@ li > a + ol {
 pre,
 code {
   font-family: 'Source Code Pro', 'Menlo', 'Consolas', 'Ubuntu Mono', Courier, monospace;
-  font-size: 14px;
+  font-size: 15px;
   line-height: inherit;
   color: #111;
 }

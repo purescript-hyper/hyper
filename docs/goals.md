@@ -19,6 +19,8 @@ mistakes cannot be made. A few examples could be:
 * Incorrect ordering of error handling middleware
 * Incorrect ordering of middleware for sessions, authentication, authorization
 * Missing authentication and/or authorization checks
+* Linking, in an HTML anchor, to a resource that is not routed
+* Posting, in an HTML form, to a resource that is not routed
 
 Can we, using the PureScript type system, eradicate this class of errors? Let's
 find out!

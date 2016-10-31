@@ -1,7 +1,9 @@
 module Hyper.Router where
 
 import Prelude
+import Control.Monad.Aff (Aff)
 import Hyper.Conn (Conn, ResponseMiddleware, Middleware)
+import Hyper.Method (Method)
 import Hyper.Stream (Initial, Stream)
 
 {-
@@ -23,31 +25,32 @@ import Hyper.Stream (Initial, Stream)
 
 -}
 
-foreign import _addRoutes :: forall r c. r 
-                         -> { | c }
-                         -> { routes :: r | c }
+foreign import _addRoutes :: forall r req res c. r 
+                         -> Conn req res { | c }
+                         -> Conn req res { routes :: r | c }
 
-foreign import _runRoutes :: forall r req res c. r 
+foreign import _runRoutes :: forall r e req res c. r
+                         -> String
                          -> Conn req { | res } c
-                         -> Conn req { body :: String | res } c
+                         -> Aff e (Conn req { body :: String | res } c)
 
 router :: forall rs e req res c.
           rs
        -> Middleware
           e
-          req
-          req
+          { method :: Method | req }
+          { method :: Method | req }
           { | res }
           { body :: String | res }
           { | c }
           { routes :: rs | c }
-router routes conn@{ response: r, components: c } = do
-  let conn' = _runRoutes routes conn
-  pure (conn' { components = (_addRoutes routes c) })
+router routes conn = 
+  _addRoutes routes <$> _runRoutes routes (show conn.request.method) conn
+  
 
-type Handler e res c =
+type Handler e = forall b res c.
   ResponseMiddleware
   e
-  { | res }
+  { body :: b | res }
   { body :: String | res }
   c

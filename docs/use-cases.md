@@ -93,3 +93,20 @@ will throw an error in the Aff monad, which can be caught and handled.
 ## Enforcing Error Handling
 
 *TODO!*
+
+## Cohesion of Links, Forms, and Routes
+
+It should not be possible to link, using an HTML anchor, to a resource in the
+web application that does not exist. Neither should it be possible to create
+a form that posts to a non-existing resource. The *Router* module of Hyper
+should encode all the application route information as a component on the Conn.
+A separate DSL for writing HTML can, based on the links and forms used in the
+markup, create a type describing which resources must be routed. A mismatch in
+those types would give a compile error, as the user have references a
+non-existing route in the web application.
+
+### Open Issues
+
+* How to handle external links
+* How to deal with the type of `conn.response.body` and the body parameter type
+  of routed handlers
