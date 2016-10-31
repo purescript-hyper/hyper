@@ -16,7 +16,7 @@ spec =
     it "can parse the request body as a form" do
       conn <- parse
               FormParser
-              { request: { bodyStream: fromString "foo=bar"
+              { request: { body: fromString "foo=bar"
                            -- Headers required by formParser (content-type, content-length):
                          , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"
                                     , "content-length": "7"
@@ -32,7 +32,7 @@ spec =
     it "fails to parse request body as a form when invalid" $ expectError $
       parse
       FormParser
-      { request: { bodyStream: fromString "foo=bar=baz"
+      { request: { body: fromString "foo=bar=baz"
                    -- Headers required by formParser (content-type, content-length):
                  , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"
                             , "content-length": "11"
