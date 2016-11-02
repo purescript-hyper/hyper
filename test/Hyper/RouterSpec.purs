@@ -1,7 +1,7 @@
 module Hyper.RouterSpec where
 
 import Prelude
-import Hyper.Conn (Conn(Conn), Middleware, ResponseMiddleware, HTTP)
+import Hyper.Conn (Conn, Middleware, ResponseMiddleware, HTTP)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Router (Route(Route), router, class Routable)
 import Test.Spec (Spec, it, describe)
@@ -9,8 +9,8 @@ import Test.Spec.Assertions (shouldEqual)
 
 respond :: forall e res b c. String
            -> ResponseMiddleware e { body :: b | res } { body :: String | res } c
-respond s (Conn c) = 
-  pure (Conn (c { response = ( c.response { body = s }) }))
+respond s c = 
+  pure (c { response = ( c.response { body = s }) })
 
 
 data MyRoutes
@@ -37,23 +37,22 @@ spec :: forall e. Spec (http :: HTTP | e) Unit
 spec =
   describe "Hyper.Router" do
     it "can route a GET for the root resource" do
-      (Conn conn) <- (router route)
-                     (Conn { request: { method: GET
-                                      , path: "/"
-                                      }
-                           , response: { body: {} }
-                           , components: {}
-                           })
+      conn <- (router route)
+              { request: { method: GET
+                         , path: "/"
+                         }
+              , response: { body: {} }
+              , components: {}
+              }
       conn.response.body `shouldEqual` "Hello!"
 
     it "can route a POST for the root resource" do
-      (Conn conn) <- (router route)
-                     (Conn
-                      { request: { method: POST
-                                 , path: ""
-                                 }
-                      , response: { body: {} }
-                      , components: {}
-                      })
+      conn <- (router route)
+              { request: { method: POST
+                         , path: ""
+                         }
+              , response: { body: {} }
+              , components: {}
+              }
       conn.response.body `shouldEqual` "OK, I've saved that for ya."
 

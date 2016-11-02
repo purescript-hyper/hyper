@@ -3,7 +3,7 @@ module Hyper.Router where
 import Prelude
 import Control.Monad.Aff (Aff)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Conn (Conn(Conn), ResponseMiddleware, Middleware)
+import Hyper.Conn (Conn, ResponseMiddleware, Middleware)
 import Hyper.Method (Method)
 import Hyper.Stream (Initial, Stream)
 
@@ -42,7 +42,7 @@ router :: forall r e req req' res res' c.
              res'
              { | c } 
              { routes :: r | c }
-router routeFn (Conn c) = do
+router routeFn c = do
   let pathComponent = fromPath (Route c.request.method c.request.path)
-  conn <- _addRoutes (Conn c)
-  routeFn pathComponent conn
+  c' <- _addRoutes c
+  routeFn pathComponent c'

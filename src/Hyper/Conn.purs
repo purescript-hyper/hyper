@@ -1,5 +1,5 @@
 module Hyper.Conn (
-  Conn(Conn),
+  Conn,
   HTTP,
   Middleware,
   RequestMiddleware,
@@ -10,10 +10,10 @@ import Control.Monad.Aff
 
 foreign import data HTTP :: !
 
-newtype Conn req res components = Conn { request :: req
-                                       , response :: res
-                                       , components :: components
-                                       }
+type Conn req res components = { request :: req
+                               , response :: res
+                               , components :: components
+                               }
 
 -- | The basic middleware type for transforming possibly both request and
 -- | response.
