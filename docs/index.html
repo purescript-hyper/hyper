@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version 187ae36</p>
+<p class="version" itemprop="version">Version c181e7a</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -139,12 +139,24 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 <h3 id="enforcing-error-handling">Enforcing Error Handling</h3>
 <p><em>TODO!</em></p>
 <h3 id="cohesion-of-links-forms-and-routes">Cohesion of Links, Forms, and Routes</h3>
-<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist. Neither should it be possible to create a form that posts to a non-existing resource. The <em>Router</em> module of Hyper should encode all the application route information as a component on the Conn. A separate DSL for writing HTML can, based on the links and forms used in the markup, create a type describing which resources must be present in the routing component. A mismatch between those types would give a compile error, as the user has referenced a non-existing route in the web application.</p>
+<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist. Neither should it be possible to create a form that posts to a non-existing resource. The <em>Router</em> module of Hyper should encode the application route information as a component on the Conn. A separate DSL for writing HTML can, based on the links and forms used in the markup, create a type describing which resources must be present in the routing component. A mismatch between those types would give a compile error, as the user has referenced a non-existing route in the web application.</p>
+<p>The application routes are described as a basic data type.</p>
+<pre class="purescript"><code>data MyRoutes
+  = GetGreeting
+  | SaveGreeting</code></pre>
+<p>The user then needs to inform the router how to translate from and to <code>Route</code> values, which are pairs of <code>Method</code> and <code>Path</code>.</p>
+<pre class="purescript"><code>instance routableMyRoutes :: Routable MyRoutes where
+  fromPath url =
+    case url of
+      Route GET &quot;/&quot; -&gt; GetGreeting
+      Route POST &quot;/&quot; -&gt; SaveGreeting
+  toPath routes =
+    case routes of
+      GetGreeting -&gt; Route GET &quot;/&quot;
+      SaveGreeting -&gt; Route POST &quot;/&quot;</code></pre>
+<p>Using this instance the <code>router</code> middleware can, given a function that maps from <code>MyRoutes</code> to middleware, route requests. The type <code>MyRoutes</code> becomes part of components of the Conn, and anchor and form tags can refer to that component to ensure references are valid and type-checks.</p>
 <h4 id="open-issues">Open Issues</h4>
-<ul>
-<li>How to handle external links</li>
-<li>How to deal with the type of <code>conn.response.body</code> and the body parameter type of routed handlers</li>
-</ul>
+<pre><code>* How to handle external links</code></pre>
 <footer>
   Copyright &copy; 2016 Oskar Wickström
 </footer>

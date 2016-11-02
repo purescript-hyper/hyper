@@ -17,6 +17,7 @@ instance routableMyRoutes :: Routable MyRoutes where
     case url of
       Route GET "/" -> GetGreeting
       Route POST "/" -> SaveGreeting
+      -- TODO: Error handling, as this is not total
       Route _ _ -> SaveGreeting
   toPath routes =
     case routes of

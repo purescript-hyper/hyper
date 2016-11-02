@@ -99,14 +99,40 @@ will throw an error in the Aff monad, which can be caught and handled.
 It should not be possible to link, using an HTML anchor, to a resource in the
 web application that does not exist. Neither should it be possible to create
 a form that posts to a non-existing resource. The *Router* module of Hyper
-should encode all the application route information as a component on the Conn.
+should encode the application route information as a component on the Conn.
 A separate DSL for writing HTML can, based on the links and forms used in the
 markup, create a type describing which resources must be present in the routing
 component. A mismatch between those types would give a compile error, as the
 user has referenced a non-existing route in the web application.
 
+The application routes are described as a basic data type.
+
+```purescript
+data MyRoutes
+  = GetGreeting
+  | SaveGreeting
+```
+
+The user then needs to inform the router how to translate from and to `Route`
+values, which are pairs of `Method` and `Path`.
+
+```purescript
+instance routableMyRoutes :: Routable MyRoutes where
+  fromPath url =
+    case url of
+      Route GET "/" -> GetGreeting
+      Route POST "/" -> SaveGreeting
+  toPath routes =
+    case routes of
+      GetGreeting -> Route GET "/"
+      SaveGreeting -> Route POST "/"
+```
+
+Using this instance the `router` middleware can, given a function that maps from
+`MyRoutes` to middleware, route requests. The type `MyRoutes` becomes part of
+components of the Conn, and anchor and form tags can refer to that component to
+ensure references are valid and type-checks.
+
 ### Open Issues
 
-* How to handle external links
-* How to deal with the type of `conn.response.body` and the body parameter type
-  of routed handlers
+    * How to handle external links
