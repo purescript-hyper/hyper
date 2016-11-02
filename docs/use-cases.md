@@ -114,7 +114,8 @@ data MyRoutes
 ```
 
 The user then needs to inform the router how to translate from and to `Route`
-values, which are pairs of `Method` and `Path`.
+values, which are pairs of `Method` and `Path`. This can hopefully be done
+automatically with `Generic` and deriving.
 
 ```purescript
 instance routableMyRoutes :: Routable MyRoutes where

@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version dd54e93</p>
+<p class="version" itemprop="version">Version 93b69ae</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -144,7 +144,7 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 <pre class="purescript"><code>data MyRoutes
   = GetGreeting
   | SaveGreeting</code></pre>
-<p>The user then needs to inform the router how to translate from and to <code>Route</code> values, which are pairs of <code>Method</code> and <code>Path</code>.</p>
+<p>The user then needs to inform the router how to translate from and to <code>Route</code> values, which are pairs of <code>Method</code> and <code>Path</code>. This can hopefully be done automatically with <code>Generic</code> and deriving.</p>
 <pre class="purescript"><code>instance routableMyRoutes :: Routable MyRoutes where
   fromPath url =
     case url of
