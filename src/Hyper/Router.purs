@@ -2,48 +2,47 @@ module Hyper.Router where
 
 import Prelude
 import Control.Monad.Aff (Aff)
-import Hyper.Conn (Conn, ResponseMiddleware, Middleware)
+import Data.Tuple (Tuple(Tuple))
+import Hyper.Conn (Conn(Conn), ResponseMiddleware, Middleware)
 import Hyper.Method (Method)
 import Hyper.Stream (Initial, Stream)
 
-{-
+-- TODO: Make Path an Array of segments
+type Path = String
 
-{
-  "" : {
-    "foo": {
-       "bars": {
-          "": {
-            "POST": ...
-         },
-         ":id": {
-           "GET": ...
-         }
-       }
-    }
-  }
-}
+data Route = Route Method Path
 
--}
+class Routable p where
+  fromPath :: Route -> p
+  toPath :: p -> Route
 
-foreign import _addRoutes :: forall r req res c. r 
-                         -> Conn req res { | c }
-                         -> Conn req res { routes :: r | c }
+type RouterFn r e req req' res res' c c' =
+  Routable r => r
+  -> Middleware e req req' res res' c c'
 
-foreign import _runRoutes :: forall r e req res c. r
-                         -> String
-                         -> Conn req { | res } c
-                         -> Aff e (Conn req { body :: String | res } c)
+foreign import _addRoutes :: forall r e req res c. Routable r =>
+                             Middleware e req req res res  { | c } { routes :: r | c }
 
-router :: forall rs e req res c.
-          rs
-       -> Middleware
+router :: forall r e req req' res res' c.
+          Routable r =>
+          RouterFn
+          r
           e
-          { method :: Method | req }
-          { method :: Method | req }
-          { | res }
-          { body :: String | res }
-          { | c }
-          { routes :: rs | c }
-router routes conn = 
-  _addRoutes routes <$> _runRoutes routes (show conn.request.method) conn
-
+          { path :: String, method :: Method | req }
+          { path :: String, method :: Method | req' } 
+          res
+          res'
+          { routes :: r | c}
+          { routes :: r | c}
+          -> Middleware 
+             e
+             { path :: String, method :: Method | req } 
+             { path :: String, method :: Method | req' } 
+             res 
+             res'
+             { | c } 
+             { routes :: r | c }
+router routeFn (Conn c) = do
+  let pathComponent = fromPath (Route c.request.method c.request.path)
+  conn <- _addRoutes (Conn c)
+  routeFn pathComponent conn
