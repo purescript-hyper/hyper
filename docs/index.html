@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version c181e7a</p>
+<p class="version" itemprop="version">Version 15e79f4</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -156,7 +156,9 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
       SaveGreeting -&gt; Route POST &quot;/&quot;</code></pre>
 <p>Using this instance the <code>router</code> middleware can, given a function that maps from <code>MyRoutes</code> to middleware, route requests. The type <code>MyRoutes</code> becomes part of components of the Conn, and anchor and form tags can refer to that component to ensure references are valid and type-checks.</p>
 <h4 id="open-issues">Open Issues</h4>
-<pre><code>* How to handle external links</code></pre>
+<ul>
+<li>How to handle external links</li>
+</ul>
 <footer>
   Copyright &copy; 2016 Oskar Wickström
 </footer>

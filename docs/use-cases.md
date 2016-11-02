@@ -135,4 +135,4 @@ ensure references are valid and type-checks.
 
 ### Open Issues
 
-    * How to handle external links
+* How to handle external links
