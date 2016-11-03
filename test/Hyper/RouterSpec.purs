@@ -3,7 +3,7 @@ module Hyper.RouterSpec where
 import Prelude
 import Hyper.Conn (Conn, Middleware, ResponseMiddleware, HTTP)
 import Hyper.Method (Method(POST, GET))
-import Hyper.Response (respond)
+import Hyper.Response (StringResponse(StringResponse), respond)
 import Hyper.Router (Route(Route), router, class Routable)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -24,13 +24,12 @@ instance routableMyRoutes :: Routable MyRoutes where
       GetGreeting -> Route GET "/"
       SaveGreeting -> Route POST "/"
 
-
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec = do
   let route r =
         case r of
-          GetGreeting -> respond "Hello!"
-          SaveGreeting -> respond "OK, I've saved that for ya."
+          GetGreeting -> respond (StringResponse "Hello!")
+          SaveGreeting -> respond (StringResponse "OK, I've saved that for ya.")
 
   describe "Hyper.Router" do
     it "can route a GET for the root resource" do
