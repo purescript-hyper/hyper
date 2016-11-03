@@ -20,18 +20,16 @@ instance responseElement :: Response Element where
     case element of
       Element tagName attrs children ->
         let
-          printAttr (Attr attrName value) = " " <> attrName <> "=" <> value
+          printAttr (Attr attrName value) = " " <> attrName <> "=\"" <> value <> "\""
           attrsStr = if null attrs
                        then ""
                        else fold (map printAttr attrs)
-          tagStartWithAttrs = "<" <> tagName <> ">"
+          startTag = "<" <> tagName <> attrsStr <> ">"
+          endTag = "</" <> tagName <> ">"
         in
-         tagStartWithAttrs
+         startTag
          <>
          fold (map toResponse children)
          <>
-         "</" <> tagName <> ">"
+         endTag
       Text s -> s
-
-a :: { href :: String } -> Array Element -> Element
-a { href: h } = Element "a" [Attr "href" h]

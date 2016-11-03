@@ -1,11 +1,8 @@
 module Hyper.Router where
 
 import Prelude
-import Control.Monad.Aff (Aff)
-import Data.Tuple (Tuple(Tuple))
-import Hyper.Conn (Conn, ResponseMiddleware, Middleware)
+import Hyper.Conn (Middleware)
 import Hyper.Method (Method)
-import Hyper.Stream (Initial, Stream)
 
 -- TODO: Make Path an Array of segments
 type Path = String
