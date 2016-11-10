@@ -57,7 +57,12 @@ $toc$
 $endif$
 $body$
 <footer>
-  Copyright &copy; 2016 $author$
+  $if(source-code-url)$
+  <p class="source-code-url">
+  <a href="$source-code-url$">Source Code</a>
+  </p>
+  $endif$
+  <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a></p>
 </footer>
 <script src="jquery.js"></script>
 <script src="highlight.min.js"></script>

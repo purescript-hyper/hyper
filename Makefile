@@ -20,5 +20,7 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		-c docs.css \
 		-o docs/index.html \
 		--base-header-level=2 \
+		-V source-code-url:https://github.com/owickstrom/hyper \
+		-V author-url:https://wickstrom.tech \
 		--template=docs/template.html \
 	$(MD_SOURCES)

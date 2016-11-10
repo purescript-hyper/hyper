@@ -124,7 +124,7 @@ a:hover {
   color: #8583d4;
 }
 
-p {
+body > p {
   text-align: justify;
 }
 
@@ -155,9 +155,7 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
-.version,
 .author {
-  text-align: center;
   font-style: normal;
 }
 
