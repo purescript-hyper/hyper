@@ -121,12 +121,12 @@ automatically with `Generic` and deriving.
 instance routableMyRoutes :: Routable MyRoutes where
   fromPath url =
     case url of
-      Route GET "/" -> GetGreeting
-      Route POST "/" -> SaveGreeting
+      Route GET [] -> GetGreeting
+      Route POST [] -> SaveGreeting
   toPath routes =
     case routes of
-      GetGreeting -> Route GET "/"
-      SaveGreeting -> Route POST "/"
+      GetGreeting -> Route GET []
+      SaveGreeting -> Route POST []
 ```
 
 Using this instance the `router` middleware can, given a function that maps from
@@ -136,4 +136,6 @@ ensure references are valid and type-checks.
 
 ### Open Issues
 
+* HTTP method encoding in types
+* Path parameters
 * How to handle external links

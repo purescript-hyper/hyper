@@ -1,11 +1,18 @@
 module Hyper.Router where
 
 import Prelude
+import Data.Array (filter)
+import Data.String (Pattern(Pattern), split, joinWith)
 import Hyper.Conn (Middleware)
 import Hyper.Method (Method)
 
--- TODO: Make Path an Array of segments
-type Path = String
+type Path = Array String
+
+pathToHtml :: Path -> String
+pathToHtml = (<>) "/" <<< joinWith "/"
+
+pathFromString :: String -> Path
+pathFromString = filter ((/=) "") <<< split (Pattern "/")
 
 data Route = Route Method Path
 
@@ -26,20 +33,21 @@ router :: forall r e req req' res res' c.
           r
           e
           { path :: String, method :: Method | req }
-          { path :: String, method :: Method | req' } 
+          { path :: String, method :: Method | req' }
           res
           res'
           { routes :: r | c}
           { routes :: r | c}
-          -> Middleware 
+          -> Middleware
              e
-             { path :: String, method :: Method | req } 
-             { path :: String, method :: Method | req' } 
-             res 
+             { path :: String, method :: Method | req }
+             { path :: String, method :: Method | req' }
+             res
              res'
-             { | c } 
+             { | c }
              { routes :: r | c }
 router routeFn c = do
-  let pathComponent = fromPath (Route c.request.method c.request.path)
+  let path = pathFromString c.request.path
+      pathComponent = fromPath (Route c.request.method path)
   c' <- _addRoutes c
   routeFn pathComponent c'

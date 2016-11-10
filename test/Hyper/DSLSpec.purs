@@ -15,14 +15,14 @@ data MyRoutes
 instance routableMyRoutes :: Routable MyRoutes where
   fromPath url =
     case url of
-      Route GET "/about" -> About
-      Route GET "/contact" -> Contact
+      Route GET ["about"] -> About
+      Route GET ["contact"] -> Contact
       -- TODO: Error handling, as this is not total
       Route _ _ -> Contact
   toPath routes =
     case routes of
-      About -> Route GET "/about"
-      Contact -> Route GET "/contact"
+      About -> Route GET ["about"]
+      Contact -> Route GET ["contact"]
 
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec = do
@@ -53,4 +53,3 @@ spec = do
               , components: {}
               }
       conn.response.body `shouldEqual` "<a href=\"/about\">About Me</a>"
-

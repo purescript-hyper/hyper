@@ -1,7 +1,7 @@
 module Hyper.RouterSpec where
 
 import Prelude
-import Hyper.Conn (Conn, Middleware, ResponseMiddleware, HTTP)
+import Hyper.Conn (HTTP)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Response (StringResponse(StringResponse), respond)
 import Hyper.Router (Route(Route), router, class Routable)
@@ -15,14 +15,14 @@ data MyRoutes
 instance routableMyRoutes :: Routable MyRoutes where
   fromPath url =
     case url of
-      Route GET "/" -> GetGreeting
-      Route POST "/" -> SaveGreeting
+      Route GET [] -> GetGreeting
+      Route POST [] -> SaveGreeting
       -- TODO: Error handling, as this is not total
       Route _ _ -> SaveGreeting
   toPath routes =
     case routes of
-      GetGreeting -> Route GET "/"
-      SaveGreeting -> Route POST "/"
+      GetGreeting -> Route GET []
+      SaveGreeting -> Route POST []
 
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec = do
@@ -51,4 +51,3 @@ spec = do
               , components: {}
               }
       conn.response.body `shouldEqual` "OK, I've saved that for ya."
-
