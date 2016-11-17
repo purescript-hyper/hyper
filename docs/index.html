@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version 72c2144</p>
+<p class="version" itemprop="version">Version ff312bd</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -148,15 +148,17 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 <pre class="purescript"><code>instance routableMyRoutes :: Routable MyRoutes where
   fromPath url =
     case url of
-      Route GET &quot;/&quot; -&gt; GetGreeting
-      Route POST &quot;/&quot; -&gt; SaveGreeting
+      Route GET [] -&gt; GetGreeting
+      Route POST [] -&gt; SaveGreeting
   toPath routes =
     case routes of
-      GetGreeting -&gt; Route GET &quot;/&quot;
-      SaveGreeting -&gt; Route POST &quot;/&quot;</code></pre>
+      GetGreeting -&gt; Route GET []
+      SaveGreeting -&gt; Route POST []</code></pre>
 <p>Using this instance the <code>router</code> middleware can, given a function that maps from <code>MyRoutes</code> to middleware, route requests. The type <code>MyRoutes</code> becomes part of components of the Conn, and anchor and form tags can refer to that component to ensure references are valid and type-checks.</p>
 <h4 id="open-issues">Open Issues</h4>
 <ul>
+<li>HTTP method encoding in types</li>
+<li>Path parameters</li>
 <li>How to handle external links</li>
 </ul>
 <footer>
