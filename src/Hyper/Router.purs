@@ -2,9 +2,10 @@ module Hyper.Router where
 
 import Prelude
 import Data.Array (filter)
+import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
-import Hyper.Conn (Middleware)
-import Hyper.Method (Method)
+import Hyper.Conn (Middleware, PartialMiddleware)
+import Hyper.Method (Method(POST, GET))
 
 type Path = Array String
 
@@ -14,40 +15,67 @@ pathToHtml = (<>) "/" <<< joinWith "/"
 pathFromString :: String -> Path
 pathFromString = filter ((/=) "") <<< split (Pattern "/")
 
-data Route = Route Method Path
+data Supported = Supported
+data Unsupported = Unsupported
 
-class Routable p where
-  fromPath :: Route -> p
-  toPath :: p -> Route
+data MethodHandler e req req' res res' c c'
+  = Routed (Middleware e req req' res res' c c')
+  | NotRouted
 
-type RouterFn r e req req' res res' c c' =
-  Routable r => r
-  -> Middleware e req req' res res' c c'
+data ResourceMethod r e req req' res res' c c'
+  = ResourceMethod r (MethodHandler e req req' res res' c c')
 
-foreign import _addRoutes :: forall r e req res c. Routable r =>
-                             Middleware e req req res res  { | c } { routes :: r | c }
+class MethodRouter mr e req req' res res' c c' where
+  routeMethod :: mr -> Maybe (Middleware e req req' res res' c c')
 
-router :: forall r e req req' res res' c.
-          Routable r =>
-          RouterFn
-          r
-          e
-          { path :: String, method :: Method | req }
-          { path :: String, method :: Method | req' }
-          res
-          res'
-          { routes :: r | c}
-          { routes :: r | c}
-          -> Middleware
-             e
-             { path :: String, method :: Method | req }
-             { path :: String, method :: Method | req' }
-             res
-             res'
-             { | c }
-             { routes :: r | c }
-router routeFn c = do
-  let path = pathFromString c.request.path
-      pathComponent = fromPath (Route c.request.method path)
-  c' <- _addRoutes c
-  routeFn pathComponent c'
+instance methodRouterRouted :: MethodRouter
+                               (ResourceMethod m  e req req' res res' c c')
+                               e req req' res res' c c' where
+  routeMethod (ResourceMethod _ (Routed mw)) = Just mw
+  routeMethod (ResourceMethod _ NotRouted) = Nothing
+
+foreign import _router :: forall ms e req req' res res' c c'.
+                          { path :: Path | ms }
+                       -> String
+                       -> Middleware e req req' res res' c c'
+
+resource :: forall gr pr e req req' res res' c c'.
+            { path :: Path
+            , "GET" :: ResourceMethod
+                       gr
+                       e
+                       { path :: Path, method :: Method | req }
+                       req'
+                       res
+                       res'
+                       c
+                       c'
+            , "POST" :: ResourceMethod
+                        pr
+                        e
+                        { path :: Path, method :: Method | req }
+                        req'
+                        res
+                        res'
+                        c
+                        c'
+            }
+         -> PartialMiddleware 
+            e 
+            { path :: Path, method :: Method | req }
+            req'
+            res 
+            res' 
+            c
+            c'
+resource r conn =
+  if r.path == conn.request.path
+  then case method of
+    Just mw -> Just <$> mw conn
+    Nothing -> pure Nothing
+  else pure Nothing
+  where
+    method =
+      case conn.request.method of
+        GET -> routeMethod r."GET"
+        POST -> routeMethod r."POST"
