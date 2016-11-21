@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version ff312bd</p>
+<p class="version" itemprop="version">Version b7108aa</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -139,26 +139,51 @@ instance bodyParserFormParser :: BodyParser FormParser Form where
 <h3 id="enforcing-error-handling">Enforcing Error Handling</h3>
 <p><em>TODO!</em></p>
 <h3 id="cohesion-of-links-forms-and-routes">Cohesion of Links, Forms, and Routes</h3>
-<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist. Neither should it be possible to create a form that posts to a non-existing resource. The <em>Router</em> module of Hyper should encode the application route information as a component on the Conn. A separate DSL for writing HTML can, based on the links and forms used in the markup, create a type describing which resources must be present in the routing component. A mismatch between those types would give a compile error, as the user has referenced a non-existing route in the web application.</p>
-<p>The application routes are described as a basic data type.</p>
-<pre class="purescript"><code>data MyRoutes
-  = GetGreeting
-  | SaveGreeting</code></pre>
-<p>The user then needs to inform the router how to translate from and to <code>Route</code> values, which are pairs of <code>Method</code> and <code>Path</code>. This can hopefully be done automatically with <code>Generic</code> and deriving.</p>
-<pre class="purescript"><code>instance routableMyRoutes :: Routable MyRoutes where
-  fromPath url =
-    case url of
-      Route GET [] -&gt; GetGreeting
-      Route POST [] -&gt; SaveGreeting
-  toPath routes =
-    case routes of
-      GetGreeting -&gt; Route GET []
-      SaveGreeting -&gt; Route POST []</code></pre>
-<p>Using this instance the <code>router</code> middleware can, given a function that maps from <code>MyRoutes</code> to middleware, route requests. The type <code>MyRoutes</code> becomes part of components of the Conn, and anchor and form tags can refer to that component to ensure references are valid and type-checks.</p>
+<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>
+<h4 id="resources">Resources</h4>
+<p>Hyper has a concept of <em>resources</em>. Each resource is a record describing its <em>path</em>, along with a set of HTTP methods and handlers. Each method implemented in Hyper must be specified explicitly in the record with a <code>ResourceMethod</code> value, and those values are parameterized with one of the marker types describing if it is routed - <code>Supported</code> or <code>NotSupported</code>. The helper functions <code>handler</code> and <code>notSupported</code> are used to construct <code>ResourceMethod</code> values.</p>
+<pre class="purescript"><code>index =
+  { path: []
+  , &quot;GET&quot;: handler (html (h1 (text &quot;Welcome!&quot;)))
+  , &quot;POST&quot;: notSupported
+  }</code></pre>
+<h4 id="resource-routers">Resource Routers</h4>
+<p>The <code>resource</code> function creates a <code>PartialMiddleware</code> that tries to route HTTP requests to handlers in its resource. It should also add the application resources as a type in the components of the Conn, giving subsequent middleware access to that information. <em>The encoding of resource types in the Conn is NOT supported yet.</em></p>
+<pre class="purescript"><code>app = fallbackTo notFound (resource index)</code></pre>
+<h4 id="html-dsl">HTML DSL</h4>
+<p>A separate DSL for writing HTML, providing functions that take resources as arguments, creates links and forms to resources in the application <em>only if they are in scope and support the required HTTP methods</em>. Paths are used from the resource, so you cannot make a typo in the URL. In other words, mistakes in routing and references between resources give you compile-time errors.</p>
+<pre class="purescript"><code>about =
+  { path: [&quot;about&quot;]
+  , &quot;GET&quot;: handler (\conn -&gt; html
+                            (linkTo contact (text &quot;Contact Me!&quot;))
+                            conn)
+  , &quot;POST&quot;: notSupported
+  }
+
+contact =
+  { path: [&quot;contact&quot;]
+  , &quot;GET&quot;: handler (\conn -&gt; html
+                             (linkTo about (text &quot;About Me&quot;))
+                             conn)
+  , &quot;POST&quot;: notSupported
+  }</code></pre>
+<p>As resources have to be in scope to be referred, you cannot refer to a non-existing resource. You can, however, refer to an existing resource <em>that is not routed</em>. This is described above in <a href="#resource-routers">Resource Routers</a>.</p>
+<p>Erroneously using the <code>about</code> resource together with <code>formTo</code> results in a compile error.</p>
+<pre class="text"><code>Error found:
+in module Hyper.HTML.Example
+
+  Could not match type
+
+    Unsupported
+
+  with type
+
+    Supported
+</code></pre>
 <h4 id="open-issues">Open Issues</h4>
 <ul>
-<li>HTTP method encoding in types</li>
-<li>Path parameters</li>
+<li>Encoding routed resources in the Conn type (see <a href="#resource-routers">Resource Routers</a>)</li>
+<li>Path parameters (Hyper currently only supports literal path segments)</li>
 <li>How to handle external links</li>
 </ul>
 <footer>

@@ -61,6 +61,9 @@ pre {
   padding: 0;
   overflow: visible;
 }
+pre .text {
+  color: #4d4d4c;
+}
 
 p code {
   display: inline-block;

@@ -1,11 +1,11 @@
 module Hyper.HTML.DSLSpec where
 
 import Prelude
-import Hyper.Conn ((??>), fallbackTo, HTTP)
+import Hyper.Conn (Middleware, (??>), fallbackTo, HTTP)
 import Hyper.HTML.DSL (formTo, text, linkTo, html)
-import Hyper.Method (Method(GET))
+import Hyper.Method (Method, Method(GET))
 import Hyper.Response (notFound)
-import Hyper.Router (notSupported, handler, resource)
+import Hyper.Router (Path, notSupported, handler, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -17,14 +17,14 @@ about =
 
 contact =
   { path: ["contact"]
-  , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
+  , "GET": handler (\conn -> html (formTo about (text "About Me")) conn)
   , "POST": notSupported
   }
 
+app = fallbackTo notFound (resource about ??> resource contact)
+
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec = do
-  let app = fallbackTo notFound $ (resource about ??> resource contact)
-
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
       conn <- app
