@@ -2,23 +2,23 @@ module Hyper.HTML.DSLSpec where
 
 import Prelude
 import Hyper.Conn ((??>), fallbackTo, HTTP)
-import Hyper.HTML.DSL (text, linkTo, html)
-import Hyper.Method (Method(POST, GET))
+import Hyper.HTML.DSL (formTo, text, linkTo, html)
+import Hyper.Method (Method(GET))
 import Hyper.Response (notFound)
-import Hyper.Router (Unsupported(Unsupported), MethodHandler(NotRouted, Routed), Supported(Supported), ResourceMethod(ResourceMethod), resource)
+import Hyper.Router (notSupported, handler, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
 about =
   { path: ["about"]
-  , "GET": ResourceMethod Supported (Routed (\conn -> html (linkTo contact (text "Contact Me!")) conn))
-  , "POST": ResourceMethod Unsupported NotRouted
+  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
+  , "POST": notSupported
   }
 
 contact =
   { path: ["contact"]
-  , "GET": ResourceMethod Supported (Routed (\conn -> html (linkTo about (text "About Me")) conn))
-  , "POST": ResourceMethod Unsupported NotRouted
+  , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
+  , "POST": notSupported
   }
 
 spec :: forall e. Spec (http :: HTTP | e) Unit

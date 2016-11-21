@@ -4,14 +4,14 @@ import Prelude
 import Hyper.Conn (fallbackTo, HTTP)
 import Hyper.Method (Method(..))
 import Hyper.Response (notFound, respond)
-import Hyper.Router (MethodHandler(Routed), Supported(Supported), ResourceMethod(ResourceMethod), resource)
+import Hyper.Router (handler, notSupported, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
 greetings =
   { path: []
-  , "GET": ResourceMethod Supported (Routed (respond "Hello!"))
-  , "POST": ResourceMethod Supported (Routed (respond "OK, I've saved that for ya."))
+  , "GET": handler (respond "Hello!")
+  , "POST": handler (respond "OK, I've saved that for ya.")
   }
 
 spec :: forall e. Spec (http :: HTTP | e) Unit

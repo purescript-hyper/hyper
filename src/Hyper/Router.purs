@@ -1,7 +1,17 @@
-module Hyper.Router where
+module Hyper.Router ( Path
+                    , pathToHtml
+                    , pathFromString
+                    , Supported
+                    , Unsupported
+                    , ResourceMethod
+                    , handler
+                    , notSupported
+                    , resource
+                    ) where
 
 import Prelude
 import Data.Array (filter)
+import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
 import Hyper.Conn (Middleware, PartialMiddleware)
@@ -18,26 +28,29 @@ pathFromString = filter ((/=) "") <<< split (Pattern "/")
 data Supported = Supported
 data Unsupported = Unsupported
 
-data MethodHandler e req req' res res' c c'
-  = Routed (Middleware e req req' res res' c c')
-  | NotRouted
-
 data ResourceMethod r e req req' res res' c c'
-  = ResourceMethod r (MethodHandler e req req' res res' c c')
+  = Routed (Middleware e req req' res res' c c') r (r ~ Supported)
+  | NotRouted r (r ~ Unsupported)
 
-class MethodRouter mr e req req' res res' c c' where
-  routeMethod :: mr -> Maybe (Middleware e req req' res res' c c')
+handler :: forall e req req' res res' c c'.
+           Middleware e req req' res res' c c'
+           -> ResourceMethod Supported e req req' res res' c c'
+handler mw = Routed mw Supported id
 
-instance methodRouterRouted :: MethodRouter
-                               (ResourceMethod m  e req req' res res' c c')
-                               e req req' res res' c c' where
-  routeMethod (ResourceMethod _ (Routed mw)) = Just mw
-  routeMethod (ResourceMethod _ NotRouted) = Nothing
+notSupported :: forall e req req' res res' c c'.
+                ResourceMethod Unsupported e req req' res res' c c'
+notSupported = NotRouted Unsupported id
 
 foreign import _router :: forall ms e req req' res res' c c'.
                           { path :: Path | ms }
                        -> String
                        -> Middleware e req req' res res' c c'
+
+methodHandler :: forall m e req req' res res' c c'.
+                 ResourceMethod m e req req' res res' c c'
+                 -> Maybe (Middleware e req req' res res' c c')
+methodHandler (Routed mw _ _) = Just mw
+methodHandler (NotRouted _ _) = Nothing
 
 resource :: forall gr pr e req req' res res' c c'.
             { path :: Path
@@ -70,12 +83,12 @@ resource :: forall gr pr e req req' res res' c c'.
             c'
 resource r conn =
   if r.path == conn.request.path
-  then case method of
+  then case handler of
     Just mw -> Just <$> mw conn
     Nothing -> pure Nothing
   else pure Nothing
   where
-    method =
+    handler =
       case conn.request.method of
-        GET -> routeMethod r."GET"
-        POST -> routeMethod r."POST"
+        GET -> methodHandler r."GET"
+        POST -> methodHandler r."POST"

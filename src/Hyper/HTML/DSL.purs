@@ -39,6 +39,17 @@ linkTo resource nested = do
   let children = execHTML nested
   addElement (Element "a" [Attr "href" (pathToHtml resource.path)] children)
 
+formTo :: forall e req req' res res' c c' ms r.
+          { path :: Path, "POST" :: ResourceMethod Supported e req req' res res' c c' | ms }
+          -> HTML r Unit
+          -> HTML r Unit
+formTo resource nested = do
+  let children = execHTML nested
+  addElement (Element
+              "form"
+              [ Attr "method" "post"
+              , Attr "action" (pathToHtml resource.path)
+              ] children)
 
 html :: forall r e res c. HTML r Unit
      -> ResponseMiddleware e { | res } { body :: String | res } c
