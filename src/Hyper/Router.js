@@ -1,8 +1,7 @@
-exports._addRoutes = function (r) {
-  return function (conn) {
-    return function (success, error) {
-      conn.components.routes = r;
-      success(conn);
-    }
+exports._router = function (resource) {
+  return function (method) {
+    return function (conn) {
+      return resource[method](conn);
+    };
   };
 };

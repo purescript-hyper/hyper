@@ -1,6 +1,6 @@
 module Hyper.Method where
 
-import Prelude
+import Data.Show (class Show)
 
 data Method = GET | POST
 

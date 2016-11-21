@@ -1,43 +1,35 @@
 module Hyper.HTML.DSLSpec where
 
 import Prelude
-import Hyper.Conn (HTTP)
-import Hyper.HTML.DSL (text, linkTo, html)
-import Hyper.Method (Method(GET))
-import Hyper.Router (Route(Route), router, class Routable)
+import Hyper.Conn (Middleware, (??>), fallbackTo, HTTP)
+import Hyper.HTML.DSL (formTo, text, linkTo, html)
+import Hyper.Method (Method, Method(GET))
+import Hyper.Response (notFound)
+import Hyper.Router (Path, notSupported, handler, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-data MyRoutes
-  = About
-  | Contact
+about =
+  { path: ["about"]
+  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
+  , "POST": notSupported
+  }
 
-instance routableMyRoutes :: Routable MyRoutes where
-  fromPath url =
-    case url of
-      Route GET ["about"] -> About
-      Route GET ["contact"] -> Contact
-      -- TODO: Error handling, as this is not total
-      Route _ _ -> Contact
-  toPath routes =
-    case routes of
-      About -> Route GET ["about"]
-      Contact -> Route GET ["contact"]
+contact =
+  { path: ["contact"]
+  , "GET": handler (\conn -> html (formTo about (text "About Me")) conn)
+  , "POST": notSupported
+  }
+
+app = fallbackTo notFound (resource about ??> resource contact)
 
 spec :: forall e. Spec (http :: HTTP | e) Unit
 spec = do
-  let route r =
-        case r of
-          About -> html $
-            linkTo Contact (text "Contact Me!")
-          Contact -> html $
-            linkTo About (text "About Me")
-
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
-      conn <- (router route)
+      conn <- app
               { request: { method: GET
-                         , path: "/about"
+                         , path: ["about"]
                          }
               , response: {}
               , components: {}
@@ -45,9 +37,9 @@ spec = do
       conn.response.body `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
 
     it "can linkTo another existing route" do
-      conn <- (router route)
+      conn <- app
               { request: { method: GET
-                         , path: "/contact"
+                         , path: ["contact"]
                          }
               , response: {}
               , components: {}

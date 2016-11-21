@@ -1,10 +1,21 @@
-module Hyper.Router where
+module Hyper.Router ( Path
+                    , pathToHtml
+                    , pathFromString
+                    , Supported
+                    , Unsupported
+                    , ResourceMethod
+                    , handler
+                    , notSupported
+                    , resource
+                    ) where
 
 import Prelude
 import Data.Array (filter)
+import Data.Leibniz (type (~))
+import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
-import Hyper.Conn (Middleware)
-import Hyper.Method (Method)
+import Hyper.Conn (Middleware, PartialMiddleware)
+import Hyper.Method (Method(POST, GET))
 
 type Path = Array String
 
@@ -14,40 +25,70 @@ pathToHtml = (<>) "/" <<< joinWith "/"
 pathFromString :: String -> Path
 pathFromString = filter ((/=) "") <<< split (Pattern "/")
 
-data Route = Route Method Path
+data Supported = Supported
+data Unsupported = Unsupported
 
-class Routable p where
-  fromPath :: Route -> p
-  toPath :: p -> Route
+data ResourceMethod r e req req' res res' c c'
+  = Routed (Middleware e req req' res res' c c') r (r ~ Supported)
+  | NotRouted r (r ~ Unsupported)
 
-type RouterFn r e req req' res res' c c' =
-  Routable r => r
-  -> Middleware e req req' res res' c c'
+handler :: forall e req req' res res' c c'.
+           Middleware e req req' res res' c c'
+           -> ResourceMethod Supported e req req' res res' c c'
+handler mw = Routed mw Supported id
 
-foreign import _addRoutes :: forall r e req res c. Routable r =>
-                             Middleware e req req res res  { | c } { routes :: r | c }
+notSupported :: forall e req req' res res' c c'.
+                ResourceMethod Unsupported e req req' res res' c c'
+notSupported = NotRouted Unsupported id
 
-router :: forall r e req req' res res' c.
-          Routable r =>
-          RouterFn
-          r
-          e
-          { path :: String, method :: Method | req }
-          { path :: String, method :: Method | req' }
-          res
-          res'
-          { routes :: r | c}
-          { routes :: r | c}
-          -> Middleware
-             e
-             { path :: String, method :: Method | req }
-             { path :: String, method :: Method | req' }
-             res
-             res'
-             { | c }
-             { routes :: r | c }
-router routeFn c = do
-  let path = pathFromString c.request.path
-      pathComponent = fromPath (Route c.request.method path)
-  c' <- _addRoutes c
-  routeFn pathComponent c'
+foreign import _router :: forall ms e req req' res res' c c'.
+                          { path :: Path | ms }
+                       -> String
+                       -> Middleware e req req' res res' c c'
+
+methodHandler :: forall m e req req' res res' c c'.
+                 ResourceMethod m e req req' res res' c c'
+                 -> Maybe (Middleware e req req' res res' c c')
+methodHandler (Routed mw _ _) = Just mw
+methodHandler (NotRouted _ _) = Nothing
+
+resource :: forall gr pr e req req' res res' c c'.
+            { path :: Path
+            , "GET" :: ResourceMethod
+                       gr
+                       e
+                       { path :: Path, method :: Method | req }
+                       req'
+                       res
+                       res'
+                       c
+                       c'
+            , "POST" :: ResourceMethod
+                        pr
+                        e
+                        { path :: Path, method :: Method | req }
+                        req'
+                        res
+                        res'
+                        c
+                        c'
+            }
+         -> PartialMiddleware 
+            e 
+            { path :: Path, method :: Method | req }
+            req'
+            res 
+            res' 
+            c
+            c'
+resource r conn =
+  if r.path == conn.request.path
+  then case handler of
+    Just mw -> Just <$> mw conn
+    Nothing -> pure Nothing
+  else pure Nothing
+  where
+    handler =
+      case conn.request.method of
+        GET -> methodHandler r."GET"
+        POST -> methodHandler r."POST"

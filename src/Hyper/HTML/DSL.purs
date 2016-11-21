@@ -5,9 +5,8 @@ import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
 import Hyper.Conn (ResponseMiddleware)
 import Hyper.HTML (Attr(Attr), Element(Text, Element))
-import Hyper.Method (Method(POST, GET))
-import Hyper.Response (StringResponse(StringResponse), respond, toResponse)
-import Hyper.Router (pathToHtml, toPath, Route(Route), class Routable)
+import Hyper.Response (respond, toResponse)
+import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 
 type HTML r a = (State (Array Element) a)
 
@@ -32,18 +31,26 @@ h1 :: forall r.
    -> HTML r Unit
 h1 = withNested (Element "h1" [])
 
-linkTo :: forall r.
-          Routable r =>
-          r
+linkTo :: forall e req req' res res' c c' ms r.
+          { path :: Path, "GET" :: ResourceMethod Supported e req req' res res' c c' | ms }
           -> HTML r Unit
           -> HTML r Unit
-linkTo route nested = do
+linkTo resource nested = do
   let children = execHTML nested
-  case toPath route of
-    Route GET path -> addElement (Element "a" [Attr "href" (pathToHtml path)] children)
-    Route POST _ -> pure unit -- TODO: need to split GET/POST in types somehow
-                              -- so this cannot happen
+  addElement (Element "a" [Attr "href" (pathToHtml resource.path)] children)
+
+formTo :: forall e req req' res res' c c' ms r.
+          { path :: Path, "POST" :: ResourceMethod Supported e req req' res res' c c' | ms }
+          -> HTML r Unit
+          -> HTML r Unit
+formTo resource nested = do
+  let children = execHTML nested
+  addElement (Element
+              "form"
+              [ Attr "method" "post"
+              , Attr "action" (pathToHtml resource.path)
+              ] children)
 
 html :: forall r e res c. HTML r Unit
-     -> ResponseMiddleware e { | res } { body :: String | res } { routes :: r | c }
-html = respond <<< StringResponse <<< fold <<< map toResponse <<< execHTML
+     -> ResponseMiddleware e { | res } { body :: String | res } c
+html = respond <<< fold <<< map toResponse <<< execHTML
