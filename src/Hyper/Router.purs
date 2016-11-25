@@ -10,12 +10,13 @@ module Hyper.Router ( Path
                     ) where
 
 import Prelude
+import Control.Monad.Maybe.Trans (MaybeT(MaybeT))
 import Data.Array (filter)
 import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
-import Hyper.Conn (Middleware, PartialMiddleware)
 import Hyper.Method (Method(POST, GET))
+import Hyper.Middleware (Middleware, PartialMiddleware)
 
 type Path = Array String
 
@@ -73,22 +74,24 @@ resource :: forall gr pr e req req' res res' c c'.
                         c
                         c'
             }
-         -> PartialMiddleware 
-            e 
+         -> PartialMiddleware
+            e
             { path :: Path, method :: Method | req }
             req'
-            res 
-            res' 
+            res
+            res'
             c
             c'
 resource r conn =
-  if r.path == conn.request.path
-  then case handler of
-    Just mw -> Just <$> mw conn
-    Nothing -> pure Nothing
-  else pure Nothing
+  MaybeT result
   where
-    handler =
+    handler' =
       case conn.request.method of
         GET -> methodHandler r."GET"
         POST -> methodHandler r."POST"
+    result =
+      if r.path == conn.request.path
+      then case handler' of
+        Just mw -> Just <$> mw conn
+        Nothing -> pure Nothing
+      else pure Nothing

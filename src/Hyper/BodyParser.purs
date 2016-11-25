@@ -6,8 +6,9 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(Right, Left))
-import Hyper.Conn (HTTP, Conn, RequestMiddleware)
-import Hyper.Stream (Closed, Initial, Stream)
+import Hyper.Conn (HTTP, Conn)
+import Hyper.Middleware (RequestMiddleware)
+import Hyper.Stream (Initial, Stream)
 
 class BodyParser p t | p -> t where
   parse :: forall e req c h. p

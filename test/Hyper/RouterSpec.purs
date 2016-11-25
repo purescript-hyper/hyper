@@ -1,10 +1,11 @@
 module Hyper.RouterSpec where
 
 import Prelude
-import Hyper.Conn (fallbackTo, HTTP)
+import Hyper.Conn (HTTP)
 import Hyper.Method (Method(..))
+import Hyper.Middleware (fallbackTo)
 import Hyper.Response (notFound, respond)
-import Hyper.Router (handler, notSupported, resource)
+import Hyper.Router (handler, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
