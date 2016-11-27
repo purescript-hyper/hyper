@@ -5,6 +5,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.BodyParser (parse)
 import Hyper.Conn (HTTP)
 import Hyper.Form (FormParser(FormParser), Form(Form))
+import Hyper.Middleware (runMiddlewareT)
 import Hyper.Stream (fromString)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -14,8 +15,8 @@ spec :: forall e. Spec (http :: HTTP | e) Unit
 spec =
   describe "Hyper.Form" do
     it "can parse the request body as a form" do
-      conn <- parse
-              FormParser
+      conn <- runMiddlewareT
+              (parse FormParser)
               { request: { body: fromString "foo=bar"
                            -- Headers required by FormParser are 'content-type' and 'content-length'
                          , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"
@@ -31,8 +32,8 @@ spec =
       conn.request.body `shouldEqual` Form [Tuple "foo" "bar"]
       
     it "fails to parse request body as a form when invalid" $ expectError $
-      parse
-      FormParser
+      runMiddlewareT
+      (parse FormParser)
       { request: { body: fromString "foo=bar=baz"
                    -- Headers required by formParser (content-type, content-length):
                  , headers: { "content-type": "application/x-www-form-urlencoded; charset=utf8"

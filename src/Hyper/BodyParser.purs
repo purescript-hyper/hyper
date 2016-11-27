@@ -6,8 +6,8 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(Right, Left))
-import Hyper.Conn (HTTP, Conn)
-import Hyper.Middleware (RequestMiddleware)
+import Hyper.Conn (Conn)
+import Hyper.Middleware (MiddlewareT(MiddlewareT), Middleware, RequestMiddleware)
 import Hyper.Stream (Initial, Stream)
 
 class BodyParser p t | p -> t where
@@ -44,7 +44,7 @@ foreign import _parseBodyAsString :: forall e req res c h.
                                      res
                                      c
                                      -- Error callback.
-                                  -> (Error -> Eff (http :: HTTP | e) Unit)
+                                  -> (Error -> Eff e Unit)
                                      -- Success callback.
                                   -> (Conn
                                       { headers :: { "content-type" :: String
@@ -56,9 +56,9 @@ foreign import _parseBodyAsString :: forall e req res c h.
                                       }
                                       res
                                       c
-                                      -> Eff (http :: HTTP | e) Unit)
+                                      -> Eff e Unit)
                                      -- Effect of parsing.
-                                  -> Eff (http :: HTTP | e) Unit
+                                  -> Eff e Unit
 
 parseBodyFromString :: forall e req h c t.
                        (String -> Either Error t)
@@ -79,7 +79,7 @@ parseBodyFromString :: forall e req h c t.
                        | req
                        }
                        c
-parseBodyFromString f conn = do
+parseBodyFromString f = MiddlewareT $ \conn -> do
   c ← makeAff (_parseBodyAsString conn)
   body ← case f c.request.body of
            Left err → throwError err
