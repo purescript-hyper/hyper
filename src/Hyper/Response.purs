@@ -2,7 +2,7 @@ module Hyper.Response where
 
 import Prelude
 import Hyper.Conn (Conn)
-import Hyper.Middleware (MiddlewareT(MiddlewareT), Middleware, ResponseMiddleware)
+import Hyper.Middleware (ResponseMiddleware)
 
 foreign import _respond :: forall req res c.
                            String
@@ -19,7 +19,7 @@ respond :: forall r e res c. Response r =>
            r
         -> ResponseMiddleware e { | res } { body :: String | res } c
 
-respond r = MiddlewareT (\c -> pure (_respond (toResponse r) c))
+respond r c = pure (_respond (toResponse r) c)
 
 notFound :: forall e res c. ResponseMiddleware e { | res } { body :: String | res } c
 notFound = respond "404 Not found"

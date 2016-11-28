@@ -7,7 +7,7 @@ import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(Right, Left))
 import Hyper.Conn (Conn)
-import Hyper.Middleware (MiddlewareT(MiddlewareT), Middleware, RequestMiddleware)
+import Hyper.Middleware (Middleware, RequestMiddleware)
 import Hyper.Stream (Initial, Stream)
 
 class BodyParser p t | p -> t where
@@ -79,7 +79,7 @@ parseBodyFromString :: forall e req h c t.
                        | req
                        }
                        c
-parseBodyFromString f = MiddlewareT $ \conn -> do
+parseBodyFromString f conn = do
   c ← makeAff (_parseBodyAsString conn)
   body ← case f c.request.body of
            Left err → throwError err

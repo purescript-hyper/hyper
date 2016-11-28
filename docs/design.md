@@ -9,17 +9,31 @@ between the HTTP server and the user agent - both request and
 response. This design is adopted from _Plug_, an abstract HTTP
 interface in Elixir, that enables various HTTP libraries to inter-operate.
 
+``` purescript
+type Conn req res components = { request :: req
+                               , response :: res
+                               , components :: components
+                               }
+```
+
 ## Middleware
 
 A *middleware* is a function transforming a `Conn` to another
-`Conn`. The `Aff`  monad encapsulates asynchronicity and error
-handling, as well as communicating the `HTTP` effect of applying middleware.
+`Conn`, in some type `m` (possibly a monad stack). The `MiddlewareT`
+type synonym encapsulates this concept, but note that it is still a
+regular function.
 
 ``` purescript
--- | The basic middleware type for transforming possibly both request and
--- | response.
-type Middleware e req req' res res' =
-  Conn req res -> Aff (http :: HTTP | e) (Conn req' res')
+type MiddlewareT m c c' = c -> m c'
+```
+
+In general, middleware are asynchronous and have effects, so we parameterize
+with `Aff e` and get `Middleware`.
+
+``` purescript
+-- | The basic middleware type for transforming a conn.
+type Middleware e c c' = MiddlewareT (Aff e) c c'
+
 ```
 
 Many middleware transform either the request or the response. It is less common

@@ -1,9 +1,6 @@
 module Hyper.Conn (
-  Conn,
-  HTTP
+  Conn
   ) where
-
-foreign import data HTTP :: !
 
 type Conn req res components = { request :: req
                                , response :: res

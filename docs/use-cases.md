@@ -121,7 +121,7 @@ index =
 
 ### Resource Routers
 
-The `resource` function creates a `PartialMiddleware` that tries to route HTTP
+The `resource` function creates a `ResourceRouter` that tries to route HTTP
 requests to handlers in its resource. It should also add the application
 resources as a type in the components of the Conn, giving subsequent middleware
 access to that information. *The encoding of resource types in the Conn is NOT
@@ -129,6 +129,13 @@ supported yet.*
 
 ```purescript
 app = fallbackTo notFound (resource index)
+```
+
+The `ResourceRouter` provides an instance for `Alt`, making it possible to
+chain resources and have them try to match the request in order.
+
+```purescript
+app = fallbackTo notFound (resource index <|> resource about <|> resource contact)
 ```
 
 ### HTML DSL
