@@ -57,12 +57,16 @@ $toc$
 $endif$
 $body$
 <footer>
+  <p>
+  The
+  $title$
   $if(source-code-url)$
-  <p class="source-code-url">
-  <a href="$source-code-url$">Source Code</a>
-  </p>
+  <a href="$source-code-url$">source code</a>
+  $else$
+  source code
   $endif$
-  <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a></p>
+  is licensed under <a href="$license-url$">$license$</a>.</p>
+  <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a>.</p>
 </footer>
 <script src="jquery.js"></script>
 <script src="highlight.min.js"></script>
