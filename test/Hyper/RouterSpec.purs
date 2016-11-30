@@ -7,21 +7,20 @@ import Hyper.Router (fallbackTo, handler, resource)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-greetings =
-  { path: []
-  , "GET": handler (respond "Hello!")
-  , "POST": handler (respond "OK, I've saved that for ya.")
-  }
-
 spec :: forall e. Spec e Unit
 spec = do
+  let greetings =
+        { path: []
+        , "GET": handler (respond "Hello!")
+        , "POST": handler (respond "OK, I've saved that for ya.")
+        }
   describe "Hyper.Router" do
     it "can route a GET for the root resource" do
       conn <- (fallbackTo notFound $ resource greetings)
               { request: { method: GET
                          , path: []
                          }
-              , response: {}
+              , response: { body: unit }
               , components: {}
               }
       conn.response.body `shouldEqual` "Hello!"
@@ -31,7 +30,7 @@ spec = do
               { request: { method: POST
                          , path: []
                          }
-              , response: {}
+              , response: { body: unit }
               , components: {}
               }
       conn.response.body `shouldEqual` "OK, I've saved that for ya."

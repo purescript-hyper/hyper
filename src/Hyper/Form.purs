@@ -4,6 +4,7 @@ module Hyper.Form (
   ) where
 
 import Prelude
+import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Exception (error, Error)
 import Data.Either (Either(Left, Right))
 import Data.Generic (class Generic)
@@ -24,7 +25,7 @@ derive newtype instance monoidForm :: Monoid Form
 
 data FormParser = FormParser
 
-instance bodyParserFormParser :: BodyParser FormParser Form where
+instance bodyParserFormParser :: BodyParser FormParser Form (Aff e) where
   parse _ = parseBodyFromString splitPairs
     where
       toTuple :: Array String -> Either Error (Tuple String String)

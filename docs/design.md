@@ -19,21 +19,12 @@ type Conn req res components = { request :: req
 ## Middleware
 
 A *middleware* is a function transforming a `Conn` to another
-`Conn`, in some type `m` (possibly a monad stack). The `MiddlewareT`
-type synonym encapsulates this concept, but note that it is still a
-regular function.
+`Conn`, in some type `m` (possibly a monad stack). The `Middleware`
+type synonym encapsulates this concept, but it is still a regular
+function.
 
 ``` purescript
-type MiddlewareT m c c' = c -> m c'
-```
-
-In general, middleware are asynchronous and have effects, so we parameterize
-with `Aff e` and get `Middleware`.
-
-``` purescript
--- | The basic middleware type for transforming a conn.
-type Middleware e c c' = MiddlewareT (Aff e) c c'
-
+type Middleware m c c' = c -> m c'
 ```
 
 Many middleware transform either the request or the response. It is less common
@@ -42,10 +33,10 @@ type synonyms.
 
 ``` purescript
 -- | A middleware that only transforms the request.
-type RequestMiddleware e req req' =
-  forall res. Middleware e req req' res res
+type RequestMiddleware m req req' c =
+  forall res. Middleware m (Conn req res c) (Conn req' res c)
 
 -- | A middleware that only transforms the response.
-type ResponseMiddleware e res res' =
-  forall req. Middleware e req req res res'
+type ResponseMiddleware m res res' c =
+  forall req. Middleware m (Conn req res c) (Conn req res' c)
 ```

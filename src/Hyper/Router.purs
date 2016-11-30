@@ -7,13 +7,13 @@ module Hyper.Router ( Path
                     , handler
                     , notSupported
                     , resource
+                    , ResourceRecord
                     , ResourceRouter()
                     , fallbackTo
                     ) where
 
 import Prelude
-import Control.Alt ((<|>), class Alt)
-import Control.Monad.Aff (Aff)
+import Control.Alt (class Alt)
 import Control.Monad.Maybe.Trans (runMaybeT, MaybeT(MaybeT))
 import Data.Array (filter)
 import Data.Leibniz (type (~))
@@ -21,7 +21,7 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
 import Hyper.Conn (Conn)
 import Hyper.Method (Method(POST, GET))
-import Hyper.Middleware (MiddlewareT, Middleware)
+import Hyper.Middleware (Middleware)
 
 type Path = Array String
 
@@ -34,8 +34,8 @@ pathFromString = filter ((/=) "") <<< split (Pattern "/")
 data Supported = Supported
 data Unsupported = Unsupported
 
-data ResourceMethod r e x y
-  = Routed (Middleware e x y) r (r ~ Supported)
+data ResourceMethod r m x y
+  = Routed (Middleware m x y) r (r ~ Supported)
   | NotRouted r (r ~ Unsupported)
 
 handler :: forall e req req' res res' c c'.
@@ -43,7 +43,7 @@ handler :: forall e req req' res res' c c'.
            -> ResourceMethod Supported e (Conn req res c) (Conn req' res' c')
 handler mw = Routed mw Supported id
 
-notSupported :: forall e req req' res res' c c'.
+notSupported :: forall e req res c req' res' c'.
                 ResourceMethod Unsupported e (Conn req res c) (Conn req' res' c')
 notSupported = NotRouted Unsupported id
 
@@ -58,24 +58,36 @@ methodHandler :: forall m e x y.
 methodHandler (Routed mw _ _) = Just mw
 methodHandler (NotRouted _ _) = Nothing
 
-newtype ResourceRouter e c c' =
-  ResourceRouter (MiddlewareT (MaybeT (Aff e)) c c')
+newtype ResourceRouter m c c' =
+  ResourceRouter (Middleware (MaybeT m) c c')
 
-resource :: forall gr pr e req req' res res' c c'.
-            { path :: Path
-            , "GET" :: ResourceMethod
-                       gr
-                       e
-                       (Conn { path :: Path, method :: Method | req } res c)
-                       (Conn { path :: Path, method :: Method | req' } res' c')
-            , "POST" :: ResourceMethod
-                        pr
-                        e
-                        (Conn { path :: Path, method :: Method | req } res c)
-                        (Conn { path :: Path, method :: Method | req' } res' c')
-            }
+instance functorResourceRouter :: Functor m => Functor (ResourceRouter m c) where
+  map f (ResourceRouter r) = ResourceRouter $ \conn -> f <$> (r conn)
+
+instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
+  -- We only want to run 'g' if 'f' resulted in a 'Nothing'.
+  alt (ResourceRouter f) (ResourceRouter g) = ResourceRouter $ \conn -> MaybeT do
+    result <- runMaybeT (f conn)
+    case result of
+      Just conn' -> pure (Just conn')
+      Nothing -> runMaybeT (g conn)
+
+type ResourceRecord m gr pr c c' = 
+  { path :: Path
+  , "GET" :: ResourceMethod gr m c c'
+  , "POST" :: ResourceMethod pr m c c'
+  }
+
+resource :: forall gr pr m req res c req' res' c'.
+            Applicative m =>
+            ResourceRecord
+            m
+            gr
+            pr
+            (Conn { path :: Path, method :: Method | req } res c)
+            (Conn { path :: Path, method :: Method | req' } res' c')
          -> ResourceRouter 
-            e
+            m
             (Conn { path :: Path, method :: Method | req } res c)
             (Conn { path :: Path, method :: Method | req' } res' c')
 resource r =
@@ -92,21 +104,11 @@ resource r =
         Nothing -> pure Nothing
       else pure Nothing
 
-instance functorResourceRouter :: Functor (ResourceRouter e c) where
-  map f (ResourceRouter r) = ResourceRouter $ \conn -> f <$> (r conn)
-
-instance altResourceRouter :: Alt (ResourceRouter e c) where
-  -- We only want to run 'g' if 'f' resulted in a 'Nothing'.
-  alt (ResourceRouter f) (ResourceRouter g) = ResourceRouter $ \conn -> MaybeT do
-    result <- runMaybeT (f conn)
-    case result of
-      Just conn' -> pure (Just conn')
-      Nothing -> runMaybeT (g conn)
-
-fallbackTo :: forall e req req' res res' c c'.
-              Middleware e (Conn req res c) (Conn req' res' c')
-              -> ResourceRouter e (Conn req res c) (Conn req' res' c')
-              -> Middleware e (Conn req res c) (Conn req' res' c')
+fallbackTo :: forall m req req' res res' c c'.
+              Monad m =>
+              Middleware m (Conn req res c) (Conn req' res' c')
+              -> ResourceRouter m (Conn req res c) (Conn req' res' c')
+              -> Middleware m (Conn req res c) (Conn req' res' c')
 fallbackTo fallback (ResourceRouter rr) conn = do
   result <- runMaybeT $ rr conn
   case result of

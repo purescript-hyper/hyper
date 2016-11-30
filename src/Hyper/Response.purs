@@ -2,11 +2,11 @@ module Hyper.Response where
 
 import Prelude
 import Hyper.Conn (Conn)
-import Hyper.Middleware (ResponseMiddleware)
+import Hyper.Middleware (Middleware)
 
 foreign import _respond :: forall req res c.
                            String
-                        -> Conn req { | res } c
+                        -> Conn req { body :: Unit | res } c
                         -> Conn req { body :: String | res } c
 
 class Response r where
@@ -15,14 +15,17 @@ class Response r where
 instance responseStringResponse :: Response String where
   toResponse s = s
 
-respond :: forall r e res c. Response r =>
+respond :: forall r m req res c. (Applicative m, Response r) =>
            r
-        -> ResponseMiddleware e { | res } { body :: String | res } c
-
+        -> Middleware m (Conn req { body :: Unit | res } c) (Conn req { body :: String | res } c)
 respond r c = pure (_respond (toResponse r) c)
 
-notFound :: forall e res c. ResponseMiddleware e { | res } { body :: String | res } c
+notFound :: forall m req res c.
+            Applicative m =>
+            Middleware m (Conn req { body :: Unit | res } c) (Conn req { body :: String | res } c)
 notFound = respond "404 Not found"
 
-notSupported :: forall e res c. ResponseMiddleware e { | res } { body :: String | res } c
+notSupported :: forall m req res c.
+                Applicative m =>
+                Middleware m (Conn req { body :: Unit | res } c) (Conn req { body :: String | res } c)
 notSupported = respond "405 Method not supported"

@@ -1,35 +1,39 @@
 module Hyper.BodyParser where
 
 import Prelude
-import Control.Monad.Aff (makeAff)
+import Control.Monad.Aff (Aff, makeAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(Right, Left))
 import Hyper.Conn (Conn)
-import Hyper.Middleware (Middleware, RequestMiddleware)
+import Hyper.Middleware (Middleware)
 import Hyper.Stream (Initial, Stream)
 
-class BodyParser p t | p -> t where
-  parse :: forall e req c h. p
-        -> RequestMiddleware
-           e
-           -- Input:
-           { body :: Stream Initial
-           , headers :: { "content-type" :: String
-                        , "content-length" :: String
-                        | h
-                        }
-           | req
-           }
-           { headers :: { "content-type" :: String
-                        , "content-length" :: String
-                        | h
-                        }
-           , body :: t
-           | req
-           }
-           c
+class BodyParser p t m | p -> t where
+  parse :: forall req res c h. p
+        -> Middleware
+           m
+           (Conn
+            { body :: Stream Initial
+            , headers :: { "content-type" :: String
+                         , "content-length" :: String
+                         | h
+                         }
+            | req
+            }
+            res
+            c)
+           (Conn
+            { headers :: { "content-type" :: String
+                         , "content-length" :: String
+                         | h
+                         }
+            , body :: t
+            | req
+            }
+            res
+            c)
 
 foreign import _parseBodyAsString :: forall e req res c h.
                                      -- Conn to parse body from.
@@ -60,25 +64,30 @@ foreign import _parseBodyAsString :: forall e req res c h.
                                      -- Effect of parsing.
                                   -> Eff e Unit
 
-parseBodyFromString :: forall e req h c t.
+parseBodyFromString :: forall e req res h c t.
                        (String -> Either Error t)
-                       -> RequestMiddleware
-                       e
-                       { body :: Stream Initial
-                       , headers :: { "content-type" :: String
-                                    , "content-length" :: String
-                                    | h
-                                    }
-                       | req
-                       }
-                       { body :: t
-                       , headers :: { "content-type" :: String
-                                    , "content-length" :: String
-                                    | h
-                                    }
-                       | req
-                       }
-                       c
+                       -> Middleware
+                       (Aff e)
+                       (Conn
+                        { body :: Stream Initial
+                        , headers :: { "content-type" :: String
+                                     , "content-length" :: String
+                                     | h
+                                     }
+                        | req
+                        }
+                        res
+                        c)
+                       (Conn
+                        { body :: t
+                        , headers :: { "content-type" :: String
+                                     , "content-length" :: String
+                                     | h
+                                     }
+                        | req
+                        }
+                        res
+                        c)
 parseBodyFromString f conn = do
   c ← makeAff (_parseBodyAsString conn)
   body ← case f c.request.body of

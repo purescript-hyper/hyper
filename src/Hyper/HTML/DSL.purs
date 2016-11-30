@@ -5,7 +5,7 @@ import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
 import Hyper.Conn (Conn)
 import Hyper.HTML (Attr(Attr), Element(Text, Element))
-import Hyper.Middleware (ResponseMiddleware)
+import Hyper.Middleware (Middleware)
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 
@@ -52,6 +52,8 @@ formTo resource nested = do
               , Attr "action" (pathToHtml resource.path)
               ] children)
 
-html :: forall r e res c. HTML r Unit
-     -> ResponseMiddleware e { | res } { body :: String | res } c
+html :: forall r m req res c. 
+        Applicative m =>
+        HTML r Unit
+     -> Middleware m (Conn req { body :: Unit | res } c) (Conn req { body :: String | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML
