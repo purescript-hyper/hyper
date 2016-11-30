@@ -27,16 +27,6 @@ function.
 type Middleware m c c' = c -> m c'
 ```
 
-Many middleware transform either the request or the response. It is less common
-that a single middleware transform both. Thus, Hyper provides two less general
-type synonyms.
-
-``` purescript
--- | A middleware that only transforms the request.
-type RequestMiddleware m req req' c =
-  forall res. Middleware m (Conn req res c) (Conn req' res c)
-
--- | A middleware that only transforms the response.
-type ResponseMiddleware m res res' c =
-  forall req. Middleware m (Conn req res c) (Conn req res' c)
-```
+Being able to parameterize `Conn` with an `Applicative`, or `Monad` stack,
+you can customize the chain depending on the needs of your middleware and
+handlers.

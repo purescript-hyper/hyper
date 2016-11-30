@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version 2360d38</p>
+<p class="version" itemprop="version">Version c5d6200</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -61,61 +61,52 @@
                                , components :: components
                                }</code></pre>
 <h3 id="middleware">Middleware</h3>
-<p>A <em>middleware</em> is a function transforming a <code>Conn</code> to another <code>Conn</code>, in some type <code>m</code> (possibly a monad stack). The <code>MiddlewareT</code> type synonym encapsulates this concept, but note that it is still a regular function.</p>
-<pre class="purescript"><code>type MiddlewareT m c c&#39; = c -&gt; m c&#39;</code></pre>
-<p>In general, middleware are asynchronous and have effects, so we parameterize with <code>Aff e</code> and get <code>Middleware</code>.</p>
-<pre class="purescript"><code>-- | The basic middleware type for transforming a conn.
-type Middleware e c c&#39; = MiddlewareT (Aff e) c c&#39;
-</code></pre>
-<p>Many middleware transform either the request or the response. It is less common that a single middleware transform both. Thus, Hyper provides two less general type synonyms.</p>
-<pre class="purescript"><code>-- | A middleware that only transforms the request.
-type RequestMiddleware e req req&#39; =
-  forall res. Middleware e req req&#39; res res
-
--- | A middleware that only transforms the response.
-type ResponseMiddleware e res res&#39; =
-  forall req. Middleware e req req res res&#39;</code></pre>
+<p>A <em>middleware</em> is a function transforming a <code>Conn</code> to another <code>Conn</code>, in some type <code>m</code> (possibly a monad stack). The <code>Middleware</code> type synonym encapsulates this concept, but it is still a regular function.</p>
+<pre class="purescript"><code>type Middleware m c c&#39; = c -&gt; m c&#39;</code></pre>
+<p>Being able to parameterize <code>Conn</code> with an <code>Applicative</code>, or <code>Monad</code> stack, you can customize the chain depending on the needs of your middleware and handlers.</p>
 <h2 id="use-cases">Use Cases</h2>
 <p><em>Here follows a collection of still loosely organized thoughts on how to implement safe middleware in Hyper. Very much work-in-progress.</em></p>
 <h3 id="writing-a-full-response">Writing a Full Response</h3>
 <p>A function which writes a complete response could take a <code>Conn</code> with an empty response.</p>
-<pre class="purescript"><code>respond s :: forall e res h. String
-          -&gt; ResponseMiddleware
-             e
-             { headers :: {
-                          | h
-                          }
-             , body :: Stream Write Initial
-             | res
-             }
-             { headers :: { &quot;content-type&quot; :: String
-                          , &quot;content-length&quot; :: String
-                          | h
-                          }
-             , body :: Stream Write Closed
-             | res
-             }</code></pre>
+<pre class="purescript"><code>respond s :: forall req res c h. String
+          -&gt; Middleware
+             (Conn req { body :: Stream Write Initial | res } c)
+             (Conn
+              req
+              { headers :: { &quot;content-type&quot; :: String
+                           , &quot;content-length&quot; :: String
+                           | h
+                           }
+              , body :: Stream Write Closed
+              | res
+              }
+              c)</code></pre>
 <h3 id="parsing-the-request-body">Parsing the Request Body</h3>
 <p>The request body is initially a <code>Stream Read Initial</code> in the connection. It might not always be of interest, thus it is not read, and not parsed, by default. Instead, the user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action.</p>
 <pre class="purescript"><code>class BodyParser p t | p -&gt; t where
-  parse :: forall e req h. p
-        -&gt; RequestMiddleware
-           e
-           { bodyStream :: Stream Read Initial
-           , headers :: { &quot;content-type&quot; :: String
-                        , &quot;content-length&quot; :: String
-                        | h
-                        }
-           | req
-           }
-           { bodyStream :: Stream Read Closed
-           , headers :: { &quot;content-type&quot; :: String
-                        , &quot;content-length&quot; :: String
-                        | h
-                        }
-           , body :: t
-           | req
-           }</code></pre>
+  parse :: forall req res c h. p
+        -&gt; Middleware
+           (Conn
+            { bodyStream :: Stream Read Initial
+            , headers :: { &quot;content-type&quot; :: String
+                         , &quot;content-length&quot; :: String
+                         | h
+                         }
+            | req
+            }
+            res
+            c)
+           (Conn
+            { bodyStream :: Stream Read Closed
+            , headers :: { &quot;content-type&quot; :: String
+                         , &quot;content-length&quot; :: String
+                         | h
+                         }
+            , body :: t
+            | req
+            }
+           res
+           c)</code></pre>
 <p>Given this type, the request body can neither be read more than once, nor can the connection’s <code>body</code> be overwritten. An example parser is the <code>BodyParser</code> instance for <code>FormParser</code> and <code>Form</code>.</p>
 <pre class="purescript"><code>-- | A form represents a &quot;www-form-urlencoded&quot; form.
 newtype Form = Form (Array (Tuple String String))
@@ -175,7 +166,7 @@ contact =
   , &quot;POST&quot;: notSupported
   }</code></pre>
 <p>As resources have to be in scope to be referred, you cannot refer to a non-existing resource. You can, however, refer to an existing resource <em>that is not routed</em>. This is described above in <a href="#resource-routers">Resource Routers</a>.</p>
-<p>Erroneously using the <code>about</code> resource together with <code>formTo</code> results in a compile error.</p>
+<p>Erroneously using the <code>about</code> resource together with <code>formTo</code> results in a compile error, as there is no handler for the <code>POST</code> method in <code>about</code>.</p>
 <pre class="text"><code>Error found:
 in module Hyper.HTML.Example
 

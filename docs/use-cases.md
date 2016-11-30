@@ -9,22 +9,19 @@ A function which writes a complete response could take a `Conn` with an
 empty response.
 
 ```purescript
-respond s :: forall e res h. String
-          -> ResponseMiddleware
-             e
-             { headers :: {
-                          | h
-                          }
-             , body :: Stream Write Initial
-             | res
-             }
-             { headers :: { "content-type" :: String
-                          , "content-length" :: String
-                          | h
-                          }
-             , body :: Stream Write Closed
-             | res
-             }
+respond s :: forall req res c h. String
+          -> Middleware
+             (Conn req { body :: Stream Write Initial | res } c)
+             (Conn
+              req
+              { headers :: { "content-type" :: String
+                           , "content-length" :: String
+                           | h
+                           }
+              , body :: Stream Write Closed
+              | res
+              }
+              c)
 ```
 
 ## Parsing the Request Body
@@ -36,24 +33,29 @@ given parser, which returns a new connection of a type reflecting the action.
 
 ```purescript
 class BodyParser p t | p -> t where
-  parse :: forall e req h. p
-        -> RequestMiddleware
-           e
-           { bodyStream :: Stream Read Initial
-           , headers :: { "content-type" :: String
-                        , "content-length" :: String
-                        | h
-                        }
-           | req
-           }
-           { bodyStream :: Stream Read Closed
-           , headers :: { "content-type" :: String
-                        , "content-length" :: String
-                        | h
-                        }
-           , body :: t
-           | req
-           }
+  parse :: forall req res c h. p
+        -> Middleware
+           (Conn
+            { bodyStream :: Stream Read Initial
+            , headers :: { "content-type" :: String
+                         , "content-length" :: String
+                         | h
+                         }
+            | req
+            }
+            res
+            c)
+           (Conn
+            { bodyStream :: Stream Read Closed
+            , headers :: { "content-type" :: String
+                         , "content-length" :: String
+                         | h
+                         }
+            , body :: t
+            | req
+            }
+           res
+           c)
 ```
 
 Given this type, the request body can neither be read more than once,
@@ -169,7 +171,7 @@ non-existing resource. You can, however, refer to an existing resource *that is
 not routed*. This is described above in [Resource Routers](#resource-routers).
 
 Erroneously using the `about` resource together with `formTo` results in a
-compile error.
+compile error, as there is no handler for the `POST` method in `about`.
 
 ```text
 Error found:
