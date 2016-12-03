@@ -21,7 +21,7 @@ type GetResource =
   Identity
   Supported
   Unsupported
-  (Conn req { body :: Unit | res } c)
+  (Conn req { | res } c)
   (Conn req { body :: String | res } c)
 
 -- But the rest is nice!
@@ -51,7 +51,7 @@ spec = do
               { request: { method: GET
                          , path: ["about"]
                          }
-              , response: { body: unit }
+              , response: {}
               , components: {}
               }
               # app
@@ -63,7 +63,7 @@ spec = do
               { request: { method: GET
                          , path: ["contact"]
                          }
-              , response: { body: unit }
+              , response: {}
               , components: {}
               }
               # app

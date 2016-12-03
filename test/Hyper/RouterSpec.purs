@@ -20,7 +20,7 @@ spec = do
               { request: { method: GET
                          , path: []
                          }
-              , response: { body: unit }
+              , response: {}
               , components: {}
               }
       conn.response.body `shouldEqual` "Hello!"
@@ -30,7 +30,7 @@ spec = do
               { request: { method: POST
                          , path: []
                          }
-              , response: { body: unit }
+              , response: {}
               , components: {}
               }
       conn.response.body `shouldEqual` "OK, I've saved that for ya."

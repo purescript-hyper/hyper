@@ -55,5 +55,5 @@ formTo resource nested = do
 html :: forall r m req res c. 
         Applicative m =>
         HTML r Unit
-     -> Middleware m (Conn req { body :: Unit | res } c) (Conn req { body :: String | res } c)
+     -> Middleware m (Conn req { | res } c) (Conn req { body :: String | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML
