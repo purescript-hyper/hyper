@@ -14,7 +14,6 @@ module Hyper.Router ( Path
 
 import Prelude
 import Control.Alt (class Alt)
-import Control.Monad.Maybe.Trans (runMaybeT, MaybeT(MaybeT))
 import Data.Array (filter)
 import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
@@ -58,19 +57,18 @@ methodHandler :: forall m e x y.
 methodHandler (Routed mw _ _) = Just mw
 methodHandler (NotRouted _ _) = Nothing
 
-newtype ResourceRouter m c c' =
-  ResourceRouter (Middleware (MaybeT m) c c')
+newtype ResourceRouter m c c' = ResourceRouter (Middleware m c (Maybe c'))
 
 instance functorResourceRouter :: Functor m => Functor (ResourceRouter m c) where
-  map f (ResourceRouter r) = ResourceRouter $ \conn -> f <$> (r conn)
+  map f (ResourceRouter r) = ResourceRouter $ \conn -> map (map f) (r conn)
 
 instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
   -- We only want to run 'g' if 'f' resulted in a 'Nothing'.
-  alt (ResourceRouter f) (ResourceRouter g) = ResourceRouter $ \conn -> MaybeT do
-    result <- runMaybeT (f conn)
+  alt (ResourceRouter f) (ResourceRouter g) = ResourceRouter $ \conn -> do
+    result <- f conn
     case result of
       Just conn' -> pure (Just conn')
-      Nothing -> runMaybeT (g conn)
+      Nothing -> g conn
 
 type ResourceRecord m gr pr c c' = 
   { path :: Path
@@ -91,7 +89,7 @@ resource :: forall gr pr m req res c req' res' c'.
             (Conn { path :: Path, method :: Method | req } res c)
             (Conn { path :: Path, method :: Method | req' } res' c')
 resource r =
-  ResourceRouter $ MaybeT <$> result
+  ResourceRouter result
   where
     handler' conn =
       case conn.request.method of
@@ -110,7 +108,7 @@ fallbackTo :: forall m req req' res res' c c'.
               -> ResourceRouter m (Conn req res c) (Conn req' res' c')
               -> Middleware m (Conn req res c) (Conn req' res' c')
 fallbackTo fallback (ResourceRouter rr) conn = do
-  result <- runMaybeT $ rr conn
+  result <- rr conn
   case result of
     Just conn' -> pure conn'
     Nothing -> fallback conn
