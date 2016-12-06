@@ -1,8 +1,7 @@
 module Hyper.Response where
 
 import Prelude
-import Hyper.Conn (Conn)
-import Hyper.Middleware (Middleware)
+import Hyper.Core (Conn, Middleware)
 
 foreign import _respond :: forall req res c.
                            String

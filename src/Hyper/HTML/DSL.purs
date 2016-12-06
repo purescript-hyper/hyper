@@ -3,9 +3,8 @@ module Hyper.HTML.DSL where
 import Prelude
 import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
-import Hyper.Conn (Conn)
+import Hyper.Core (Conn, Middleware)
 import Hyper.HTML (Attr(Attr), Element(Text, Element))
-import Hyper.Middleware (Middleware)
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 

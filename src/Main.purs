@@ -8,6 +8,3 @@ import Hyper.Server (Port(..), runServer)
 
 main :: forall e. Eff ( console :: CONSOLE | e ) Unit                
 main = runServer (Port 3000) (html (h1 (text "Hello, Hyper!")))
-
-
-

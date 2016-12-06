@@ -3,10 +3,8 @@
 var http = require('http');
 
 exports._end = function (res) {
-  return function (s) {
-    return function () {
-      res.end(s);
-    };
+  return function () {
+    res.end(s);
   };
 };
 

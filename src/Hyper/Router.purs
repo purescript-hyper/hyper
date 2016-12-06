@@ -18,9 +18,8 @@ import Data.Array (filter)
 import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
-import Hyper.Conn (Conn)
+import Hyper.Core (Middleware, Conn)
 import Hyper.Method (Method(POST, GET))
-import Hyper.Middleware (Middleware)
 
 type Path = Array String
 

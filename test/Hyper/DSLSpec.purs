@@ -4,7 +4,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Identity (Identity)
 import Data.Newtype (unwrap)
-import Hyper.Conn (Conn)
+import Hyper.Core (Conn)
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
 import Hyper.Response (notFound)
