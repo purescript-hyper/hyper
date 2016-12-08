@@ -23,9 +23,9 @@ about :: forall m req res rw c.
          Unsupported
          (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
          (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)
-about = -- THIS IS WHERE I GET AN ERROR
+about =
    { path: ["about"]
-  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn) -- SEEMINGLY CAUSED BY THIS
+  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
   , "POST": notSupported
   }
 
@@ -39,8 +39,7 @@ contact :: forall m req res rw c.
            (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)  
 contact =
   { path: ["contact"]
-  , "GET": handler (html (text "No"))
-  --, "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
+  , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
   , "POST": notSupported
   }
 
