@@ -45,11 +45,6 @@ notSupported :: forall e req res c req' res' c'.
                 ResourceMethod Unsupported e (Conn req res c) (Conn req' res' c')
 notSupported = NotRouted Unsupported id
 
-foreign import _router :: forall ms e req req' res res' c c'.
-                          { path :: Path | ms }
-                       -> String
-                       -> Middleware e (Conn req res c) (Conn req' res' c')
-
 methodHandler :: forall m e x y.
                  ResourceMethod m e x y
                  -> Maybe (Middleware e x y)

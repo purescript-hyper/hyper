@@ -15,6 +15,35 @@ import Hyper.TestUtilities (TestResponseWriter(TestResponseWriter))
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
+about :: forall m req res rw c.
+         (Monad m, ResponseWriter rw m) =>
+         ResourceRecord
+         m
+         Supported
+         Unsupported
+         (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
+         (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)
+about = -- THIS IS WHERE I GET AN ERROR
+   { path: ["about"]
+  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn) -- SEEMINGLY CAUSED BY THIS
+  , "POST": notSupported
+  }
+
+contact :: forall m req res rw c.
+           (Monad m, ResponseWriter rw m) =>
+           ResourceRecord
+           m
+           Supported
+           Unsupported
+           (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
+           (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)  
+contact =
+  { path: ["contact"]
+  , "GET": handler (html (text "No"))
+  --, "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
+  , "POST": notSupported
+  }
+
 app :: forall m req res rw c.
   (Monad m, ResponseWriter rw m) =>
   Middleware
@@ -26,19 +55,6 @@ app :: forall m req res rw c.
         { writer :: rw, state :: ResponseEnded | res }
         c)
 app = headers [] >=> (fallbackTo (notFound) (resource about <|> resource contact))
-  where
-    about =
-      { path: ["about"]
-      --, "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
-      , "GET": handler (html (text "Contact Me!"))
-      , "POST": notSupported
-      }
-    contact =
-      { path: ["contact"]
-      --, "GET": handler (html (text "No"))
-      , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
-      , "POST": notSupported
-      }
 
 -- But the rest is nice!
 

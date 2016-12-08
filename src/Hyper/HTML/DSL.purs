@@ -30,15 +30,20 @@ h1 :: HTML Unit
 h1 = withNested (Element "h1" [])
 
 linkTo :: forall m c c' ms.
-          { path :: Path, "GET" :: ResourceMethod Supported m c c' | ms }
+          { path :: Path
+          , "GET" :: ResourceMethod Supported m c c'
+          | ms }
           -> HTML Unit
           -> HTML Unit
 linkTo resource nested = do
   let children = execHTML nested
   addElement (Element "a" [Attr "href" (pathToHtml resource.path)] children)
 
-formTo :: forall m req req' res res' c c' ms.
-          { path :: Path, "POST" :: ResourceMethod Supported m (Conn req res c) (Conn req' res' c') | ms }
+formTo :: forall m c c' ms.
+          { path :: Path
+          , "POST" :: ResourceMethod Supported m c c'
+          | ms
+          }
           -> HTML Unit
           -> HTML Unit
 formTo resource nested = do
