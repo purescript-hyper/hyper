@@ -3,46 +3,44 @@ module Hyper.HTML.DSL where
 import Prelude
 import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
-import Hyper.Core (Conn, Middleware)
+import Hyper.Core (class ResponseWriter, ResponseEnded, HeadersClosed, Conn, Middleware)
 import Hyper.HTML (Attr(Attr), Element(Text, Element))
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 
-type HTML r a = (State (Array Element) a)
+type HTML a = (State (Array Element) a)
 
-execHTML :: forall r a. HTML r a -> Array Element
+execHTML :: forall a. HTML a -> Array Element
 execHTML s = execState s []
 
-addElement :: forall r. Element -> HTML r Unit
+addElement :: Element -> HTML Unit
 addElement e = modify ((<>) [e])
 
-text :: forall r. String -> HTML r Unit
+text :: String -> HTML Unit
 text = addElement <<< Text
 
-withNested :: forall r.
-              (Array Element -> Element)
-           -> HTML r Unit
-           -> HTML r Unit
+withNested :: (Array Element -> Element)
+           -> HTML Unit
+           -> HTML Unit
 withNested el = addElement <<< el <<< execHTML
 
 
-h1 :: forall r.
-      HTML r Unit
-   -> HTML r Unit
+h1 :: HTML Unit
+   -> HTML Unit
 h1 = withNested (Element "h1" [])
 
-linkTo :: forall e req req' res res' c c' ms r.
-          { path :: Path, "GET" :: ResourceMethod Supported e (Conn req res c) (Conn req' res' c') | ms }
-          -> HTML r Unit
-          -> HTML r Unit
+linkTo :: forall m c c' ms.
+          { path :: Path, "GET" :: ResourceMethod Supported m c c' | ms }
+          -> HTML Unit
+          -> HTML Unit
 linkTo resource nested = do
   let children = execHTML nested
   addElement (Element "a" [Attr "href" (pathToHtml resource.path)] children)
 
-formTo :: forall e req req' res res' c c' ms r.
-          { path :: Path, "POST" :: ResourceMethod Supported e (Conn req res c) (Conn req' res' c') | ms }
-          -> HTML r Unit
-          -> HTML r Unit
+formTo :: forall m req req' res res' c c' ms.
+          { path :: Path, "POST" :: ResourceMethod Supported m (Conn req res c) (Conn req' res' c') | ms }
+          -> HTML Unit
+          -> HTML Unit
 formTo resource nested = do
   let children = execHTML nested
   addElement (Element
@@ -51,8 +49,11 @@ formTo resource nested = do
               , Attr "action" (pathToHtml resource.path)
               ] children)
 
-html :: forall r m req res c. 
-        Applicative m =>
-        HTML r Unit
-     -> Middleware m (Conn req { | res } c) (Conn req { body :: String | res } c)
+html :: forall m req res rw c.
+        (Monad m, ResponseWriter rw m) =>
+        HTML Unit
+     -> Middleware
+        m
+        (Conn req { writer :: rw, state :: HeadersClosed | res } c)
+        (Conn req { writer :: rw, state :: ResponseEnded | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML

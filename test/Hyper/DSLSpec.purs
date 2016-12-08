@@ -2,69 +2,71 @@ module Hyper.HTML.DSLSpec where
 
 import Prelude
 import Control.Alt ((<|>))
+import Control.Monad.Eff.Class (class MonadEff)
+import Control.Monad.Eff.Console (CONSOLE)
 import Data.Identity (Identity)
 import Data.Newtype (unwrap)
-import Hyper.Core (Conn)
+import Hyper.Core (HeadersClosed(HeadersClosed), class ResponseWriter, Middleware, HeadersOpen(HeadersOpen), ResponseEnded(ResponseEnded), Conn)
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
-import Hyper.Response (notFound)
-import Hyper.Router (notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.Response (headers, notFound)
+import Hyper.Router (Path, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.TestUtilities (TestResponseWriter(TestResponseWriter))
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
--- Still quite verbose, but does not type check without this:
-
-type GetResource =
-  forall req res c.
-  ResourceRecord
-  Identity
-  Supported
-  Unsupported
-  (Conn req { | res } c)
-  (Conn req { body :: String | res } c)
+app :: forall m req res rw c.
+  (Monad m, ResponseWriter rw m) =>
+  Middleware
+  m
+  (Conn { path :: Path, method :: Method | req }
+        { writer :: rw, state :: HeadersOpen | res }
+        c)
+  (Conn { path :: Path, method :: Method | req }
+        { writer :: rw, state :: ResponseEnded | res }
+        c)
+app = headers [] >=> (fallbackTo (notFound) (resource about <|> resource contact))
+  where
+    about =
+      { path: ["about"]
+      --, "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
+      , "GET": handler (html (text "Contact Me!"))
+      , "POST": notSupported
+      }
+    contact =
+      { path: ["contact"]
+      --, "GET": handler (html (text "No"))
+      , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
+      , "POST": notSupported
+      }
 
 -- But the rest is nice!
 
-spec :: forall e. Spec e Unit
+spec :: forall e. Spec (console :: CONSOLE | e) Unit
 spec = do
-  let
-    about :: GetResource
-    about =
-      { path: ["about"]
-      , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
-      , "POST": notSupported
-      }
-  
-    contact :: GetResource
-    contact =
-      { path: ["contact"]
-      , "GET": handler (\conn -> (html (linkTo about (text "About Me"))) conn)
-      , "POST": notSupported
-      }
-
-    app = fallbackTo notFound (resource about <|> resource contact)
- 
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
-      let conn =
+      conn <- app
               { request: { method: GET
                          , path: ["about"]
                          }
-              , response: {}
+              , response: { state: HeadersOpen
+                          , writer: TestResponseWriter
+                          }
               , components: {}
               }
-              # app
-              # unwrap
-      conn.response.body `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
+      -- conn.response.body `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
+      pure unit
 
     it "can linkTo another existing route" do
-      let conn =
+      conn <- app
               { request: { method: GET
                          , path: ["contact"]
                          }
-              , response: {}
+              , response: { state: HeadersOpen
+                          , writer: TestResponseWriter
+                          }
               , components: {}
               }
-              # app
-              # unwrap
-      conn.response.body `shouldEqual` "<a href=\"/about\">About Me</a>"
+      -- conn.response.body `shouldEqual` "<a href=\"/about\">About Me</a>"
+      pure unit

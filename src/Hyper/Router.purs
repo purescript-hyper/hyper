@@ -36,9 +36,9 @@ data ResourceMethod r m x y
   = Routed (Middleware m x y) r (r ~ Supported)
   | NotRouted r (r ~ Unsupported)
 
-handler :: forall e req req' res res' c c'.
-           Middleware e (Conn req res c) (Conn req' res' c')
-           -> ResourceMethod Supported e (Conn req res c) (Conn req' res' c')
+handler :: forall m req req' res res' c c'.
+           Middleware m (Conn req res c) (Conn req' res' c')
+           -> ResourceMethod Supported m (Conn req res c) (Conn req' res' c')
 handler mw = Routed mw Supported id
 
 notSupported :: forall e req res c req' res' c'.
@@ -69,7 +69,7 @@ instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
       Just conn' -> pure (Just conn')
       Nothing -> g conn
 
-type ResourceRecord m gr pr c c' = 
+type ResourceRecord m gr pr c c' =
   { path :: Path
   , "GET" :: ResourceMethod gr m c c'
   , "POST" :: ResourceMethod pr m c c'
@@ -83,7 +83,7 @@ resource :: forall gr pr m req res c req' res' c'.
             pr
             (Conn { path :: Path, method :: Method | req } res c)
             (Conn { path :: Path, method :: Method | req' } res' c')
-         -> ResourceRouter 
+         -> ResourceRouter
             m
             (Conn { path :: Path, method :: Method | req } res c)
             (Conn { path :: Path, method :: Method | req' } res' c')

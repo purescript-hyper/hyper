@@ -25,7 +25,13 @@ instance responseWriterServerResponse :: MonadEff e m => ResponseWriter ServerRe
          , response: (response { state = HeadersClosed })
          , components: components
          }
-  endResponse writer { request, response, components } = do
+  send writer _ { request, response, components } = do
+    pure { request: request
+         , response: response
+         , components: components
+         }
+
+  end writer { request, response, components } = do
     liftEff (_end writer)
     pure { request: request
          , response: (response { state = ResponseEnded })
@@ -39,7 +45,7 @@ foreign import _serveHttp :: forall m e.
                              -> m Unit
 
 serveHttp :: forall m e.
-             MonadEff e m => 
+             MonadEff e m =>
              Port
              -> ContT Unit m { request :: IncomingMessage, response :: ServerResponse }
 serveHttp (Port port) = ContT (_serveHttp port)
@@ -47,9 +53,9 @@ serveHttp (Port port) = ContT (_serveHttp port)
 runServer :: forall m e req res c.
              MonadEff (console :: CONSOLE | e) m =>
              Port
-             -> Middleware 
-                m 
-                (Conn { host :: String } { state :: HeadersOpen, writer :: ServerResponse } {}) 
+             -> Middleware
+                m
+                (Conn { host :: String } { state :: HeadersOpen, writer :: ServerResponse } {})
                 (Conn req { state :: ResponseEnded | res } c)
              -> m Unit
 runServer port middleware = runContT action (const $ pure unit)
