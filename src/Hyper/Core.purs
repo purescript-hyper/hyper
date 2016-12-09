@@ -2,6 +2,8 @@ module Hyper.Core where
 
 import Data.Tuple
 
+type Header = Tuple String String
+
 type Conn req res components =
   { request :: req
   , response :: res
@@ -34,7 +36,7 @@ type ResponseStateTransition m from to =
 
 class ResponseWriter rw m | rw -> m where
   writeHeader :: rw
-                 -> Tuple String String
+                 -> Header
                  -> ResponseStateTransition m HeadersOpen HeadersOpen
 
   closeHeaders :: rw -> ResponseStateTransition m HeadersOpen HeadersClosed

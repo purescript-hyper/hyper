@@ -3,13 +3,15 @@ module Hyper.HTML.DSLSpec where
 import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
+import Data.Tuple (Tuple(..))
 import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen(..), Middleware, ResponseEnded)
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
 import Hyper.Response (headers, notFound)
 import Hyper.Router (Path, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
-import Hyper.TestUtilities (TestResponseWriter(TestResponseWriter))
+import Hyper.Test.TestServer (TestResponseWriter(..), testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
+import Test.Spec.Assertions (shouldEqual)
 
 -- To have `app` and its routes be polymorphic, and still compile, we need to provide
 -- some type annotations. The following alias is a handy shortcut for the resources
@@ -35,7 +37,8 @@ app :: forall m req res rw c.
   (Conn { path :: Path, method :: Method | req }
         { writer :: rw, state :: ResponseEnded | res }
         c)
-app = headers [] >=> (fallbackTo (notFound) (resource about <|> resource contact))
+app = headers [Tuple "content-type" "text/html"] 
+      >=> fallbackTo (notFound) (resource about <|> resource contact)
   where
     about :: TestResource m rw Supported Unsupported
     about =
@@ -55,29 +58,29 @@ spec :: forall e. Spec (console :: CONSOLE | e) Unit
 spec = do
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
-      conn <- app
-              { request: { method: GET
-                         , path: ["about"]
-                         }
-              , response: { state: HeadersOpen
-                          , writer: TestResponseWriter
-                          }
-              , components: {}
-              }
-      -- TODO: Reintroduce assertion:
-      -- conn.response.body `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
-      pure unit
+      response <- { request: { method: GET
+                             , path: ["about"]
+                             }
+                  , response: { state: HeadersOpen
+                              , writer: TestResponseWriter
+                              }
+                  , components: {}
+                  }
+                  # app
+                  # testServer
+      testHeaders response `shouldEqual` [Tuple "content-type" "text/html"]
+      testBody response `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
 
     it "can linkTo another existing route" do
-      conn <- app
-              { request: { method: GET
-                         , path: ["contact"]
-                         }
-              , response: { state: HeadersOpen
-                          , writer: TestResponseWriter
-                          }
-              , components: {}
-              }
-      -- TODO: Reintroduce assertion:
-      -- conn.response.body `shouldEqual` "<a href=\"/about\">About Me</a>"
-      pure unit
+      response <- { request: { method: GET
+                             , path: ["contact"]
+                             }
+                  , response: { state: HeadersOpen
+                              , writer: TestResponseWriter
+                              }
+                  , components: {}
+                  }
+                  # app
+                  # testServer
+      testHeaders response `shouldEqual` [Tuple "content-type" "text/html"]
+      testBody response `shouldEqual` "<a href=\"/about\">About Me</a>"
