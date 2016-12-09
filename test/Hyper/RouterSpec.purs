@@ -2,8 +2,6 @@ module Hyper.RouterSpec where
 
 import Prelude
 import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Writer (lift)
-import Data.Newtype (unwrap)
 import Hyper.Core (class ResponseWriter, Conn, HeadersOpen(..), Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (headers, notFound, respond)

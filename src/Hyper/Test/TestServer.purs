@@ -1,9 +1,8 @@
 module Hyper.Test.TestServer where
 
 import Prelude
-import Control.Monad.Writer (WriterT, execWriterT, lift, tell)
+import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Data.Monoid (class Monoid)
-import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (ResponseEnded(ResponseEnded), HeadersClosed(HeadersClosed), class ResponseWriter, Header)
 
 data TestResponse = TestResponse (Array Header) String
