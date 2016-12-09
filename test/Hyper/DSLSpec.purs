@@ -2,46 +2,28 @@ module Hyper.HTML.DSLSpec where
 
 import Prelude
 import Control.Alt ((<|>))
-import Control.Monad.Eff.Class (class MonadEff)
 import Control.Monad.Eff.Console (CONSOLE)
-import Data.Identity (Identity)
-import Data.Newtype (unwrap)
-import Hyper.Core (HeadersClosed(HeadersClosed), class ResponseWriter, Middleware, HeadersOpen(HeadersOpen), ResponseEnded(ResponseEnded), Conn)
+import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen(..), Middleware, ResponseEnded)
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
 import Hyper.Response (headers, notFound)
 import Hyper.Router (Path, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
 import Hyper.TestUtilities (TestResponseWriter(TestResponseWriter))
 import Test.Spec (Spec, it, describe)
-import Test.Spec.Assertions (shouldEqual)
 
-about :: forall m req res rw c.
-         (Monad m, ResponseWriter rw m) =>
-         ResourceRecord
-         m
-         Supported
-         Unsupported
-         (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
-         (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)
-about =
-   { path: ["about"]
-  , "GET": handler (\conn -> html (linkTo contact (text "Contact Me!")) conn)
-  , "POST": notSupported
-  }
+-- To have `app` and its routes be polymorphic, and still compile, we need to provide
+-- some type annotations. The following alias is a handy shortcut for the resources
+-- used in this test suite.
 
-contact :: forall m req res rw c.
-           (Monad m, ResponseWriter rw m) =>
-           ResourceRecord
-           m
-           Supported
-           Unsupported
-           (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
-           (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)  
-contact =
-  { path: ["contact"]
-  , "GET": handler (\conn -> html (linkTo about (text "About Me")) conn)
-  , "POST": notSupported
-  }
+type TestResource m rw gr pr =
+  forall req res c.
+  (Monad m, ResponseWriter rw m) =>
+  ResourceRecord
+  m
+  gr
+  pr
+  (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
+  (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)
 
 app :: forall m req res rw c.
   (Monad m, ResponseWriter rw m) =>
@@ -54,8 +36,20 @@ app :: forall m req res rw c.
         { writer :: rw, state :: ResponseEnded | res }
         c)
 app = headers [] >=> (fallbackTo (notFound) (resource about <|> resource contact))
+  where
+    about :: TestResource m rw Supported Unsupported
+    about =
+      { path: ["about"]
+      , "GET": handler (\conn -> html (linkTo (contact ∷ TestResource m rw Supported Unsupported) (text "Contact Me!")) conn)
+      , "POST": notSupported
+      }
 
--- But the rest is nice!
+    contact :: TestResource m rw Supported Unsupported
+    contact =
+      { path: ["contact"]
+      , "GET": handler (\conn -> html (linkTo (about ∷ TestResource m rw Supported Unsupported) (text "About Me")) conn)
+      , "POST": notSupported
+      }
 
 spec :: forall e. Spec (console :: CONSOLE | e) Unit
 spec = do
@@ -70,6 +64,7 @@ spec = do
                           }
               , components: {}
               }
+      -- TODO: Reintroduce assertion:
       -- conn.response.body `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
       pure unit
 
@@ -83,5 +78,6 @@ spec = do
                           }
               , components: {}
               }
+      -- TODO: Reintroduce assertion:
       -- conn.response.body `shouldEqual` "<a href=\"/about\">About Me</a>"
       pure unit
