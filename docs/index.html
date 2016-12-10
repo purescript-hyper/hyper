@@ -16,7 +16,7 @@
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">Version be646a2</p>
+<p class="version" itemprop="version">Version bbcc8d9</p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
 <figure id="header-image">
@@ -69,6 +69,7 @@
 <h3 id="response-state-transitions">Response State Transitions</h3>
 <p>The fields <code>state</code> and <code>writer</code> are usually present in the <code>response</code> record of a Conn, as they are required by the functions in <code>Hyper.Response</code>. The state of a response is tracked in type signatures to guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes.</p>
 <p>The <code>writer</code> is a value provided by the server of the application, constrained by the <code>Hyper.Core.ResponseWriter</code> type class, and is used by functions in <code>Hyper.Response</code> to provide higher-level ways of responding to request. Let us have a look at the type signatures of some of those functions.</p>
+<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response as headers being closed</em>.</p>
 <pre class="purescript"><code>headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m) =&gt;
            t Header
@@ -76,7 +77,7 @@
            m
            (Conn req { writer :: rw, state :: HeadersOpen | res } c)
            (Conn req { writer :: rw, state :: HeadersClosed | res } c)</code></pre>
-<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response as headers being closed</em>.</p>
+<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response as ended</em>.</p>
 <pre class="purescript"><code>respond :: forall r m req res rw c.
            (Monad m, Response r, ResponseWriter rw m) =&gt;
            r
@@ -84,7 +85,6 @@
            m
            (Conn req { writer :: rw, state :: HeadersClosed | res } c)
            (Conn req { writer :: rw, state :: ResponseEnded | res } c)</code></pre>
-<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response as ended</em>.</p>
 <p>The <code>Response</code> type class describes types that can be written as responses.</p>
 <pre class="purescript"><code>class Response r where
   toResponse :: r -&gt; String</code></pre>

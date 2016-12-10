@@ -47,6 +47,11 @@ by functions in `Hyper.Response` to provide higher-level ways of
 responding to request. Let us have a look at the type signatures of
 some of those functions.
 
+We see that `headers` takes a traversable collection of headers, and gives
+back a middleware that, given a connection *where headers are ready to be
+written*, writes all specified headers, writes the separating CRLF before the
+HTTP body, and *marks the state of the response as headers being closed*.
+
 ``` purescript
 headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m) =>
@@ -57,10 +62,10 @@ headers :: forall t m req res rw c.
            (Conn req { writer :: rw, state :: HeadersClosed | res } c)
 ```
 
-We see that `headers` takes a traversable collection of headers, and gives
-back a middleware that, given a connection *where headers are ready to be
-written*, writes all specified headers, writes the separating CRLF before the
-HTTP body, and *marks the state of the response as headers being closed*.
+To be used in combination with `headers`, the `respond` function takes
+some `Response r`, and gives back a middleware that, given a
+connection *where all headers have been written*, writes a response,
+and *marks the state of the response as ended*.
 
 ``` purescript
 respond :: forall r m req res rw c.
@@ -71,11 +76,6 @@ respond :: forall r m req res rw c.
            (Conn req { writer :: rw, state :: HeadersClosed | res } c)
            (Conn req { writer :: rw, state :: ResponseEnded | res } c)
 ```
-
-To be used in combination with `headers`, the `respond` function takes
-some `Response r`, and gives back a middleware that, given a
-connection *where all headers have been written*, writes a response,
-and *marks the state of the response as ended*.
 
 The `Response` type class describes types that can be written as responses.
 
