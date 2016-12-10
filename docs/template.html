@@ -37,7 +37,9 @@ $if(title)$
 <header>
 <h1 class="title" itemprop="name">$title$</h1>
 $if(subtitle)$
-<p class="version" itemprop="version">Version $subtitle$</p>
+<p class="version" itemprop="version">
+  Version $subtitle$
+</p>
 $endif$
 $for(author)$
 <cite class="author" itemprop="author">By $author$</cite>
@@ -67,6 +69,9 @@ $body$
   $endif$
   is licensed under <a href="$license-url$">$license$</a>.</p>
   <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a>.</p>
+  <p>
+  <a href="hyper.pdf">Download as PDF</a>
+  </p>
 </footer>
 <script src="jquery.js"></script>
 <script src="highlight.min.js"></script>
