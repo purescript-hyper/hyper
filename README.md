@@ -2,32 +2,30 @@
 
 *Type-safe, statically checked composition of HTTP servers, using PureScript.*
 
-## What is this?
-
-This is an **experiment**, trying to improve correctness in web server
-programming, and in HTTP middleware and request handlers specifically. To read
-about the goals and design of Hyper, see [the
-documentation](https://owickstrom.github.io/hyper/).
+Hyper is an **experiment**, trying to improve correctness in web server
+programming, and in HTTP middleware and request handlers specifically. Read
+about the goals and design of Hyper at [owickstrom.github.io/hyper/](
+https://owickstrom.github.io/hyper/).
 
 ## Build
 
 Install dependencies and build:
 
 ```bash
-npm install
 bower install
 pulp build
 ```
 
-Running tests:
+### Running Tests
 
 ```bash
 pulp test
 ```
 
-Running examples:
+### Running Examples
 
 ```bash
+npm install # for examples using the node server
 pulp run -I examples/node-server
 ```
 
