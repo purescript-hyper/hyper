@@ -15,6 +15,7 @@ import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..
 foreign import data IncomingMessage :: *
 foreign import data ServerResponse :: *
 
+foreign import _write :: forall e. ServerResponse -> String → Eff e Unit
 foreign import _end :: forall e. ServerResponse -> Eff e Unit
 
 instance responseWriterServerResponse :: MonadEff e m => ResponseWriter ServerResponse m where
@@ -24,7 +25,8 @@ instance responseWriterServerResponse :: MonadEff e m => ResponseWriter ServerRe
          , response: (response { state = HeadersClosed })
          , components: components
          }
-  send writer _ { request, response, components } = do
+  send writer s { request, response, components } = do
+    liftEff (_write writer s)
     pure { request: request
          , response: response
          , components: components

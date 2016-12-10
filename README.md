@@ -25,6 +25,12 @@ Running tests:
 pulp test
 ```
 
+Running examples:
+
+```bash
+pulp run -I examples/node-server
+```
+
 ## License
 
 [Mozilla Public License Version 2.0](LICENSE)

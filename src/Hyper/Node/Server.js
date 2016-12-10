@@ -2,9 +2,17 @@
 
 var http = require('http');
 
+exports._write = function (res) {
+  return function (s) {
+    return function () {
+      res.write(s);
+    };
+  };
+};
+
 exports._end = function (res) {
   return function () {
-    res.end(s);
+    res.end();
   };
 };
 
