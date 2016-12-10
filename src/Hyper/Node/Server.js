@@ -1,4 +1,4 @@
-// module Hyper.Server
+// module Hyper.Node.Server
 
 var http = require('http');
 

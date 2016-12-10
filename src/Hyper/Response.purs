@@ -2,11 +2,12 @@ module Hyper.Response where
 
 import Prelude
 import Data.Foldable (traverse_)
-import Data.Tuple (Tuple)
-import Hyper.Core (closeHeaders, writeHeader, HeadersOpen, HeadersClosed, end, send, class ResponseWriter, ResponseEnded, Conn, Middleware)
+import Data.Traversable (class Traversable)
+import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
-headers :: forall m req res rw c. (Monad m, ResponseWriter rw m) =>
-           Array (Tuple String String)
+headers :: forall t m req res rw c. 
+           (Traversable t, Monad m, ResponseWriter rw m) =>
+           t Header
         -> Middleware
            m
            (Conn req { writer :: rw, state :: HeadersOpen | res } c)
@@ -20,10 +21,11 @@ headers hs conn = do
 class Response r where
   toResponse :: r -> String
 
-instance responseStringResponse :: Response String where
+instance responseString :: Response String where
   toResponse s = s
 
-respond :: forall r m req res rw c. (Monad m, Response r, ResponseWriter rw m) =>
+respond :: forall r m req res rw c.
+           (Monad m, Response r, ResponseWriter rw m) =>
            r
         -> Middleware
            m

@@ -1,30 +1,13 @@
 # Use Cases
 
-*Here follows a collection of still loosely organized thoughts on how
+*Here follows a collection of loosely organized thoughts on how
 to implement safe middleware in Hyper. Very much work-in-progress.*
 
-## Writing a Full Response
-
-A function which writes a complete response could take a `Conn` with an
-empty response.
-
-```purescript
-respond s :: forall req res c h. String
-          -> Middleware
-             (Conn req { body :: Stream Write Initial | res } c)
-             (Conn
-              req
-              { headers :: { "content-type" :: String
-                           , "content-length" :: String
-                           | h
-                           }
-              , body :: Stream Write Closed
-              | res
-              }
-              c)
-```
-
 ## Parsing the Request Body
+
+*Warning! Rough edges here, see
+the [GitHub issue](https://github.com/owickstrom/hyper/issues/6) for
+details.*
 
 The request body is initially a `Stream Read Initial` in the connection. It
 might not always be of interest, thus it is not read, and not parsed, by
@@ -92,10 +75,6 @@ This instance uses the helper `parseBodyFromString` to first read the body as a
 string, then parse that string as a `www-form-urlencoded` form. Any invalid form
 will throw an error in the Aff monad, which can be caught and handled.
 
-## Enforcing Error Handling
-
-*TODO!*
-
 ## Cohesion of Links, Forms, and Routes
 
 It should not be possible to link, using an HTML anchor, to a resource in the
@@ -159,9 +138,7 @@ about =
 
 contact =
   { path: ["contact"]
-  , "GET": handler (\conn -> html
-                             (linkTo about (text "About Me"))
-                             conn)
+  , "GET": handler (html (text "Good luck finding my email address."))
   , "POST": notSupported
   }
 ```
@@ -170,8 +147,8 @@ As resources have to be in scope to be referred, you cannot refer to a
 non-existing resource. You can, however, refer to an existing resource *that is
 not routed*. This is described above in [Resource Routers](#resource-routers).
 
-Erroneously using the `about` resource together with `formTo` results in a
-compile error, as there is no handler for the `POST` method in `about`.
+Erroneously using the `contact` resource together with `formTo` results in a
+compile error, as there is no handler for the `POST` method in `contact`.
 
 ```text
 Error found:
@@ -186,10 +163,3 @@ in module Hyper.HTML.Example
     Supported
 
 ```
-
-### Open Issues
-
-* Encoding routed resources in the Conn type (see [Resource
-    Routers](#resource-routers))
-* Path parameters (Hyper currently only supports literal path segments)
-* How to handle external links

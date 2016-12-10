@@ -1,17 +1,16 @@
-module Hyper.Server where
+module Hyper.Node.Server where
 
-import Prelude
+import Control.Applicative (pure)
+import Control.Bind (bind)
 import Control.Monad.Cont.Trans (ContT(..), lift, runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Data.Newtype (class Newtype)
+import Data.Function (const, ($))
+import Data.Semigroup ((<>))
 import Data.Tuple (Tuple(..))
-import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, ResponseEnded(..))
-
-newtype Port = Port Int
-
-derive instance newtypePort :: Newtype Port _
+import Data.Unit (Unit, unit)
+import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
 
 foreign import data IncomingMessage :: *
 foreign import data ServerResponse :: *
