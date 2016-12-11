@@ -1,11 +1,6 @@
 module Hyper.Core where
 
 import Data.Tuple (Tuple)
-import Data.Newtype (class Newtype)
-
-newtype Port = Port Int
-
-derive instance newtypePort :: Newtype Port _
 
 type Header = Tuple String String
 

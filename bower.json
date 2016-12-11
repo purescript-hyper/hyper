@@ -15,7 +15,8 @@
     "purescript-foldable-traversable": "^2.0.0",
     "purescript-control": "^2.0.0",
     "purescript-transformers": "^2.0.2",
-    "purescript-leibniz": "^2.0.0"
+    "purescript-leibniz": "^2.0.0",
+    "purescript-node-http": "^3.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0",

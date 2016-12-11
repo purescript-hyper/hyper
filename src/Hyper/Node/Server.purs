@@ -1,65 +1,54 @@
 module Hyper.Node.Server where
 
+import Node.HTTP
 import Control.Applicative (pure)
 import Control.Bind (bind)
-import Control.Monad.Cont.Trans (ContT(..), lift, runContT)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Data.Function (const, ($))
-import Data.Semigroup ((<>))
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
+import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, ResponseEnded(..))
+import Node.Encoding (Encoding(..))
+import Node.Stream (end, writeString)
 
-foreign import data IncomingMessage :: *
-foreign import data ServerResponse :: *
+data HttpResponse = HttpResponse Response
 
-foreign import _write :: forall e. ServerResponse -> String → Eff e Unit
-foreign import _end :: forall e. ServerResponse -> Eff e Unit
-
-instance responseWriterServerResponse :: MonadEff e m => ResponseWriter ServerResponse m where
+instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m where
   writeHeader _ (Tuple name value) conn =
     pure conn
 
   closeHeaders _ conn =
     pure conn { response = (conn.response { state = HeadersClosed }) }
 
-  send writer s conn = do
-    liftEff (_write writer s)
+  send (HttpResponse writer) s conn = do
+    liftEff (writeString (responseAsStream writer) UTF8 s (pure unit))
     pure conn
 
-  end writer conn = do
-    liftEff (_end writer)
+  end (HttpResponse writer) conn = do
+    liftEff (end (responseAsStream writer) (pure unit))
     pure conn { response = (conn.response { state = ResponseEnded }) }
 
-foreign import _serveHttp :: forall m e.
-                             MonadEff e m =>
-                             Int
-                             -> ({ request :: IncomingMessage, response :: ServerResponse } -> m Unit)
-                             -> m Unit
+defaultListenOptions ∷ ListenOptions
+defaultListenOptions = { hostname: "0.0.0.0", port: 3000, backlog: Nothing }
 
-serveHttp :: forall m e.
-             MonadEff e m =>
-             Port
-             -> ContT Unit m { request :: IncomingMessage, response :: ServerResponse }
-serveHttp (Port port) = ContT (_serveHttp port)
-
-runServer :: forall m e req res c.
-             MonadEff (console :: CONSOLE | e) m =>
-             Port
+runServer :: forall e req res c.
+             ListenOptions
              -> Middleware
-                m
-                (Conn { host :: String } { state :: HeadersOpen, writer :: ServerResponse } {})
+                (Eff (http ∷ HTTP | e))
+                (Conn { host :: String } { state :: HeadersOpen, writer :: HttpResponse } {})
                 (Conn req { state :: ResponseEnded | res } c)
-             -> m Unit
-runServer port middleware = runContT action (const $ pure unit)
+             -> Eff (http ∷ HTTP | e) Unit
+runServer listenOptions middleware = do
+  server <- createServer onRequest
+  listen server listenOptions onListening
   where
-    action = do
-      serverConn <- serveHttp port
+    onRequest ∷ Request → Response → Eff (http ∷ HTTP | e) Unit
+    onRequest request response = do
       let conn = { request: { host: "foo" }
-                 , response: { state: HeadersOpen, writer: serverConn.response }
+                 , response: { state: HeadersOpen, writer: HttpResponse response }
                  , components: {}
                  }
-      conn' <- lift (middleware conn)
-      liftEff (log $ "Got a request to: " <> conn.request.host)
+      conn' <- middleware conn
+      pure unit
+    onListening = pure unit
