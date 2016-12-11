@@ -19,25 +19,19 @@ foreign import _write :: forall e. ServerResponse -> String → Eff e Unit
 foreign import _end :: forall e. ServerResponse -> Eff e Unit
 
 instance responseWriterServerResponse :: MonadEff e m => ResponseWriter ServerResponse m where
-  writeHeader _ (Tuple name value) conn = pure conn
-  closeHeaders _ { request, response, components } =
-    pure { request: request
-         , response: (response { state = HeadersClosed })
-         , components: components
-         }
-  send writer s { request, response, components } = do
-    liftEff (_write writer s)
-    pure { request: request
-         , response: response
-         , components: components
-         }
+  writeHeader _ (Tuple name value) conn =
+    pure conn
 
-  end writer { request, response, components } = do
+  closeHeaders _ conn =
+    pure conn { response = (conn.response { state = HeadersClosed }) }
+
+  send writer s conn = do
+    liftEff (_write writer s)
+    pure conn
+
+  end writer conn = do
     liftEff (_end writer)
-    pure { request: request
-         , response: (response { state = ResponseEnded })
-         , components: components
-         }
+    pure conn { response = (conn.response { state = ResponseEnded }) }
 
 foreign import _serveHttp :: forall m e.
                              MonadEff e m =>

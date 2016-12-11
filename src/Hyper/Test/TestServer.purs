@@ -20,33 +20,21 @@ instance semigroupTestResponse ∷ Semigroup TestResponse where
 instance monoidTestResponse ∷ Monoid TestResponse where
   mempty = TestResponse [] ""
 
-execTestServer ∷ ∀ m a. Functor m ⇒ WriterT TestResponse m a -> m TestResponse
-execTestServer action = execWriterT action
-
 testServer ∷ ∀ m a. Monad m ⇒ WriterT TestResponse m a → m TestResponse
-testServer m = execTestServer (void m)
+testServer = execWriterT <<< void
 
 data TestResponseWriter = TestResponseWriter
   
 instance responseWriterTestResponseWriter :: Monad m =>
                                              ResponseWriter TestResponseWriter (WriterT TestResponse m) where
-  writeHeader _ header conn = do
-    tell (TestResponse [header] "")
-    pure conn
-  closeHeaders _ { request, response, components } = do
-    pure { request: request
-         , response: (response { state = HeadersClosed })
-         , components: components
-         }
-  send writer s { request, response, components } = do
-    tell (TestResponse [] s)
-    pure { request: request
-         , response: response
-         , components: components
-         }
+  writeHeader _ header conn =
+    tell (TestResponse [header] "") *> pure conn
+    
+  closeHeaders _ conn =
+    pure conn { response = (conn.response { state = HeadersClosed }) }
+    
+  send writer s conn =
+    tell (TestResponse [] s) *> pure conn
 
-  end writer { request, response, components } = do
-    pure { request: request
-         , response: (response { state = ResponseEnded })
-         , components: components
-         }
+  end writer conn =
+    pure conn { response = (conn.response { state = ResponseEnded }) }
