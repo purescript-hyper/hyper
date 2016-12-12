@@ -35,22 +35,23 @@ metrics, and much more, in the chain of middleware.
 
 ## Response State Transitions
 
-The fields `state` and `writer` are usually present in the `response` record of
-a Conn, as they are required by the functions in `Hyper.Response`. The state of
-a response is tracked in type signatures to guarantee correctness in response
-handling, preventing incorrect ordering of headers and body writes, incomplete
-responses, or other such mistakes.
+The `writer` field in the `response` record of a Conn is a value
+provided by the server backend. Functions usually constrain the
+`writer` field to be a value implementing the `Hyper.Core.ResponseWriter`
+type class. This makes it possible to provide response writing
+abstractions without depending on a specific server backend.
 
-The `writer` is a value provided by the server of the application,
-constrained by the `Hyper.Core.ResponseWriter` type class, and is used
-by functions in `Hyper.Response` to provide higher-level ways of
-responding to request. Let us have a look at the type signatures of
-some of those functions.
+The state of a response writer is tracked in its type parameter. This
+state tracking, and the type signatures of functions using the
+response writer, guarantee correctness in response handling,
+preventing incorrect ordering of headers and body writes, incomplete
+responses, or other such mistakes. Let us have a look at the type
+signatures of some of response writing functions in `Hyper.Response`.
 
 We see that `headers` takes a traversable collection of headers, and gives
 back a middleware that, given a connection *where headers are ready to be
 written*, writes all specified headers, writes the separating CRLF before the
-HTTP body, and *marks the state of the response as headers being closed*.
+HTTP body, and *marks the state of the response writer as headers being closed*.
 
 ``` purescript
 headers :: forall t m req res rw c.
@@ -58,14 +59,14 @@ headers :: forall t m req res rw c.
            t Header
         -> Middleware
            m
-           (Conn req { writer :: rw, state :: HeadersOpen | res } c)
-           (Conn req { writer :: rw, state :: HeadersClosed | res } c)
+           (Conn req { writer :: rw HeadersOpen | res } c)
+           (Conn req { writer :: rw HeadersClosed | res } c)
 ```
 
 To be used in combination with `headers`, the `respond` function takes
 some `Response r`, and gives back a middleware that, given a
 connection *where all headers have been written*, writes a response,
-and *marks the state of the response as ended*.
+and *marks the state of the response writer as ended*.
 
 ``` purescript
 respond :: forall r m req res rw c.
@@ -73,8 +74,8 @@ respond :: forall r m req res rw c.
            r
         -> Middleware
            m
-           (Conn req { writer :: rw, state :: HeadersClosed | res } c)
-           (Conn req { writer :: rw, state :: ResponseEnded | res } c)
+           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw ResponseEnded | res } c)
 ```
 
 The `Response` type class describes types that can be written as responses.

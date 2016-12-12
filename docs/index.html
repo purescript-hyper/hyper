@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version caf765d
+  Version a26c5be
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -69,24 +69,24 @@
 <pre class="purescript"><code>type Middleware m c c&#39; = c -&gt; m c&#39;</code></pre>
 <p>Being able to parameterize <code>Conn</code> with some type <code>m</code>, you can customize the chain depending on the needs of your middleware and handlers. Applications can use monad transformers to track state, provide configuration, gather metrics, and much more, in the chain of middleware.</p>
 <h3 id="response-state-transitions">Response State Transitions</h3>
-<p>The fields <code>state</code> and <code>writer</code> are usually present in the <code>response</code> record of a Conn, as they are required by the functions in <code>Hyper.Response</code>. The state of a response is tracked in type signatures to guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes.</p>
-<p>The <code>writer</code> is a value provided by the server of the application, constrained by the <code>Hyper.Core.ResponseWriter</code> type class, and is used by functions in <code>Hyper.Response</code> to provide higher-level ways of responding to request. Let us have a look at the type signatures of some of those functions.</p>
-<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response as headers being closed</em>.</p>
+<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Functions usually constrain the <code>writer</code> field to be a value implementing the <code>Hyper.Core.ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
+<p>The state of a response writer is tracked in its type parameter. This state tracking, and the type signatures of functions using the response writer, guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes. Let us have a look at the type signatures of some of response writing functions in <code>Hyper.Response</code>.</p>
+<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response writer as headers being closed</em>.</p>
 <pre class="purescript"><code>headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m) =&gt;
            t Header
         -&gt; Middleware
            m
-           (Conn req { writer :: rw, state :: HeadersOpen | res } c)
-           (Conn req { writer :: rw, state :: HeadersClosed | res } c)</code></pre>
-<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response as ended</em>.</p>
+           (Conn req { writer :: rw HeadersOpen | res } c)
+           (Conn req { writer :: rw HeadersClosed | res } c)</code></pre>
+<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
 <pre class="purescript"><code>respond :: forall r m req res rw c.
            (Monad m, Response r, ResponseWriter rw m) =&gt;
            r
         -&gt; Middleware
            m
-           (Conn req { writer :: rw, state :: HeadersClosed | res } c)
-           (Conn req { writer :: rw, state :: ResponseEnded | res } c)</code></pre>
+           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw ResponseEnded | res } c)</code></pre>
 <p>The <code>Response</code> type class describes types that can be written as responses.</p>
 <pre class="purescript"><code>class Response r where
   toResponse :: r -&gt; String</code></pre>

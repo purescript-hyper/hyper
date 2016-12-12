@@ -24,18 +24,18 @@ type TestResource m rw gr pr =
   m
   gr
   pr
-  (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: HeadersClosed | res } c)
-  (Conn { path :: Path, method :: Method | req } { writer :: rw, state :: ResponseEnded | res } c)
+  (Conn { path :: Path, method :: Method | req } { writer :: rw HeadersClosed | res } c)
+  (Conn { path :: Path, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 
 app :: forall m req res rw c.
   (Monad m, ResponseWriter rw m) =>
   Middleware
   m
   (Conn { path :: Path, method :: Method | req }
-        { writer :: rw, state :: HeadersOpen | res }
+        { writer :: rw HeadersOpen | res }
         c)
   (Conn { path :: Path, method :: Method | req }
-        { writer :: rw, state :: ResponseEnded | res }
+        { writer :: rw ResponseEnded | res }
         c)
 app = headers [Tuple "content-type" "text/html"] 
       >=> fallbackTo (notFound) (resource about <|> resource contact)
@@ -61,9 +61,7 @@ spec = do
       response <- { request: { method: GET
                              , path: ["about"]
                              }
-                  , response: { state: HeadersOpen
-                              , writer: TestResponseWriter
-                              }
+                  , response: { writer: TestResponseWriter HeadersOpen }
                   , components: {}
                   }
                   # app
@@ -75,9 +73,7 @@ spec = do
       response <- { request: { method: GET
                              , path: ["contact"]
                              }
-                  , response: { state: HeadersOpen
-                              , writer: TestResponseWriter
-                              }
+                  , response: { writer: TestResponseWriter HeadersOpen }
                   , components: {}
                   }
                   # app

@@ -33,19 +33,15 @@ data ResponseEnded = ResponseEnded
 type Middleware m c c' = c -> m c'
 
 
-type ResponseStateTransition m from to =
+type ResponseStateTransition m rw from to =
   forall req res c.
   Middleware
   m
-  (Conn req {state :: from | res} c)
-  (Conn req {state :: to | res} c)
+  (Conn req {writer :: rw from | res} c)
+  (Conn req {writer :: rw to | res} c)
 
 class ResponseWriter rw m | rw -> m where
-  writeHeader :: rw
-                 -> Header
-                 -> ResponseStateTransition m HeadersOpen HeadersOpen
-
-  closeHeaders :: rw -> ResponseStateTransition m HeadersOpen HeadersClosed
-
-  send :: rw -> String -> ResponseStateTransition m HeadersClosed HeadersClosed
-  end :: rw -> ResponseStateTransition m HeadersClosed ResponseEnded
+  writeHeader :: Header -> ResponseStateTransition m rw HeadersOpen HeadersOpen
+  closeHeaders :: ResponseStateTransition m rw HeadersOpen HeadersClosed
+  send :: String -> ResponseStateTransition m rw HeadersClosed HeadersClosed
+  end :: ResponseStateTransition m rw HeadersClosed ResponseEnded

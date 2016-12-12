@@ -15,10 +15,10 @@ app :: forall m req res rw c.
   Middleware
   m
   (Conn { path :: Path, method :: Method | req }
-        { writer :: rw, state :: HeadersOpen | res }
+        { writer :: rw HeadersOpen | res }
         c)
   (Conn { path :: Path, method :: Method | req }
-        { writer :: rw, state :: ResponseEnded | res }
+        { writer :: rw ResponseEnded | res }
         c)
 app = headers [] >=> (fallbackTo notFound $ resource greetings)
   where
@@ -36,9 +36,7 @@ spec = do
             { request: { method: GET
                        , path: []
                        }
-            , response: { state: HeadersOpen
-                        , writer: TestResponseWriter
-                        }
+            , response: { writer: TestResponseWriter HeadersOpen }
             , components: {}
             }
             # app
@@ -50,9 +48,7 @@ spec = do
             { request: { method: POST
                        , path: []
                        }
-            , response: { state: HeadersOpen
-                        , writer: TestResponseWriter
-                        }
+            , response: { writer: TestResponseWriter HeadersOpen }
             , components: {}
             }
             # app

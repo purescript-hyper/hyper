@@ -1,9 +1,12 @@
 module Hyper.Test.TestServer where
 
-import Prelude
+import Control.Applicative (pure, (*>))
+import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
+import Data.Function ((<<<))
 import Data.Monoid (class Monoid)
-import Hyper.Core (ResponseEnded(ResponseEnded), HeadersClosed(HeadersClosed), class ResponseWriter, Header)
+import Data.Semigroup (class Semigroup, (<>))
+import Hyper.Core (class ResponseWriter, Header, HeadersClosed(HeadersClosed), ResponseEnded(ResponseEnded), Conn)
 
 data TestResponse = TestResponse (Array Header) String
 
@@ -23,18 +26,24 @@ instance monoidTestResponse ∷ Monoid TestResponse where
 testServer ∷ ∀ m a. Monad m ⇒ WriterT TestResponse m a → m TestResponse
 testServer = execWriterT <<< void
 
-data TestResponseWriter = TestResponseWriter
-  
+data TestResponseWriter state = TestResponseWriter state
+
+withState ∷ ∀ req res c a b.
+            b 
+          → Conn req { writer ∷ TestResponseWriter a | res } c
+          → Conn req { writer ∷ TestResponseWriter b | res } c
+withState s conn = 
+  case conn.response.writer of
+       TestResponseWriter _ → conn { response = (conn.response { writer = TestResponseWriter s }) }
+
 instance responseWriterTestResponseWriter :: Monad m =>
                                              ResponseWriter TestResponseWriter (WriterT TestResponse m) where
-  writeHeader _ header conn =
+  writeHeader header conn =
     tell (TestResponse [header] "") *> pure conn
     
-  closeHeaders _ conn =
-    pure conn { response = (conn.response { state = HeadersClosed }) }
+  closeHeaders = pure <<< withState HeadersClosed
     
-  send writer s conn =
+  send s conn =
     tell (TestResponse [] s) *> pure conn
 
-  end writer conn =
-    pure conn { response = (conn.response { state = ResponseEnded }) }
+  end = pure <<< withState ResponseEnded

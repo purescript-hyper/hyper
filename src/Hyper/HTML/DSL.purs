@@ -59,6 +59,6 @@ html :: forall m req res rw c.
         HTML Unit
      -> Middleware
         m
-        (Conn req { writer :: rw, state :: HeadersClosed | res } c)
-        (Conn req { writer :: rw, state :: ResponseEnded | res } c)
+        (Conn req { writer :: rw HeadersClosed | res } c)
+        (Conn req { writer :: rw ResponseEnded | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML
