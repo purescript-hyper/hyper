@@ -13,7 +13,7 @@ import Data.String (joinWith, Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
-import Hyper.BodyParser (parseBodyFromString, class BodyParser)
+import Hyper.BodyParser (class BodyParser)
 
 newtype Form = Form (Array (Tuple String String))
 
@@ -25,8 +25,8 @@ derive newtype instance monoidForm :: Monoid Form
 
 data FormParser = FormParser
 
-instance bodyParserFormParser :: BodyParser FormParser Form (Aff e) where
-  parse _ = parseBodyFromString splitPairs
+instance bodyParserFormParser :: Applicative m ⇒ BodyParser FormParser m String (Either Error Form) where
+  parse _ = parser
     where
       toTuple :: Array String -> Either Error (Tuple String String)
       toTuple kv =
@@ -40,3 +40,6 @@ instance bodyParserFormParser :: BodyParser FormParser Form (Aff e) where
                    <<< map toTuple
                    <<< map splitPair
                    <<< split (Pattern "&")
+      parser conn =
+        let form = splitPairs conn.request.body
+        in pure (conn { request = (conn.request { body = form }) })
