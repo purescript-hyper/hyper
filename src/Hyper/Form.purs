@@ -1,10 +1,9 @@
 module Hyper.Form (
   Form(..),
-  FormParser(..)
+  parseForm
   ) where
 
 import Prelude
-import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Exception (error, Error)
 import Data.Either (Either(Left, Right))
 import Data.Generic (class Generic)
@@ -13,7 +12,7 @@ import Data.String (joinWith, Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
-import Hyper.BodyParser (class BodyParser)
+import Hyper.Core (Middleware, Conn)
 
 newtype Form = Form (Array (Tuple String String))
 
@@ -23,23 +22,20 @@ derive newtype instance ordForm :: Ord Form
 derive newtype instance showForm :: Show Form
 derive newtype instance monoidForm :: Monoid Form
 
-data FormParser = FormParser
-
-instance bodyParserFormParser :: Applicative m ⇒ BodyParser FormParser m String (Either Error Form) where
-  parse _ = parser
-    where
-      toTuple :: Array String -> Either Error (Tuple String String)
-      toTuple kv =
-        case kv of
-          [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
-          parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
-      splitPair = split (Pattern "=")
-      splitPairs ∷ String → Either Error Form
-      splitPairs = (<$>) Form
-                   <<< sequence
-                   <<< map toTuple
-                   <<< map splitPair
-                   <<< split (Pattern "&")
-      parser conn =
-        let form = splitPairs conn.request.body
-        in pure (conn { request = (conn.request { body = form }) })
+parseForm ∷ forall m req res c. Applicative m => Middleware m (Conn {body ∷ String | req} res c) (Conn {body ∷ Either Error Form | req} res c)
+parseForm conn =
+  let form = splitPairs conn.request.body
+  in pure (conn { request = (conn.request { body = form }) })
+  where
+    toTuple :: Array String -> Either Error (Tuple String String)
+    toTuple kv =
+      case kv of
+        [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
+        parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
+    splitPair = split (Pattern "=")
+    splitPairs ∷ String → Either Error Form
+    splitPairs = (<$>) Form
+                 <<< sequence
+                 <<< map toTuple
+                 <<< map splitPair
+                 <<< split (Pattern "&")
