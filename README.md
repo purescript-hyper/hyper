@@ -26,7 +26,7 @@ pulp test
 
 ```bash
 npm install # for examples using the node server
-pulp run -I examples/node-server
+pulp run -I examples/<example-name>
 ```
 
 ## License
