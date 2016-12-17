@@ -5,10 +5,6 @@ to implement safe middleware in Hyper. Very much work-in-progress.*
 
 ## Parsing the Request Body
 
-*Warning! Rough edges here, see
-the [GitHub issue](https://github.com/owickstrom/hyper/issues/6) for
-details.*
-
 The request body is, when using the Node server, initially a
 `RequestBody` in the connection. The user explicitly chooses to read
 and parse the body with a given parser, which returns a new connection

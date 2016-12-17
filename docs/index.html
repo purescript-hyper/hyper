@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version ad8c3b0
+  Version 4e43e48
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -94,7 +94,6 @@
 <h2 id="use-cases">Use Cases</h2>
 <p><em>Here follows a collection of loosely organized thoughts on how to implement safe middleware in Hyper. Very much work-in-progress.</em></p>
 <h3 id="parsing-the-request-body">Parsing the Request Body</h3>
-<p><em>Warning! Rough edges here, see the <a href="https://github.com/owickstrom/hyper/issues/6">GitHub issue</a> for details.</em></p>
 <p>The request body is, when using the Node server, initially a <code>RequestBody</code> in the connection. The user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action. The following type signature resides in <code>Hyper.Node.Server</code>, and shows how a request body can be read into a <code>String</code>. The <code>Aff</code> monad, and the <code>AVAR</code> effect, is used to accomplish this asynchronously in the case of the Node server.</p>
 <pre class="purescript"><code>readBodyAsString ∷ ∀ e req res c.
                    Middleware
