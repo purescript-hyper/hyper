@@ -9,71 +9,71 @@ to implement safe middleware in Hyper. Very much work-in-progress.*
 the [GitHub issue](https://github.com/owickstrom/hyper/issues/6) for
 details.*
 
-The request body is initially a `Stream Read Initial` in the connection. It
-might not always be of interest, thus it is not read, and not parsed, by
-default. Instead, the user explicitly chooses to read and parse the body with a
-given parser, which returns a new connection of a type reflecting the action.
+The request body is, when using the Node server, initially a `Readable
+() e` in the connection. The user explicitly chooses to read and parse
+the body with a given parser, which returns a new connection of a type
+reflecting the action. The following type signature resides in
+`Hyper.Node.Server`, and shows how a request body of a `Readable`
+stream type can be read into a `String`.
 
 ```purescript
-class BodyParser p t | p -> t where
-  parse :: forall req res c h. p
-        -> Middleware
-           (Conn
-            { bodyStream :: Stream Read Initial
-            , headers :: { "content-type" :: String
-                         , "content-length" :: String
-                         | h
-                         }
-            | req
-            }
-            res
-            c)
-           (Conn
-            { bodyStream :: Stream Read Closed
-            , headers :: { "content-type" :: String
-                         , "content-length" :: String
-                         | h
-                         }
-            , body :: t
-            | req
-            }
-           res
-           c)
+readBodyAsString ∷ ∀ m e req res c.
+                   MonadEff (http ∷ HTTP, err ∷ EXCEPTION | e) m ⇒
+                   Middleware
+                   m
+                   (Conn {body ∷ Readable () (http :: HTTP, err :: EXCEPTION | e) | req} res c)
+                   (Conn {body ∷ Maybe String | req} res c)
 ```
 
-Given this type, the request body can neither be read more than once,
-nor can the connection's `body` be overwritten. An example parser is
-the `BodyParser` instance for `FormParser` and `Form`.
+A simple form parser can use `readBodyAsString` to convert the body a
+more useful format for the application. The following function checks
+the `content-type` header in the request, splits the request body,
+builds up a `Form` value, and finally using that value for the `body`
+field in the resulting `Conn`.
 
 ``` purescript
--- | A form represents a "www-form-urlencoded" form.
-newtype Form = Form (Array (Tuple String String))
-
--- | Placeholder constructor without any options.
-data FormParser = FormParser
-
-instance bodyParserFormParser :: BodyParser FormParser Form where
-  parse _ = parseBodyFromString splitPairs
-    where
-      toTuple :: Array String -> Either Error (Tuple String String)
-      toTuple kv =
-        case kv of
-          [key, value] → Right (Tuple (decodeURIComponent key)
-                                      (decodeURIComponent value))
-          parts        → Left (error ("Invalid form key-value pair: "
-                                      <> joinWith " " parts))
-      splitPair = split (Pattern "=")
-      splitPairs ∷ String → Either Error Form
-      splitPairs = (<$>) Form
-                   <<< sequence
-                   <<< map toTuple
-                   <<< map splitPair
-                   <<< split (Pattern "&")
+parseForm ∷ forall m req headers res c.
+            Applicative m =>
+            Middleware
+            m
+            (Conn { body ∷ String
+                  , headers :: { "content-type" :: String
+                               | headers
+                               }
+                  | req
+                  } res c)
+            (Either Error (Conn { body ∷ Form
+                                , headers :: { "content-type" :: String
+                                             | headers
+                                             }
+                                | req
+                                }
+                                res
+                                c))
+parseForm conn =
+  case parseContentMediaType conn.request.headers."content-type" of
+    Nothing -> pure (Left (error "Could not parse content-type header."))
+    Just mediaType | mediaType == applicationFormURLEncoded -> pure do
+      form <- splitPairs conn.request.body
+      pure (conn { request = (conn.request { body = form }) })
+    Just mediaType -> pure (Left (error $ "Invalid content media type: " <> show mediaType))
+  where
+    toTuple :: Array String -> Either Error (Tuple String String)
+    toTuple kv =
+      case kv of
+        [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
+        parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
+    splitPair = split (Pattern "=")
+    splitPairs ∷ String → Either Error Form
+    splitPairs = split (Pattern "&")
+                 >>> map splitPair
+                 >>> map toTuple
+                 >>> sequence
+                 >>> map Form
 ```
 
-This instance uses the helper `parseBodyFromString` to first read the body as a
-string, then parse that string as a `www-form-urlencoded` form. Any invalid form
-will throw an error in the Aff monad, which can be caught and handled.
+More efficient parsers, directly operating on the `Readable` request body,
+instead of `String`, can be built as well.
 
 ## Cohesion of Links, Forms, and Routes
 
