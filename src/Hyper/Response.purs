@@ -2,8 +2,10 @@ module Hyper.Response where
 
 import Prelude
 import Data.Foldable (traverse_)
+import Data.MediaType (MediaType)
+import Data.Newtype (unwrap)
 import Data.Traversable (class Traversable)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
 headers :: forall t m req res rw c.
@@ -18,6 +20,15 @@ headers hs conn = do
   closeHeaders conn
   where
     writeOne c header = writeHeader header c
+
+contentType :: forall m req res rw c.
+               (Monad m, ResponseWriter rw m) =>
+               MediaType
+            -> Middleware
+               m
+               (Conn req { writer :: rw HeadersOpen | res } c)
+               (Conn req { writer :: rw HeadersOpen | res } c)
+contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
 class Response r where
   toResponse :: r -> String

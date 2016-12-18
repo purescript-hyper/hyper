@@ -5,7 +5,7 @@ import Control.Monad.Eff.Console (CONSOLE)
 import Hyper.Core (class ResponseWriter, Conn, HeadersOpen(..), Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (headers, notFound, respond)
-import Hyper.Router (Path, fallbackTo, handler, resource)
+import Hyper.Router (fallbackTo, handler, resource)
 import Hyper.Test.TestServer (TestResponseWriter(..), testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -14,10 +14,10 @@ app :: forall m req res rw c.
   (Monad m, ResponseWriter rw m) =>
   Middleware
   m
-  (Conn { path :: Path, method :: Method | req }
+  (Conn { url :: String, method :: Method | req }
         { writer :: rw HeadersOpen | res }
         c)
-  (Conn { path :: Path, method :: Method | req }
+  (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
 app = headers [] >=> (fallbackTo notFound $ resource greetings)
@@ -33,8 +33,8 @@ spec = do
   describe "Hyper.Router" do
     it "can route a GET for the root resource" do
       response ←
-            { request: { method: GET
-                       , path: []
+        { request: { method: GET
+                       , url: ""
                        }
             , response: { writer: TestResponseWriter HeadersOpen }
             , components: {}
@@ -46,7 +46,7 @@ spec = do
     it "can route a POST for the root resource" do
       response ←
             { request: { method: POST
-                       , path: []
+                       , url: ""
                        }
             , response: { writer: TestResponseWriter HeadersOpen }
             , components: {}

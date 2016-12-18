@@ -14,7 +14,7 @@ execHTML :: forall a. HTML a -> Array Element
 execHTML s = execState s []
 
 addElement :: Element -> HTML Unit
-addElement e = modify ((<>) [e])
+addElement e = modify (_ <> [e])
 
 text :: String -> HTML Unit
 text = addElement <<< Text
@@ -28,6 +28,10 @@ withNested el = addElement <<< el <<< execHTML
 h1 :: HTML Unit
    -> HTML Unit
 h1 = withNested (Element "h1" [])
+
+p :: HTML Unit
+   -> HTML Unit
+p = withNested (Element "p" [])
 
 linkTo :: forall m c c' ms.
           { path :: Path

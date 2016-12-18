@@ -24,20 +24,20 @@ type TestResource m rw gr pr =
   m
   gr
   pr
-  (Conn { path :: Path, method :: Method | req } { writer :: rw HeadersClosed | res } c)
-  (Conn { path :: Path, method :: Method | req } { writer :: rw ResponseEnded | res } c)
+  (Conn { url :: String, method :: Method | req } { writer :: rw HeadersClosed | res } c)
+  (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 
 app :: forall m req res rw c.
   (Monad m, ResponseWriter rw m) =>
   Middleware
   m
-  (Conn { path :: Path, method :: Method | req }
+  (Conn { url :: String, method :: Method | req }
         { writer :: rw HeadersOpen | res }
         c)
-  (Conn { path :: Path, method :: Method | req }
+  (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = headers [Tuple "content-type" "text/html"] 
+app = headers [Tuple "content-type" "text/html"]
       >=> fallbackTo (notFound) (resource about <|> resource contact)
   where
     about :: TestResource m rw Supported Unsupported
@@ -59,7 +59,7 @@ spec = do
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
       response <- { request: { method: GET
-                             , path: ["about"]
+                             , url: "about"
                              }
                   , response: { writer: TestResponseWriter HeadersOpen }
                   , components: {}
@@ -71,7 +71,7 @@ spec = do
 
     it "can linkTo another existing route" do
       response <- { request: { method: GET
-                             , path: ["contact"]
+                             , url: "contact"
                              }
                   , response: { writer: TestResponseWriter HeadersOpen }
                   , components: {}

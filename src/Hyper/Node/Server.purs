@@ -12,7 +12,7 @@ import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeV
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
-import Data.Function (($), const, (<<<))
+import Data.Function (($), (<<<))
 import Data.Int (fromString)
 import Data.Maybe (fromMaybe, Maybe(..))
 import Data.Newtype (class Newtype, unwrap)

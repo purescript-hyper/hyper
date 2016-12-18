@@ -76,12 +76,12 @@ resource :: forall gr pr m req res c req' res' c'.
             m
             gr
             pr
-            (Conn { path :: Path, method :: Method | req } res c)
-            (Conn { path :: Path, method :: Method | req' } res' c')
+            (Conn { url :: String, method :: Method | req } res c)
+            (Conn { url :: String, method :: Method | req' } res' c')
          -> ResourceRouter
             m
-            (Conn { path :: Path, method :: Method | req } res c)
-            (Conn { path :: Path, method :: Method | req' } res' c')
+            (Conn { url :: String, method :: Method | req } res c)
+            (Conn { url :: String, method :: Method | req' } res' c')
 resource r =
   ResourceRouter result
   where
@@ -90,7 +90,7 @@ resource r =
         GET -> methodHandler r."GET"
         POST -> methodHandler r."POST"
     result conn =
-      if r.path == conn.request.path
+      if r.path == pathFromString conn.request.url
       then case handler' conn of
         Just mw -> Just <$> mw conn
         Nothing -> pure Nothing
