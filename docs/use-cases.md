@@ -14,14 +14,17 @@ a `String`. The `Aff` monad, and the `AVAR` effect, is used to
 accomplish this asynchronously in the case of the Node server.
 
 ```purescript
-readBodyAsString ∷ ∀ e req res c.
-                   Middleware
-                   (Aff (http ∷ HTTP, err :: EXCEPTION, avar :: AVAR | e))
-                   (Conn { body ∷ RequestBody
-                         , contentLength :: Maybe Int
-                         | req
-                         } res c)
-                   (Conn {body ∷ String, contentLength :: Maybe Int | req} res c)
+readBodyAsString
+  :: forall e req res c.
+     Middleware
+     (Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e))
+     (Conn { body :: RequestBody
+           , contentLength :: Maybe Int
+           | req
+           } res c)
+     (Conn { body :: String
+           , contentLength :: Maybe Int | req
+           } res c)
 ```
 
 A simple form parser can use `readBodyAsString` to convert the body a
@@ -46,27 +49,7 @@ parseForm ∷ forall m req res c.
                   }
                   res
                   c)
-parseForm conn = do
-  let form =
-        case lookup "content-type" conn.request.headers >>= parseContentMediaType of
-          Nothing -> Left (error "Could not parse content-type header.")
-          Just mediaType | mediaType == applicationFormURLEncoded ->
-            splitPairs conn.request.body
-          Just mediaType -> Left (error $ "Invalid content media type: " <> show mediaType)
-  pure (conn { request = (conn.request { body = form }) })
-  where
-    toTuple :: Array String -> Either Error (Tuple String String)
-    toTuple kv =
-      case kv of
-        [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
-        parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
-    splitPair = split (Pattern "=")
-    splitPairs ∷ String → Either Error Form
-    splitPairs = split (Pattern "&")
-                 >>> map splitPair
-                 >>> map toTuple
-                 >>> sequence
-                 >>> map Form
+parseForm conn = ...
 ```
 
 More efficient parsers, directly operating on the `RequestBody`,

@@ -5,8 +5,9 @@ module Hyper.Form (
 
 import Prelude
 import Control.Monad.Eff.Exception (error, Error)
+import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
-import Data.Either (Either(Left, Right))
+import Data.Either (Either)
 import Data.Generic (class Generic)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType (MediaType(MediaType))
@@ -33,6 +34,19 @@ parseContentMediaType = split (Pattern ";")
                         >>> head
                         >>> map MediaType
 
+toTuple :: Array String -> Either Error (Tuple String String)
+toTuple kv =
+  case kv of
+    [key, value] ->
+      pure (Tuple (decodeURIComponent key) (decodeURIComponent value))
+    parts ->
+      throwError (error ("Invalid form key-value pair: " <> joinWith " " parts))
+
+splitPairs :: String → Either Error (Array (Tuple String String))
+splitPairs = split (Pattern "&")
+             >>> map (split (Pattern "="))
+             >>> map toTuple
+             >>> sequence
 
 parseForm ∷ forall m req res c.
             Applicative m =>
@@ -48,24 +62,14 @@ parseForm ∷ forall m req res c.
                   }
                   res
                   c)
-parseForm conn = do
-  let form =
-        case lookup "content-type" conn.request.headers >>= parseContentMediaType of
-          Nothing -> Left (error "Could not parse content-type header.")
-          Just mediaType | mediaType == applicationFormURLEncoded ->
-            splitPairs conn.request.body
-          Just mediaType -> Left (error $ "Invalid content media type: " <> show mediaType)
+parseForm conn =
   pure (conn { request = (conn.request { body = form }) })
   where
-    toTuple :: Array String -> Either Error (Tuple String String)
-    toTuple kv =
-      case kv of
-        [key, value] → Right (Tuple (decodeURIComponent key) (decodeURIComponent value))
-        parts        → Left (error ("Invalid form key-value pair: " <> joinWith " " parts))
-    splitPair = split (Pattern "=")
-    splitPairs ∷ String → Either Error Form
-    splitPairs = split (Pattern "&")
-                 >>> map splitPair
-                 >>> map toTuple
-                 >>> sequence
-                 >>> map Form
+    form =
+      case lookup "content-type" conn.request.headers >>= parseContentMediaType of
+        Nothing ->
+          throwError (error "Missing or invalid content-type header.")
+        Just mediaType | mediaType == applicationFormURLEncoded ->
+          Form <$> splitPairs conn.request.body
+        Just mediaType ->
+          throwError (error ("Cannot parse media of type: " <> show mediaType))

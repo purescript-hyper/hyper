@@ -6,7 +6,7 @@ import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(..))
 import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
-headers :: forall t m req res rw c. 
+headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m) =>
            t Header
         -> Middleware
@@ -32,9 +32,7 @@ respond :: forall r m req res rw c.
            m
            (Conn req { writer :: rw HeadersClosed | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
-respond r c = do
-  c' <- send (toResponse r) c
-  end c'
+respond r = send (toResponse r) >=> end
 
 notFound :: forall m req res rw c.
             (Monad m, ResponseWriter rw m) =>

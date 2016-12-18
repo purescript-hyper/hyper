@@ -5,8 +5,7 @@ import Data.Newtype (class Newtype)
 
 newtype Port = Port Int
 
-derive instance newtypePort :: Newtype Port
- _
+derive instance newtypePort :: Newtype Port _
 
 type Header = Tuple String String
 
@@ -15,7 +14,7 @@ type Conn req res components =
   , response :: res
   , components :: components
   }
-  
+
 -- | The basic middleware type for transforming a 'Conn'.
 type Middleware m c c' = c -> m c'
 
