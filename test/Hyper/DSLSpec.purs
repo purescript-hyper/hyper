@@ -3,13 +3,14 @@ module Hyper.HTML.DSLSpec where
 import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
+import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(..))
-import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen(..), Middleware, ResponseEnded)
+import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
-import Hyper.Response (headers, notFound)
+import Hyper.Response (contentType)
 import Hyper.Router (notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
-import Hyper.Test.TestServer (TestResponseWriter(..), testBody, testHeaders, testServer)
+import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -24,7 +25,7 @@ type TestResource m rw gr pr =
   m
   gr
   pr
-  (Conn { url :: String, method :: Method | req } { writer :: rw HeadersClosed | res } c)
+  (Conn { url :: String, method :: Method | req } { writer :: rw StatusLineOpen | res } c)
   (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 
 app :: forall m req res rw c.
@@ -32,25 +33,37 @@ app :: forall m req res rw c.
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
-        { writer :: rw HeadersOpen | res }
+        { writer :: rw StatusLineOpen | res }
         c)
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = headers [Tuple "content-type" "text/html"]
-      >=> fallbackTo (notFound) (resource about <|> resource contact)
+app = fallbackTo notFound (resource about <|> resource contact)
   where
+    notFound =
+      writeStatus statusNotFound
+      >=> contentType textHTML
+      >=> closeHeaders
+      >=> html (text "Not Found")
     about :: TestResource m rw Supported Unsupported
     about =
       { path: ["about"]
-      , "GET": handler (\conn -> html (linkTo (contact ∷ TestResource m rw Supported Unsupported) (text "Contact Me!")) conn)
+      , "GET": handler (\conn ->
+                         writeStatus statusOK conn
+                         >>= contentType textHTML
+                         >>= closeHeaders
+                         >>= html (linkTo (contact ∷ TestResource m rw Supported Unsupported) (text "Contact Me!")))
       , "POST": notSupported
       }
 
     contact :: TestResource m rw Supported Unsupported
     contact =
       { path: ["contact"]
-      , "GET": handler (\conn -> html (linkTo (about ∷ TestResource m rw Supported Unsupported) (text "About Me")) conn)
+      , "GET": handler (\conn ->
+                         writeStatus statusOK conn
+                         >>= contentType textHTML
+                         >>= closeHeaders
+                         >>= html (linkTo (about ∷ TestResource m rw Supported Unsupported) (text "About Me")))
       , "POST": notSupported
       }
 
@@ -61,22 +74,22 @@ spec = do
       response <- { request: { method: GET
                              , url: "about"
                              }
-                  , response: { writer: TestResponseWriter HeadersOpen }
+                  , response: { writer: testResponseWriter }
                   , components: {}
                   }
                   # app
                   # testServer
-      testHeaders response `shouldEqual` [Tuple "content-type" "text/html"]
+      testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
       testBody response `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
 
     it "can linkTo another existing route" do
       response <- { request: { method: GET
                              , url: "contact"
                              }
-                  , response: { writer: TestResponseWriter HeadersOpen }
+                  , response: { writer: testResponseWriter }
                   , components: {}
                   }
                   # app
                   # testServer
-      testHeaders response `shouldEqual` [Tuple "content-type" "text/html"]
+      testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
       testBody response `shouldEqual` "<a href=\"/about\">About Me</a>"

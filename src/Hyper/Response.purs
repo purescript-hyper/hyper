@@ -44,19 +44,3 @@ respond :: forall r m req res rw c.
            (Conn req { writer :: rw HeadersClosed | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
 respond r = send (toResponse r) >=> end
-
-notFound :: forall m req res rw c.
-            (Monad m, ResponseWriter rw m) =>
-            Middleware
-                m
-                (Conn req { writer :: rw HeadersClosed | res } c)
-                (Conn req { writer :: rw ResponseEnded | res } c)
-notFound = respond "404 Not found"
-
-notSupported :: forall m req res rw c.
-                (Monad m, ResponseWriter rw m) =>
-                Middleware
-                m
-                (Conn req { writer :: rw HeadersClosed | res } c)
-                (Conn req { writer :: rw ResponseEnded | res } c)
-notSupported = respond "405 Method not supported"

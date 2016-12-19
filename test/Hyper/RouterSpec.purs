@@ -2,11 +2,14 @@ module Hyper.RouterSpec where
 
 import Prelude
 import Control.Monad.Eff.Console (CONSOLE)
-import Hyper.Core (class ResponseWriter, Conn, HeadersOpen(..), Middleware, ResponseEnded)
+import Data.Maybe (Maybe(Just))
+import Data.MediaType.Common (textHTML)
+import Data.Tuple (Tuple(Tuple))
+import Hyper.Core (StatusLineOpen, statusCreated, statusOK, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
-import Hyper.Response (headers, notFound, respond)
+import Hyper.Response (contentType, headers, respond)
 import Hyper.Router (fallbackTo, handler, resource)
-import Hyper.Test.TestServer (TestResponseWriter(..), testBody, testServer)
+import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -15,17 +18,26 @@ app :: forall m req res rw c.
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
-        { writer :: rw HeadersOpen | res }
+        { writer :: rw StatusLineOpen | res }
         c)
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = headers [] >=> (fallbackTo notFound $ resource greetings)
+app = fallbackTo notFound (resource greetings)
   where
+    notFound =
+      writeStatus statusNotFound
+      >=> contentType textHTML
+      >=> closeHeaders
+      >=> respond "Not Found"
     greetings =
       { path: []
-      , "GET": handler (respond "Hello!")
-      , "POST": handler (respond "OK, I've saved that for ya.")
+      , "GET": handler (writeStatus statusOK
+                        >=> headers []
+                        >=> respond "Hello!")
+      , "POST": handler (writeStatus statusCreated
+                         >=> headers []
+                         >=> respond "OK, I've saved that for ya.")
       }
 
 spec :: forall e. Spec (console :: CONSOLE | e) Unit
@@ -34,13 +46,13 @@ spec = do
     it "can route a GET for the root resource" do
       response ←
         { request: { method: GET
-                       , url: ""
-                       }
-            , response: { writer: TestResponseWriter HeadersOpen }
-            , components: {}
-            }
-            # app
-            # testServer
+                   , url: ""
+                   }
+        , response: { writer: testResponseWriter }
+        , components: {}
+        }
+        # app
+        # testServer
       testBody response `shouldEqual` "Hello!"
 
     it "can route a POST for the root resource" do
@@ -48,9 +60,10 @@ spec = do
             { request: { method: POST
                        , url: ""
                        }
-            , response: { writer: TestResponseWriter HeadersOpen }
+            , response: { writer: testResponseWriter }
             , components: {}
             }
             # app
             # testServer
+      testStatus response `shouldEqual` Just (Tuple 201 "Created")
       testBody response `shouldEqual` "OK, I've saved that for ya."

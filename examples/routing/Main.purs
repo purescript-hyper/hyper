@@ -7,11 +7,11 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (HeadersOpen, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
+import Hyper.Core (StatusLineOpen, statusOK, statusNotFound, writeStatus, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
 import Hyper.HTML.DSL (linkTo, h1, p, text, html)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType, notFound)
+import Hyper.Response (contentType)
 import Hyper.Router (notSupported, resource, fallbackTo, handler)
 import Node.HTTP (HTTP)
 
@@ -20,7 +20,7 @@ app :: forall m req res rw c.
        Middleware
        m
        (Conn { url :: String, method :: Method | req }
-             { writer :: rw HeadersOpen | res }
+             { writer :: rw StatusLineOpen | res }
              c)
        (Conn { url :: String, method :: Method | req }
              { writer :: rw ResponseEnded | res }
@@ -28,35 +28,40 @@ app :: forall m req res rw c.
 app =
   fallbackTo
   -- Not Found:
-  (contentType textHTML >=> closeHeaders >=> notFound)
+  notFound
   -- Resources:
   (resource home <|> resource about)
     where
-      homeView =
-        html do
-          h1 [] (text "Welcome!")
-          p [] do
-            text "Read more at "
-            -- Type-safe routing:
-            linkTo about (text "About")
-            text "."
+      htmlWithStatus status x =
+        writeStatus status
+        >=> contentType textHTML
+        >=> closeHeaders
+        >=> html x
+
+      notFound = htmlWithStatus
+                 statusNotFound
+                 (text "Not Found")
+
+      homeView = do
+        h1 [] (text "Welcome!")
+        p [] do
+          text "Read more at "
+          -- Type-safe routing:
+          linkTo about (text "About")
+          text "."
 
       home = { path: []
              , "GET":
-               handler (contentType textHTML
-                        >=> closeHeaders
-                        >=> homeView)
+               handler (htmlWithStatus statusOK homeView)
              , "POST": notSupported
              }
 
-      aboutView = html do
+      aboutView = do
         h1 [] (text "About")
         p [] (text "OK, about this example...")
 
       about = { path: ["about"]
-              , "GET": handler (contentType textHTML
-                                >=> closeHeaders
-                                >=> aboutView)
+              , "GET": handler (htmlWithStatus statusOK aboutView)
               , "POST": notSupported
               }
 

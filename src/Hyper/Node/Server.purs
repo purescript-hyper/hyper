@@ -20,7 +20,7 @@ import Data.Semigroup ((<>))
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Hyper.Core (class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
+import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
 import Hyper.Method (Method)
 import Node.Encoding (Encoding(..))
 
@@ -65,6 +65,14 @@ withState s conn =
 
 
 instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m where
+  writeStatus (Tuple code reason) conn =
+    case conn.response.writer of
+      HttpResponse _ r → do
+        liftEff do
+          setStatusCode r code
+          setStatusMessage r reason
+        pure (withState HeadersOpen conn)
+
   writeHeader (Tuple name value) conn =
     case conn.response.writer of
       HttpResponse _ r → do
@@ -109,7 +117,7 @@ runServer :: forall e req res c.
                       , headers :: StrMap String
                       , method :: Method
                       }
-                      { writer :: HttpResponse HeadersOpen }
+                      { writer :: HttpResponse StatusLineOpen }
                       {})
                 (Conn req { writer :: HttpResponse ResponseEnded | res } c)
              -> Eff (http :: HTTP | e) Unit
@@ -131,7 +139,7 @@ runServer options onListening onRequestError middleware = do
                             , method: fromMaybe Method.GET (Method.fromString (requestMethod request))
                             , contentLength: parseContentLength headers >>= fromString
                             }
-                 , response: { writer: HttpResponse HeadersOpen response }
+                 , response: { writer: HttpResponse StatusLineOpen response }
                  , components: {}
                  }
       in catchException onRequestError (void (launchAff (middleware conn)))
