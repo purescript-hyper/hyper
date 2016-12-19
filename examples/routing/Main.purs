@@ -32,28 +32,31 @@ app =
   -- Resources:
   (resource home <|> resource about)
     where
+      homeView =
+        html do
+          h1 [] (text "Welcome!")
+          p [] do
+            text "Read more at "
+            -- Type-safe routing:
+            linkTo about (text "About")
+            text "."
+
       home = { path: []
              , "GET":
-               handler
-               (contentType textHTML
-                >=> closeHeaders
-                >=> html do
-                  h1 (text "Welcome!")
-                  p do
-                    text "Read more at "
-                    -- Type-safe routing:
-                    linkTo about (text "About")
-                    text "."
-               )
+               handler (contentType textHTML
+                        >=> closeHeaders
+                        >=> homeView)
              , "POST": notSupported
              }
+
+      aboutView = html do
+        h1 [] (text "About")
+        p [] (text "OK, about this example...")
+
       about = { path: ["about"]
-              , "GET": handler
-                (contentType textHTML
-                 >=> closeHeaders
-                 >=> html do
-                   h1 (text "About")
-                   p (text "OK, about this example..."))
+              , "GET": handler (contentType textHTML
+                                >=> closeHeaders
+                                >=> aboutView)
               , "POST": notSupported
               }
 
