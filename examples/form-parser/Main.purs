@@ -7,12 +7,12 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (message, EXCEPTION)
 import Data.Either (Either(Right, Left))
-import Data.Foldable (fold)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.String (length)
 import Data.Tuple (lookup, Tuple(Tuple))
 import Hyper.Core (Port(Port))
 import Hyper.Form (Form(Form), parseForm)
+import Hyper.HTML.DSL (p, text, element, html)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Response (respond, headers)
@@ -22,19 +22,21 @@ main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar 
 main =
   let
     -- A view function that renders the name form.
-    renderNameForm err conn =
-      respond
-      (fold [ errHtml
-            , "<form method=\"post\">"
-            , "<label>Your Name: <input method=\"post\" name=\"firstName\"></label>"
-            , "<p><button type=\"submit\">Send</button></p>"
-            , "</form>"
-            ])
-      conn
+    renderNameForm err = html do
+      errHtml
+      element "form" [(Tuple "method" "post")] do
+        element "label" [Tuple "for" "firstName"] do
+          text "Your Name:"
+        p [] do
+          element "input" [ Tuple "name" "firstName"
+                          , Tuple "id" "firstName"
+                          ] (pure unit)
+        p [] do
+          element "button" [] (text "Send")
       where errHtml =
               case err of
-                Just s -> "<p style=\"color: red;\">" <> s <> "</p>"
-                Nothing -> ""
+                Just s -> p [(Tuple "style" "color: red;")] (text s)
+                Nothing -> pure unit
 
     -- Our handler for GET and POST requests.
     printForm conn =

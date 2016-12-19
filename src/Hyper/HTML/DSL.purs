@@ -3,8 +3,9 @@ module Hyper.HTML.DSL where
 import Prelude
 import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
+import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, ResponseEnded, HeadersClosed, Conn, Middleware)
-import Hyper.HTML (TagName, Attr(Attr), Element(Text, Element))
+import Hyper.HTML (TagName, Attr, Element(Text, Element))
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 
@@ -38,7 +39,7 @@ linkTo :: forall m c c' ms.
           -> HTML Unit
 linkTo resource nested = do
   let children = execHTML nested
-  addElement (Element "a" [Attr "href" (pathToHtml resource.path)] children)
+  addElement (Element "a" [Tuple "href" (pathToHtml resource.path)] children)
 
 formTo :: forall m c c' ms.
           { path :: Path
@@ -51,8 +52,8 @@ formTo resource nested = do
   let children = execHTML nested
   addElement (Element
               "form"
-              [ Attr "method" "post"
-              , Attr "action" (pathToHtml resource.path)
+              [ Tuple "method" "post"
+              , Tuple "action" (pathToHtml resource.path)
               ] children)
 
 html :: forall m req res rw c.
