@@ -13,7 +13,7 @@ data Attr = Attr AttrName String
 data Element
   = Element TagName (Array Attr) (Array Element)
   | Text String
-    
+
 -- TODO: Escape HTML
 instance responseElement :: Response Element where
   toResponse element =

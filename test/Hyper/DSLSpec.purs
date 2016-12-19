@@ -8,7 +8,7 @@ import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen(..), M
 import Hyper.HTML.DSL (text, linkTo, html)
 import Hyper.Method (Method(GET))
 import Hyper.Response (headers, notFound)
-import Hyper.Router (Path, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.Router (notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
 import Hyper.Test.TestServer (TestResponseWriter(..), testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)

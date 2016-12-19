@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
 import Hyper.Core (class ResponseWriter, ResponseEnded, HeadersClosed, Conn, Middleware)
-import Hyper.HTML (Attr(Attr), Element(Text, Element))
+import Hyper.HTML (TagName, Attr(Attr), Element(Text, Element))
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
 
@@ -24,14 +24,11 @@ withNested :: (Array Element -> Element)
            -> HTML Unit
 withNested el = addElement <<< el <<< execHTML
 
-
-h1 :: HTML Unit
-   -> HTML Unit
-h1 = withNested (Element "h1" [])
-
-p :: HTML Unit
-   -> HTML Unit
-p = withNested (Element "p" [])
+element :: TagName
+        -> Array Attr
+        -> HTML Unit
+        -> HTML Unit
+element tagName attrs = withNested (Element tagName attrs)
 
 linkTo :: forall m c c' ms.
           { path :: Path
@@ -66,3 +63,44 @@ html :: forall m req res rw c.
         (Conn req { writer :: rw HeadersClosed | res } c)
         (Conn req { writer :: rw ResponseEnded | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML
+
+--
+-- Convinience functions for elements.
+--
+
+type DSLElement = Array Attr -> HTML Unit -> HTML Unit
+
+h1 :: DSLElement
+h1 = element "h1"
+
+h2 :: DSLElement
+h2 = element "h2"
+
+h3 :: DSLElement
+h3 = element "h3"
+
+h4 :: DSLElement
+h4 = element "h4"
+
+h5 :: DSLElement
+h5 = element "h5"
+
+h6 :: DSLElement
+h6 = element "h6"
+
+p :: DSLElement
+p = element "p"
+
+ul :: DSLElement
+ul = element "ul"
+
+ol :: DSLElement
+ol = element "ol"
+
+li :: DSLElement
+li = element "li"
+
+span :: DSLElement
+span = element "span"
+
+-- `<a>` is, for now, intentionally left out to encourage use of `linkTo`.
