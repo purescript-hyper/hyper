@@ -6,7 +6,7 @@ import Data.MediaType (MediaType)
 import Data.Newtype (unwrap)
 import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, Conn, HeadersClosed, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
+import Hyper.Core (class ResponseWriter, Conn, BodyOpen, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
 headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m) =>
@@ -14,7 +14,7 @@ headers :: forall t m req res rw c.
         -> Middleware
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw BodyOpen | res } c)
 headers hs conn = do
   traverse_ (writeOne conn) hs
   closeHeaders conn
@@ -41,6 +41,6 @@ respond :: forall r m req res rw c.
            r
         -> Middleware
            m
-           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
 respond r = send (toResponse r) >=> end

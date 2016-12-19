@@ -4,7 +4,7 @@ import Prelude
 import Control.Monad.State (execState, modify, State)
 import Data.Foldable (fold)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, ResponseEnded, HeadersClosed, Conn, Middleware)
+import Hyper.Core (class ResponseWriter, ResponseEnded, BodyOpen, Conn, Middleware)
 import Hyper.HTML (TagName, Attr, Element(Text, Element))
 import Hyper.Response (respond, toResponse)
 import Hyper.Router (Supported, ResourceMethod, Path, pathToHtml)
@@ -61,7 +61,7 @@ html :: forall m req res rw c.
         HTML Unit
      -> Middleware
         m
-        (Conn req { writer :: rw HeadersClosed | res } c)
+        (Conn req { writer :: rw BodyOpen | res } c)
         (Conn req { writer :: rw ResponseEnded | res } c)
 html = respond <<< fold <<< map toResponse <<< execHTML
 

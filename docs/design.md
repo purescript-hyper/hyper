@@ -60,7 +60,7 @@ headers :: forall t m req res rw c.
         -> Middleware
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw BodyOpen | res } c)
 ```
 
 To be used in combination with `headers`, the `respond` function takes
@@ -74,7 +74,7 @@ respond :: forall r m req res rw c.
            r
         -> Middleware
            m
-           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
 ```
 

@@ -20,7 +20,7 @@ import Data.Semigroup ((<>))
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, HeadersClosed(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
+import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, BodyOpen(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
 import Hyper.Method (Method)
 import Node.Encoding (Encoding(..))
 
@@ -79,7 +79,7 @@ instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => Respons
         liftEff (setHeader r name value)
         pure conn
 
-  closeHeaders = pure <<< withState HeadersClosed
+  closeHeaders = pure <<< withState BodyOpen
 
   send s conn =
     case conn.response.writer of

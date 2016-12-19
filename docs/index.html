@@ -78,14 +78,14 @@
         -&gt; Middleware
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw HeadersClosed | res } c)</code></pre>
+           (Conn req { writer :: rw BodyOpen | res } c)</code></pre>
 <p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
 <pre class="purescript"><code>respond :: forall r m req res rw c.
            (Monad m, Response r, ResponseWriter rw m) =&gt;
            r
         -&gt; Middleware
            m
-           (Conn req { writer :: rw HeadersClosed | res } c)
+           (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)</code></pre>
 <p>The <code>Response</code> type class describes types that can be written as responses.</p>
 <pre class="purescript"><code>class Response r where

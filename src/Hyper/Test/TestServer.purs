@@ -8,7 +8,7 @@ import Data.Function ((<<<))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (class Monoid)
 import Data.Semigroup (class Semigroup, (<>))
-import Hyper.Core (StatusLineOpen(StatusLineOpen), HeadersOpen(HeadersOpen), Status, class ResponseWriter, Header, HeadersClosed(HeadersClosed), ResponseEnded(ResponseEnded), Conn)
+import Hyper.Core (StatusLineOpen(StatusLineOpen), HeadersOpen(HeadersOpen), Status, class ResponseWriter, Header, BodyOpen(BodyOpen), ResponseEnded(ResponseEnded), Conn)
 
 data TestResponse = TestResponse (Maybe Status) (Array Header) String
 
@@ -52,7 +52,7 @@ instance responseWriterTestResponseWriter :: Monad m =>
   writeHeader header conn =
     tell (TestResponse Nothing [header] "") *> pure conn
 
-  closeHeaders = pure <<< withState HeadersClosed
+  closeHeaders = pure <<< withState BodyOpen
 
   send s conn =
     tell (TestResponse Nothing [] s) *> pure conn

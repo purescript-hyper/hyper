@@ -44,7 +44,7 @@ data HeadersOpen = HeadersOpen
 
 -- | Type indicating that headers have already been
 -- | sent, and that the body is currently streaming.
-data HeadersClosed = HeadersClosed
+data BodyOpen = BodyOpen
 
 -- | Type indicating that headers have already been
 -- | sent, and that the body stream, and thus the response,
@@ -64,6 +64,6 @@ type ResponseStateTransition m rw from to =
 class ResponseWriter rw m | rw -> m where
   writeStatus :: Status -> ResponseStateTransition m rw StatusLineOpen HeadersOpen
   writeHeader :: Header -> ResponseStateTransition m rw HeadersOpen HeadersOpen
-  closeHeaders :: ResponseStateTransition m rw HeadersOpen HeadersClosed
-  send :: String -> ResponseStateTransition m rw HeadersClosed HeadersClosed
-  end :: ResponseStateTransition m rw HeadersClosed ResponseEnded
+  closeHeaders :: ResponseStateTransition m rw HeadersOpen BodyOpen
+  send :: String -> ResponseStateTransition m rw BodyOpen BodyOpen
+  end :: ResponseStateTransition m rw BodyOpen ResponseEnded
