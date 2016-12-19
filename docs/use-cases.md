@@ -75,7 +75,7 @@ values.
 ```purescript
 index =
   { path: []
-  , "GET": handler (html (h1 (text "Welcome!")))
+  , "GET": handler (html (h1 [] (text "Welcome!")))
   , "POST": notSupported
   }
 ```

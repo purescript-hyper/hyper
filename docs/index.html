@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 5bf21da
+  Version aca1c8b
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -129,7 +129,7 @@ parseForm conn = ...</code></pre>
 <p>Hyper has a concept of <em>resources</em>. Each resource is a record describing its <em>path</em>, along with a set of HTTP methods and handlers. Each method implemented in Hyper must be specified explicitly in the record with a <code>ResourceMethod</code> value, and those values are parameterized with one of the marker types describing if it is routed - <code>Supported</code> or <code>NotSupported</code>. The helper functions <code>handler</code> and <code>notSupported</code> are used to construct <code>ResourceMethod</code> values.</p>
 <pre class="purescript"><code>index =
   { path: []
-  , &quot;GET&quot;: handler (html (h1 (text &quot;Welcome!&quot;)))
+  , &quot;GET&quot;: handler (html (h1 [] (text &quot;Welcome!&quot;)))
   , &quot;POST&quot;: notSupported
   }</code></pre>
 <h4 id="resource-routers">Resource Routers</h4>
