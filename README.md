@@ -29,6 +29,10 @@ npm install # for examples using the node server
 pulp run -I examples/<example-name>
 ```
 
+## CodeScene Status
+
+[![](https://codescene.io/projects/49/status.svg) Get more details at **codescene.io**.](https://codescene.io/projects/49/jobs/latest-successful/results)
+
 ## License
 
 [Mozilla Public License Version 2.0](LICENSE)
