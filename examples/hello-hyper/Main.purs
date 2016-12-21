@@ -3,16 +3,18 @@ module Main where
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Hyper.Core (Port(Port))
-import Hyper.HTML.DSL (h1, html, text)
+import Data.Tuple (Tuple(Tuple))
+import Hyper.Core (closeHeaders, writeStatus, Port(Port))
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (headers)
+import Hyper.Response (respond)
 import Node.HTTP (HTTP)
 
 main :: forall e. Eff (console :: CONSOLE, http ∷ HTTP | e) Unit
 main =
   let
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    app = headers []
-          >=> html (h1 (text "Hello, Hyper!"))
-  in runServer defaultOptions onListening app
+    onRequestError err = log ("Request failed: " <> show err)
+    app = writeStatus (Tuple 200 "OK")
+          >=> closeHeaders
+          >=> (respond "Hello, Hyper!")
+  in runServer defaultOptions onListening onRequestError app
