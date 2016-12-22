@@ -36,7 +36,6 @@ main =
       >>= closeHeaders
       >>= html (p [] (text ("You are authenticated as " <> name <> ".")))
 
-
     app = withAuthentication >=> (authenticated myProfilePage)
     components =
       { authentication: unit
