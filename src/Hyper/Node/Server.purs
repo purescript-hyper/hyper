@@ -105,10 +105,11 @@ defaultOptions = { hostname: "0.0.0.0"
                  }
 
 
-runServer :: forall e req res c.
+runServer :: forall e req res c c'.
              ServerOptions
              -> (Port -> Eff (http ∷ HTTP | e) Unit)
              -> (Error -> Eff (http ∷ HTTP | e) Unit)
+             -> c
              -> Middleware
                 (Aff (http :: HTTP | e))
                 (Conn { url :: String
@@ -118,10 +119,10 @@ runServer :: forall e req res c.
                       , method :: Method
                       }
                       { writer :: HttpResponse StatusLineOpen }
-                      {})
-                (Conn req { writer :: HttpResponse ResponseEnded | res } c)
+                      c)
+                (Conn req { writer :: HttpResponse ResponseEnded | res } c')
              -> Eff (http :: HTTP | e) Unit
-runServer options onListening onRequestError middleware = do
+runServer options onListening onRequestError components middleware = do
   server <- createServer onRequest
   let listenOptions = { port: unwrap options.port
                       , hostname: "0.0.0.0"
@@ -140,6 +141,6 @@ runServer options onListening onRequestError middleware = do
                             , contentLength: parseContentLength headers >>= fromString
                             }
                  , response: { writer: HttpResponse StatusLineOpen response }
-                 , components: {}
+                 , components: components
                  }
       in catchException onRequestError (void (launchAff (middleware conn)))
