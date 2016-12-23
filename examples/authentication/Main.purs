@@ -18,6 +18,7 @@ import Node.HTTP (HTTP)
 
 data User = User String
 
+-- This could be a function checking the username/password in a database.
 userFromBasicAuth :: forall e. Tuple String String -> Aff e (Maybe User)
 userFromBasicAuth =
   case _ of
