@@ -30,7 +30,7 @@ main =
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
 
-    myProfilePage conn@{ components: { authentication: (User name) } } =
+    myProfilePage conn@{ components: { authentication: User name } } =
       writeStatus statusOK conn
       >>= contentType textHTML
       >>= closeHeaders
