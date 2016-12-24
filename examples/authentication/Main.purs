@@ -1,5 +1,6 @@
 module Main where
 
+import Hyper.Node.BasicAuth as BasicAuth
 import Prelude
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
@@ -7,10 +8,8 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Authentication (authenticated, withAuthentication)
 import Hyper.Core (writeStatus, closeHeaders, statusOK, Port(Port))
 import Hyper.HTML.DSL (p, text, html)
-import Hyper.Node.BasicAuth (BasicAuth(BasicAuth))
 import Hyper.Node.Server (runServer, defaultOptions)
 import Hyper.Response (contentType)
 import Node.Buffer (BUFFER)
@@ -37,9 +36,7 @@ main =
       >>= closeHeaders
       >>= html (p [] (text ("You are authenticated as " <> name <> ".")))
 
-    app = withAuthentication >=> (authenticated myProfilePage)
-    components =
-      { authentication: unit
-      , authenticator: BasicAuth userFromBasicAuth
-      }
+    app = BasicAuth.withAuthentication userFromBasicAuth
+          >=> BasicAuth.authenticated myProfilePage
+    components = { authentication: unit }
   in runServer defaultOptions onListening onRequestError components app
