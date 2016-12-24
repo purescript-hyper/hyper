@@ -17,4 +17,4 @@ main =
     app = writeStatus (Tuple 200 "OK")
           >=> closeHeaders
           >=> (respond "Hello, Hyper!")
-  in runServer defaultOptions onListening onRequestError app
+  in runServer defaultOptions onListening onRequestError {} app

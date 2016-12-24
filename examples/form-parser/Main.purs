@@ -87,4 +87,4 @@ main =
     onRequestError err = log ("Request failed: " <> show err)
 
   -- Let's run it.
-  in runServer defaultOptions onListening onRequestError app
+  in runServer defaultOptions onListening onRequestError {} app
