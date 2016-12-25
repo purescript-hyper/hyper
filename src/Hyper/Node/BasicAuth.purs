@@ -12,7 +12,7 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.StrMap (StrMap)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
-import Data.Unit (Unit, unit)
+import Data.Unit (Unit)
 import Hyper.Authentication (setAuthentication)
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeHeader, writeStatus)
 import Hyper.Response (respond)
@@ -71,15 +71,15 @@ authenticated
     (Conn
       req
       { writer :: rw ResponseEnded | res }
-      { authentication :: Unit | c })
+      { authentication :: Maybe t | c })
 authenticated mw conn =
   case conn.components.authentication of
     Nothing ->
-      writeStatus (Tuple 401 "Unauthorized") (setAuthentication unit conn)
+      writeStatus (Tuple 401 "Unauthorized") conn
       >>= writeHeader (Tuple "WWW-Authenticate" "Basic realm=\"Hyper Authentication Example\"")
       >>= closeHeaders
       >>= respond "Please authenticate."
     Just auth ->
       setAuthentication auth conn
       # mw
-      # map (setAuthentication unit)
+      # map (setAuthentication (Just auth))
