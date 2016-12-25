@@ -12,7 +12,7 @@ import Hyper.HTML (element_, h1, p, text)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Router (linkTo, notSupported, resource, fallbackTo, handler)
+import Hyper.Routing.ResourceRouter (linkTo, notSupported, resource, fallbackTo, handler)
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.

@@ -22,7 +22,7 @@ import Hyper.HTML (li, ul, element_, p, text, h1, HTML)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Router (linkTo, notSupported, resource, fallbackTo, handler)
+import Hyper.Routing.ResourceRouter (linkTo, notSupported, resource, fallbackTo, handler)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -117,6 +117,7 @@ userFromBasicAuth =
     Tuple "admin" "admin" -> pure (Just (User "admin"))
     Tuple "guest" "guest" -> pure (Just (User "guest"))
     _ -> pure Nothing
+
 
 -- This could be a function checking a database, or some session store, if the
 -- authenticated user has role `Admin`.

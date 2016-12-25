@@ -1,18 +1,18 @@
-module Hyper.Router ( Path
-                    , pathToHtml
-                    , pathFromString
-                    , Supported
-                    , Unsupported
-                    , ResourceMethod
-                    , handler
-                    , notSupported
-                    , resource
-                    , ResourceRecord
-                    , ResourceRouter()
-                    , fallbackTo
-                    , linkTo
-                    , formTo
-                    ) where
+module Hyper.Routing.ResourceRouter ( Path
+                                    , pathToHtml
+                                    , pathFromString
+                                    , Supported
+                                    , Unsupported
+                                    , ResourceMethod
+                                    , handler
+                                    , notSupported
+                                    , resource
+                                    , ResourceRecord
+                                    , ResourceRouter()
+                                    , fallbackTo
+                                    , linkTo
+                                    , formTo
+                                    ) where
 
 import Prelude
 import Control.Alt (class Alt)

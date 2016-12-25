@@ -1,4 +1,4 @@
-module Hyper.RouterSpec where
+module Hyper.Routing.ResourceRouterSpec where
 
 import Prelude
 import Control.Monad.Eff.Console (CONSOLE)
@@ -8,7 +8,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (StatusLineOpen, statusCreated, statusOK, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (contentType, headers, respond)
-import Hyper.Router (fallbackTo, handler, resource)
+import Hyper.Routing.ResourceRouter (fallbackTo, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)

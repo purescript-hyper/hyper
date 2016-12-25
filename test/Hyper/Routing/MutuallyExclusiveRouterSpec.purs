@@ -1,4 +1,4 @@
-module Hyper.HTML.DSLSpec where
+module Hyper.Routing.MutuallyExclusiveRouterSpec where
 
 import Prelude
 import Control.Alt ((<|>))
@@ -9,7 +9,7 @@ import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, statusNotFound, write
 import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (respond, contentType)
-import Hyper.Router (linkTo, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.Routing.ResourceRouter (linkTo, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
