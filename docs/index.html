@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version aca1c8b
+  Version 4ebfb58
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -32,9 +32,11 @@
 <li><a href="#middleware">Middleware</a></li>
 <li><a href="#response-state-transitions">Response State Transitions</a></li>
 </ul></li>
-<li><a href="#use-cases">Use Cases</a><ul>
-<li><a href="#parsing-the-request-body">Parsing the Request Body</a></li>
-<li><a href="#cohesion-of-links-forms-and-routes">Cohesion of Links, Forms, and Routes</a></li>
+<li><a href="#request-body-parsing">Request Body Parsing</a></li>
+<li><a href="#resource-routing">Resource Routing</a><ul>
+<li><a href="#resources">Resources</a></li>
+<li><a href="#resource-routers">Resource Routers</a></li>
+<li><a href="#type-safe-links-and-forms">Type-Safe Links and Forms</a></li>
 </ul></li>
 <li><a href="#contributing">Contributing</a></li>
 </ul>
@@ -91,9 +93,7 @@
 <pre class="purescript"><code>class Response r where
   toResponse :: r -&gt; String</code></pre>
 <p><strong>NOTE:</strong> The return type of <code>toResponse</code> should probably be something other than <code>String</code> (<a href="https://github.com/owickstrom/hyper/issues/5">GitHub issue</a>).</p>
-<h2 id="use-cases">Use Cases</h2>
-<p><em>Here follows a collection of loosely organized thoughts on how to implement safe middleware in Hyper. Very much work-in-progress.</em></p>
-<h3 id="parsing-the-request-body">Parsing the Request Body</h3>
+<h2 id="request-body-parsing">Request Body Parsing</h2>
 <p>The request body is, when using the Node server, initially a <code>RequestBody</code> in the connection. The user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action. The following type signature resides in <code>Hyper.Node.Server</code>, and shows how a request body can be read into a <code>String</code>. The <code>Aff</code> monad, and the <code>AVAR</code> effect, is used to accomplish this asynchronously in the case of the Node server.</p>
 <pre class="purescript"><code>readBodyAsString
   :: forall e req res c.
@@ -123,39 +123,58 @@
                   c)
 parseForm conn = ...</code></pre>
 <p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
-<h3 id="cohesion-of-links-forms-and-routes">Cohesion of Links, Forms, and Routes</h3>
-<p>It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>
-<h4 id="resources">Resources</h4>
-<p>Hyper has a concept of <em>resources</em>. Each resource is a record describing its <em>path</em>, along with a set of HTTP methods and handlers. Each method implemented in Hyper must be specified explicitly in the record with a <code>ResourceMethod</code> value, and those values are parameterized with one of the marker types describing if it is routed - <code>Supported</code> or <code>NotSupported</code>. The helper functions <code>handler</code> and <code>notSupported</code> are used to construct <code>ResourceMethod</code> values.</p>
+<h2 id="resource-routing">Resource Routing</h2>
+<p><code>Hyper.Routing.ResourceRouter</code> aims to provide type-safe routing, based on REST resources. It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>
+<h3 id="resources">Resources</h3>
+<p>The central concept is <em>resources</em>, as in RESTful resources. Each resource is a record describing its <em>path</em>, along with a set of HTTP methods and handlers. Each method implemented must be specified explicitly in the record with a <code>ResourceMethod</code> value, and those values are parameterized with one of the marker types describing if it is routed - <code>Supported</code> or <code>NotSupported</code>. The helper function <code>handler</code> is used to construct <code>ResourceMethod</code> values with the <code>Supported</code> type parameter.</p>
 <pre class="purescript"><code>index =
-  { path: []
-  , &quot;GET&quot;: handler (html (h1 [] (text &quot;Welcome!&quot;)))
-  , &quot;POST&quot;: notSupported
+  resource
+  { path = []
+  , &quot;GET&quot; = handler (html (h1 [] (text &quot;Welcome!&quot;)))
   }</code></pre>
-<h4 id="resource-routers">Resource Routers</h4>
+<h3 id="resource-routers">Resource Routers</h3>
 <p>The <code>resource</code> function creates a <code>ResourceRouter</code> that tries to route HTTP requests to handlers in its resource. It should also add the application resources as a type in the components of the Conn, giving subsequent middleware access to that information. <em>The encoding of resource types in the Conn is NOT supported yet.</em></p>
-<pre class="purescript"><code>app = fallbackTo notFound (resource index)</code></pre>
+<pre class="purescript"><code>app = runRouter defaultRouterFallbacks (router index)</code></pre>
 <p>The <code>ResourceRouter</code> provides an instance for <code>Alt</code>, making it possible to chain resources and have them try to match the request in order.</p>
-<pre class="purescript"><code>app = fallbackTo notFound (resource index &lt;|&gt; resource about &lt;|&gt; resource contact)</code></pre>
-<h4 id="html-dsl">HTML DSL</h4>
-<p>A separate DSL for writing HTML, providing functions that take resources as arguments, creates links and forms to resources in the application <em>only if they are in scope and support the required HTTP methods</em>. Paths are used from the resource, so you cannot make a typo in the URL. In other words, mistakes in routing and references between resources give you compile-time errors.</p>
+<pre class="purescript"><code>app =
+  runRouter
+  defaultRouterFallbacks
+  (router index &lt;|&gt; router about &lt;|&gt; router contact)</code></pre>
+<h4 id="router-fallbacks">Router Fallbacks</h4>
+<p>The router has a <em>fallback</em> concept - functions that provide a response in case no resource matched the request. For instance, if a route path matches the request URL, but not the method, the chain short-circuits and the <code>onMethodNotAllowed</code> function provides a response for the <em>405 Method Not Allowed</em> case. The same goes for <code>onNotFound</code>, in the case of a <em>404 Not Found</em>.</p>
+<p>The <code>defaultRoutesFallbacks</code> can be used to get a set of basic fallbacks. If custom responses are desired, simply provide your own fallbacks, or override some of the defaults.</p>
+<pre class="purescript"><code>fallbacks =
+  { onNotFound:
+    writeStatus statusNotFound
+    &gt;=&gt; headers []
+    &gt;=&gt; respond &quot;What are you doing here?&quot;
+  , onMethodNotAllowed:
+    \method -&gt;
+    writeStatus statusMethodNotAllowed
+    &gt;=&gt; headers []
+    &gt;=&gt; respond (&quot;No way I&#39;m routing a &quot; &lt;&gt; show method &lt;&gt; &quot; request.&quot;)
+  }
+
+app = runRouter fallbacks (router index)</code></pre>
+<h3 id="type-safe-links-and-forms">Type-Safe Links and Forms</h3>
+<p>The resource router module also provides functions that take resources as arguments, creates links and forms to resources in the application <em>only if they are in scope and support the required HTTP methods</em>. Paths are used from the resource, so you cannot make a typo in the URL. In other words, mistakes in routing and references between resources give you compile-time errors.</p>
 <pre class="purescript"><code>about =
-  { path: [&quot;about&quot;]
-  , &quot;GET&quot;: handler (\conn -&gt; html
-                            (linkTo contact (text &quot;Contact Me!&quot;))
-                            conn)
-  , &quot;POST&quot;: notSupported
+  resource
+  { path = [&quot;about&quot;]
+  , &quot;GET&quot; = handler (\conn -&gt; respond
+                              (linkTo contact (text &quot;Contact Me!&quot;))
+                              conn)
   }
 
 contact =
-  { path: [&quot;contact&quot;]
-  , &quot;GET&quot;: handler (html (text &quot;Good luck finding my email address.&quot;))
-  , &quot;POST&quot;: notSupported
+  resource
+  { path = [&quot;contact&quot;]
+  , &quot;GET&quot; = handler (respond (text &quot;Good luck finding my email address.&quot;))
   }</code></pre>
 <p>As resources have to be in scope to be referred, you cannot refer to a non-existing resource. You can, however, refer to an existing resource <em>that is not routed</em>. This is described above in <a href="#resource-routers">Resource Routers</a>.</p>
 <p>Erroneously using the <code>contact</code> resource together with <code>formTo</code> results in a compile error, as there is no handler for the <code>POST</code> method in <code>contact</code>.</p>
 <pre class="text"><code>Error found:
-in module Hyper.HTML.Example
+in module Example
 
   Could not match type
 

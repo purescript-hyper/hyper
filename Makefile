@@ -1,10 +1,11 @@
 VERSION=$(shell git rev-parse --short HEAD)
 
 MD_SOURCES=docs/index.md \
-		docs/goals.md \
-		docs/design.md \
-		docs/use-cases.md \
-		docs/contributing.md
+					 docs/goals.md \
+					 docs/design.md \
+					 docs/request-body-parsing.md \
+					 docs/resource-routing.md \
+					 docs/contributing.md
 
 .PHONY: docs
 docs: docs/index.html docs/hyper.pdf
