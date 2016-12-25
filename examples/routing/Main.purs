@@ -8,11 +8,11 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.MediaType.Common (textHTML)
 import Hyper.Core (StatusLineOpen, statusOK, statusNotFound, writeStatus, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
-import Hyper.HTML.DSL (linkTo, h1, p, text, html)
+import Hyper.HTML (element_, h1, p, text)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType)
-import Hyper.Router (notSupported, resource, fallbackTo, handler)
+import Hyper.Response (respond, contentType)
+import Hyper.Router (linkTo, notSupported, resource, fallbackTo, handler)
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
@@ -36,19 +36,20 @@ app =
         writeStatus status
         >=> contentType textHTML
         >=> closeHeaders
-        >=> html x
+        >=> respond x
 
       notFound = htmlWithStatus
                  statusNotFound
                  (text "Not Found")
 
-      homeView = do
-        h1 [] (text "Welcome!")
-        p [] do
-          text "Read more at "
-          -- Type-safe routing:
-          linkTo about (text "About")
-          text "."
+      homeView =
+        element_ "section" [ h1 [] [ text "Welcome!" ]
+                           , p [] [ text "Read more at "
+                                    -- Type-safe routing:
+                                  , linkTo about [text "About"]
+                                  , text "."
+                                  ]
+                           ]
 
       home = { path: []
              , "GET":
@@ -56,9 +57,10 @@ app =
              , "POST": notSupported
              }
 
-      aboutView = do
-        h1 [] (text "About")
-        p [] (text "OK, about this example...")
+      aboutView =
+        element_ "section" [ h1 [] [ text "About" ]
+                           , p [] [ text "OK, about this example..." ]
+                           ]
 
       about = { path: ["about"]
               , "GET": handler (htmlWithStatus statusOK aboutView)

@@ -10,6 +10,8 @@ module Hyper.Router ( Path
                     , ResourceRecord
                     , ResourceRouter()
                     , fallbackTo
+                    , linkTo
+                    , formTo
                     ) where
 
 import Prelude
@@ -18,7 +20,9 @@ import Data.Array (filter)
 import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
+import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (Middleware, Conn)
+import Hyper.HTML (form, a, HTML)
 import Hyper.Method (Method(POST, GET))
 
 type Path = Array String
@@ -106,3 +110,26 @@ fallbackTo fallback (ResourceRouter rr) conn = do
   case result of
     Just conn' -> pure conn'
     Nothing -> fallback conn
+
+linkTo :: forall m c c' ms.
+          { path :: Path
+          , "GET" :: ResourceMethod Supported m c c'
+          | ms }
+          -> Array HTML
+          -> HTML
+linkTo resource' nested = do
+  a [Tuple "href" (pathToHtml resource'.path)] nested
+
+formTo :: forall m c c' ms.
+          { path :: Path
+          , "POST" :: ResourceMethod Supported m c c'
+          | ms
+          }
+          -> Array HTML
+          -> HTML
+formTo resource' nested =
+  form
+  [ Tuple "method" "post"
+  , Tuple "action" (pathToHtml resource'.path)
+  ]
+  nested

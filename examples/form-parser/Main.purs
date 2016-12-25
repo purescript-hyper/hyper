@@ -13,10 +13,10 @@ import Data.String (length)
 import Data.Tuple (lookup, Tuple(Tuple))
 import Hyper.Core (statusOK, statusBadRequest, writeStatus, closeHeaders, Port(Port))
 import Hyper.Form (Form(Form), parseForm)
-import Hyper.HTML.DSL (p, text, element, html)
+import Hyper.HTML (p, text, element)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
-import Hyper.Response (contentType)
+import Hyper.Response (respond, contentType)
 import Node.HTTP (HTTP)
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
@@ -24,26 +24,27 @@ main =
   let
     -- A view function that renders the name form.
     renderNameForm err = do
-      errHtml
-      element "form" [(Tuple "method" "post")] do
-        element "label" [Tuple "for" "firstName"] do
-          text "Your Name:"
-        p [] $
-          element "input" [ Tuple "name" "firstName"
-                          , Tuple "id" "firstName"
-                          ] (pure unit)
-        p [] $
-          element "button" [] (text "Send")
-      where errHtml =
-              case err of
-                Just s -> p [(Tuple "style" "color: red;")] (text s)
-                Nothing -> pure unit
+      element "form" [(Tuple "method" "post")] (join [ formattedError, formElements ])
+      where
+        formElements =
+          [ element "label" [ Tuple "for" "firstName" ] [ text "Your Name:" ]
+          , p [] [ element "input" [ Tuple "name" "firstName"
+                                   , Tuple "id" "firstName"
+                                   ] []
+                 ]
+          , p [] [ element "button" [] [ text "Send" ] ]
+          ]
+
+        formattedError =
+          case err of
+            Just s -> [ p [ Tuple "style" "color: red;" ] [ text s ] ]
+            Nothing -> []
 
     htmlWithStatus status x =
       writeStatus status
       >=> contentType textHTML
       >=> closeHeaders
-      >=> html x
+      >=> respond x
 
     handlePost body conn =
       case body of
@@ -51,14 +52,14 @@ main =
           liftEff (log (message err))
           htmlWithStatus
             statusBadRequest
-            (p [] (text "Bad request, invalid form."))
+            (p [] [text "Bad request, invalid form."])
             conn
         Right (Form values) ->
           case lookup "firstName" values of
             Just name | length name > 0 ->
               htmlWithStatus
               statusOK
-              (p [] (text ("Hi " <> name <> "!")))
+              (p [] [text ("Hi " <> name <> "!")])
               conn
             _ ->
               htmlWithStatus

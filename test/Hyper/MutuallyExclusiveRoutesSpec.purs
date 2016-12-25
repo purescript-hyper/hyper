@@ -6,10 +6,10 @@ import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(..))
 import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
-import Hyper.HTML.DSL (text, linkTo, html)
+import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
-import Hyper.Response (contentType)
-import Hyper.Router (notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.Response (respond, contentType)
+import Hyper.Router (linkTo, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -44,7 +44,7 @@ app = fallbackTo notFound (resource about <|> resource contact)
       writeStatus statusNotFound
       >=> contentType textHTML
       >=> closeHeaders
-      >=> html (text "Not Found")
+      >=> respond (text "Not Found")
     about :: TestResource m rw Supported Unsupported
     about =
       { path: ["about"]
@@ -52,7 +52,7 @@ app = fallbackTo notFound (resource about <|> resource contact)
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
-                         >>= html (linkTo (contact ∷ TestResource m rw Supported Unsupported) (text "Contact Me!")))
+                         >>= respond (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"]))
       , "POST": notSupported
       }
 
@@ -63,7 +63,7 @@ app = fallbackTo notFound (resource about <|> resource contact)
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
-                         >>= html (linkTo (about ∷ TestResource m rw Supported Unsupported) (text "About Me")))
+                         >>= respond (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"]))
       , "POST": notSupported
       }
 

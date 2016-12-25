@@ -18,11 +18,11 @@ import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
-import Hyper.HTML.DSL (HTML, li, ul, linkTo, h1, p, text, html)
+import Hyper.HTML (li, ul, element_, p, text, h1, HTML)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType)
-import Hyper.Router (notSupported, resource, fallbackTo, handler)
+import Hyper.Response (respond, contentType)
+import Hyper.Router (linkTo, notSupported, resource, fallbackTo, handler)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -32,7 +32,7 @@ htmlWithStatus
   :: forall m req res rw c.
      (Monad m, ResponseWriter rw m) =>
      Status
-  -> HTML Unit
+  -> HTML
   -> Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } c)
@@ -41,7 +41,7 @@ htmlWithStatus status x =
   writeStatus status
   >=> contentType textHTML
   >=> closeHeaders
-  >=> html x
+  >=> respond x
 
 
 -- Users have user names.
@@ -74,11 +74,12 @@ profileHandler conn =
   where
     view =
       case _ of
-        Just (User name) -> do
-          h1 [] (text "Profile")
-          p [] (text ("Logged in as " <> name <> "."))
+        Just (User name) ->
+          element_ "section" [ h1 [] [ text "Profile" ]
+                             , p [] [ text ("Logged in as " <> name <> ".") ]
+                             ]
         Nothing ->
-          p [] (text "You are not logged in.")
+          p [] [text "You are not logged in."]
 
 
 -- A handler that requires a user authorized as `Admin`. Note that
@@ -102,9 +103,10 @@ adminHandler conn =
   (view conn.components.authentication)
   conn
   where
-    view (User name) = do
-      h1 [] (text "Administration")
-      p [] (text ("Here be dragons, " <> name <> "."))
+    view (User name) =
+      element_ "section" [ h1 [] [ text "Administration" ]
+                         , p [] [ text ("Here be dragons, " <> name <> ".") ]
+                         ]
 
 
 -- This could be a function checking the username/password in a database
@@ -156,11 +158,12 @@ app =
                  statusNotFound
                  (text "Not Found")
 
-      homeView = do
-        h1 [] (text "Home")
-        ul [] do
-          li [] (linkTo profile (text "Profile"))
-          li [] (linkTo admin (text "Administration"))
+      homeView =
+        element_ "section" [ h1 [] [text "Home"]
+                           , ul [] [ li [] [ linkTo profile [ text "Profile" ] ]
+                                   , li [] [ linkTo admin [ text "Administration" ] ]
+                                   ]
+                           ]
 
       home = { path: []
              , "GET":

@@ -9,9 +9,9 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (writeStatus, closeHeaders, statusOK, Port(Port))
-import Hyper.HTML.DSL (p, text, html)
+import Hyper.HTML (text, p)
 import Hyper.Node.Server (runServer, defaultOptions)
-import Hyper.Response (contentType)
+import Hyper.Response (respond, contentType)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -34,7 +34,7 @@ main =
       writeStatus statusOK conn
       >>= contentType textHTML
       >>= closeHeaders
-      >>= html (p [] (text ("You are authenticated as " <> name <> ".")))
+      >>= respond (p [] [text ("You are authenticated as " <> name <> ".")])
 
     app = BasicAuth.withAuthentication userFromBasicAuth
           >=> BasicAuth.authenticated "Authentication Example" myProfilePage
