@@ -119,8 +119,8 @@ profileHandler conn =
 
 -- A handler that requires a `User` authorized as `Admin`. Note that
 -- even if the actual authorization check does not happen here, we
--- cannot user this handler without doing authorization properly
--- before.
+-- cannot use this handler without doing authorization properly
+-- somewhere before in the middleware chain.
 adminHandler
   :: forall m req res rw c.
      (Monad m, ResponseWriter rw m) =>
