@@ -9,7 +9,7 @@ import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, statusNotFound, write
 import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (linkTo, notSupported, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
+import Hyper.Routing.ResourceRouter (router, linkTo, Unsupported, Supported, ResourceRecord, fallbackTo, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -38,7 +38,7 @@ app :: forall m req res rw c.
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = fallbackTo notFound (resource about <|> resource contact)
+app = fallbackTo notFound (router about <|> router contact)
   where
     notFound =
       writeStatus statusNotFound
@@ -47,24 +47,24 @@ app = fallbackTo notFound (resource about <|> resource contact)
       >=> respond (text "Not Found")
     about :: TestResource m rw Supported Unsupported
     about =
-      { path: ["about"]
-      , "GET": handler (\conn ->
+      resource
+      { path = ["about"]
+      , "GET" = handler (\conn ->
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
                          >>= respond (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"]))
-      , "POST": notSupported
       }
 
     contact :: TestResource m rw Supported Unsupported
     contact =
-      { path: ["contact"]
-      , "GET": handler (\conn ->
+      resource
+      { path = ["contact"]
+      , "GET" = handler (\conn ->
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
                          >>= respond (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"]))
-      , "POST": notSupported
       }
 
 spec :: forall e. Spec (console :: CONSOLE | e) Unit

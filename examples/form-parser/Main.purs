@@ -67,8 +67,8 @@ main =
               (renderNameForm (Just "Name is missing."))
               conn
 
-    -- Our handler for GET and POST requests.
-    handler conn =
+    -- Our router.
+    router conn =
       case conn.request.method of
         GET -> htmlWithStatus
                statusOK
@@ -80,7 +80,7 @@ main =
     -- handler.
     app = readBodyAsString
           >=> parseForm
-          >=> handler
+          >=> router
 
     -- Some nice console printing when the server starts, and if a request
     -- fails (in this case when the request body is unreadable for some reason).

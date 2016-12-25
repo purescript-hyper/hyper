@@ -12,7 +12,7 @@ import Hyper.HTML (element_, h1, p, text)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (linkTo, notSupported, resource, fallbackTo, handler)
+import Hyper.Routing.ResourceRouter (router, linkTo, resource, fallbackTo, handler)
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
@@ -30,7 +30,7 @@ app =
   -- Not Found:
   notFound
   -- Resources:
-  (resource home <|> resource about)
+  (router home <|> router about)
     where
       htmlWithStatus status x =
         writeStatus status
@@ -51,21 +51,20 @@ app =
                                   ]
                            ]
 
-      home = { path: []
-             , "GET":
-               handler (htmlWithStatus statusOK homeView)
-             , "POST": notSupported
-             }
+      home =
+        resource { path = []
+                 , "GET" = handler (htmlWithStatus statusOK homeView)
+                 }
 
       aboutView =
         element_ "section" [ h1 [] [ text "About" ]
                            , p [] [ text "OK, about this example..." ]
                            ]
 
-      about = { path: ["about"]
-              , "GET": handler (htmlWithStatus statusOK aboutView)
-              , "POST": notSupported
-              }
+      about =
+        resource { path = ["about"]
+                 , "GET" = handler (htmlWithStatus statusOK aboutView)
+                 }
 
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit

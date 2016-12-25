@@ -8,7 +8,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (StatusLineOpen, statusCreated, statusOK, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (contentType, headers, respond)
-import Hyper.Routing.ResourceRouter (fallbackTo, handler, resource)
+import Hyper.Routing.ResourceRouter (router, fallbackTo, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -23,7 +23,7 @@ app :: forall m req res rw c.
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = fallbackTo notFound (resource greetings)
+app = fallbackTo notFound (router greetings)
   where
     notFound =
       writeStatus statusNotFound
@@ -31,11 +31,12 @@ app = fallbackTo notFound (resource greetings)
       >=> closeHeaders
       >=> respond "Not Found"
     greetings =
-      { path: []
-      , "GET": handler (writeStatus statusOK
+      resource
+      { path = []
+      , "GET" = handler (writeStatus statusOK
                         >=> headers []
                         >=> respond "Hello!")
-      , "POST": handler (writeStatus statusCreated
+      , "POST" = handler (writeStatus statusCreated
                          >=> headers []
                          >=> respond "OK, I've saved that for ya.")
       }

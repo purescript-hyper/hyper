@@ -8,6 +8,7 @@ module Hyper.Routing.ResourceRouter ( Path
                                     , notSupported
                                     , resource
                                     , ResourceRecord
+                                    , router
                                     , ResourceRouter()
                                     , fallbackTo
                                     , linkTo
@@ -74,19 +75,32 @@ type ResourceRecord m gr pr c c' =
   , "POST" :: ResourceMethod pr m c c'
   }
 
-resource :: forall gr pr m req res c req' res' c'.
-            Applicative m =>
-            ResourceRecord
-            m
-            gr
-            pr
-            (Conn { url :: String, method :: Method | req } res c)
-            (Conn { url :: String, method :: Method | req' } res' c')
-         -> ResourceRouter
-            m
-            (Conn { url :: String, method :: Method | req } res c)
-            (Conn { url :: String, method :: Method | req' } res' c')
-resource r =
+resource
+  :: forall m req res c req' res' c'.
+     { path :: Unit
+     , "GET" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "POST" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     }
+resource =
+  { path: unit
+  , "GET": notSupported
+  , "POST": notSupported
+  }
+
+router
+  :: forall gr pr m req res c req' res' c'.
+     Applicative m =>
+     ResourceRecord
+     m
+     gr
+     pr
+     (Conn { url :: String, method :: Method | req } res c)
+     (Conn { url :: String, method :: Method | req' } res' c')
+  -> ResourceRouter
+     m
+     (Conn { url :: String, method :: Method | req } res c)
+     (Conn { url :: String, method :: Method | req' } res' c')
+router r =
   ResourceRouter result
   where
     handler' conn =

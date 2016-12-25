@@ -2,11 +2,13 @@
 -- _authorization_, illustrating the parts that can be custom
 -- to your application, and how you can leverage the type system
 -- to make sure authorization is properly checked.
+--
+-- It _does not_ feature type-safe routing, to keep the example
+-- focused on auth.
 module Main where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
-import Control.Alternative ((<|>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
@@ -18,11 +20,10 @@ import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
-import Hyper.HTML (li, ul, element_, p, text, h1, HTML)
-import Hyper.Method (Method)
+import Hyper.HTML (a, li, ul, element_, p, text, h1, HTML)
+import Hyper.Method (Method(GET))
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (linkTo, notSupported, resource, fallbackTo, handler)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -150,10 +151,7 @@ app :: forall e req res rw c.
              , authorization :: Unit
              | c
              })
-app =
-  -- We always check for authentication.
-  BasicAuth.withAuthentication userFromBasicAuth
-  >=> fallbackTo notFound (resource home <|> resource profile <|> resource admin)
+app = BasicAuth.withAuthentication userFromBasicAuth >=> router
     where
       notFound = htmlWithStatus
                  statusNotFound
@@ -161,30 +159,26 @@ app =
 
       homeView =
         element_ "section" [ h1 [] [text "Home"]
-                           , ul [] [ li [] [ linkTo profile [ text "Profile" ] ]
-                                   , li [] [ linkTo admin [ text "Administration" ] ]
+                           , ul [] [ li [] [ a [ Tuple "href" "/profile" ] [ text "Profile" ] ]
+                                   , li [] [ a [ Tuple "href" "/admin" ] [ text "Administration" ] ]
                                    ]
                            ]
 
-      home = { path: []
-             , "GET":
-               handler (htmlWithStatus statusOK homeView)
-             , "POST": notSupported
-             }
-
-      profile = { path: ["profile"]
-                , "GET": handler profileHandler
-                , "POST": notSupported
-                }
-
-      admin = { path: ["admin"]
+      router conn =
+        case Tuple conn.request.method conn.request.url of
+          Tuple GET "/" ->
+            htmlWithStatus statusOK homeView conn
+          Tuple GET "/profile" ->
+            profileHandler conn
+          Tuple GET "/admin" ->
               -- To use the admin handler, we must ensure that the user is
               -- authenticated and authorized as `Admin`.
-              , "GET": handler (BasicAuth.authenticated
-                                "Authorization Example"
-                                (authorized getAdminRole adminHandler))
-              , "POST": notSupported
-              }
+            BasicAuth.authenticated
+            "Authorization Example"
+            (authorized getAdminRole adminHandler)
+            conn
+          _ ->
+            notFound conn
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
