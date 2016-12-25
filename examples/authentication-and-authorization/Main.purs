@@ -35,12 +35,8 @@ htmlWithStatus
   -> HTML Unit
   -> Middleware
      m
-     (Conn { url :: String, method :: Method | req }
-           { writer :: rw StatusLineOpen | res }
-           c)
-     (Conn { url :: String, method :: Method | req }
-           { writer :: rw ResponseEnded | res }
-           c)
+     (Conn req { writer :: rw StatusLineOpen | res } c)
+     (Conn req { writer :: rw ResponseEnded | res } c)
 htmlWithStatus status x =
   writeStatus status
   >=> contentType textHTML
@@ -78,20 +74,12 @@ requireAdmin
      (Monad m, ResponseWriter rw m) =>
      (Middleware
       m
-      (Conn req
-            { writer :: rw StatusLineOpen | res }
-            { authentication :: Authorized Admin | c })
-      (Conn req
-            { writer :: rw ResponseEnded | res }
-            { authentication :: Authorized Admin | c }))
+      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Authorized Admin | c })
+      (Conn req { writer :: rw ResponseEnded | res } { authentication :: Authorized Admin | c }))
   -> Middleware
      m
-     (Conn req
-           { writer :: rw StatusLineOpen | res }
-           { authentication :: User | c })
-     (Conn req
-           { writer :: rw ResponseEnded | res }
-           { authentication :: User | c })
+     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: User | c })
+     (Conn req { writer :: rw ResponseEnded | res } { authentication :: User | c })
 requireAdmin mw conn =
   case conn.components.authentication of
     User "administrator" ->
@@ -112,12 +100,8 @@ profileHandler
      (Monad m, ResponseWriter rw m) =>
      Middleware
      m
-     (Conn { url :: String, method :: Method, headers :: StrMap String | req }
-           { writer :: rw StatusLineOpen | res }
-           { authentication :: Maybe User | c })
-     (Conn { url :: String, method :: Method, headers :: StrMap String | req }
-           { writer :: rw ResponseEnded | res }
-           { authentication :: Maybe User | c })
+     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
+     (Conn req { writer :: rw ResponseEnded | res } { authentication :: Maybe User | c })
 profileHandler conn =
   htmlWithStatus
   statusOK
@@ -142,12 +126,8 @@ adminHandler
      (Monad m, ResponseWriter rw m) =>
      Middleware
      m
-     (Conn { url :: String, method :: Method, headers :: StrMap String | req }
-           { writer :: rw StatusLineOpen | res }
-           { authentication :: Authorized Admin | c })
-     (Conn { url :: String, method :: Method, headers :: StrMap String | req }
-           { writer :: rw ResponseEnded | res }
-           { authentication :: Authorized Admin | c })
+     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Authorized Admin | c })
+     (Conn req { writer :: rw ResponseEnded | res } { authentication :: Authorized Admin | c })
 adminHandler conn =
   htmlWithStatus
   statusOK
