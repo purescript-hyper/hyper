@@ -9,6 +9,7 @@ import Control.Monad.Eff.Class (liftEff, class MonadEff)
 import Data.Function ((#))
 import Data.Functor (map, (<$>))
 import Data.Maybe (Maybe(Nothing, Just))
+import Data.Monoid ((<>))
 import Data.StrMap (StrMap)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
@@ -79,7 +80,7 @@ authenticated realm mw conn =
   case conn.components.authentication of
     Nothing ->
       writeStatus (Tuple 401 "Unauthorized") conn
-      >>= writeHeader (Tuple "WWW-Authenticate" "Basic realm=\" <> realm <> \"")
+      >>= writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
       >>= closeHeaders
       >>= respond "Please authenticate."
     Just auth ->
