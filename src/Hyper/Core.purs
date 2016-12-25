@@ -21,6 +21,9 @@ statusBadRequest = Tuple 400 "Bad Request"
 statusNotFound :: Status
 statusNotFound = Tuple 404 "Not Found"
 
+statusMethodNotAllowed :: Status
+statusMethodNotAllowed = Tuple 405 "Method Not Allowed"
+
 type Header = Tuple String String
 
 type Conn req res components =

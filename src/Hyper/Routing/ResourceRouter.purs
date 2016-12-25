@@ -10,7 +10,7 @@ module Hyper.Routing.ResourceRouter ( Path
                                     , ResourceRecord
                                     , router
                                     , ResourceRouter()
-                                    , fallbackTo
+                                    , runRouter
                                     , linkTo
                                     , formTo
                                     ) where
@@ -56,18 +56,32 @@ methodHandler :: forall m e x y.
 methodHandler (Routed mw _ _) = Just mw
 methodHandler (NotRouted _ _) = Nothing
 
-newtype ResourceRouter m c c' = ResourceRouter (Middleware m c (Maybe c'))
+data RoutingResult c
+  = RouteMatch c
+  | NotAllowed Method
+  | NotFound
+
+instance functorRoutingResult :: Functor RoutingResult where
+  map f =
+    case _ of
+      RouteMatch c -> RouteMatch (f c)
+      NotAllowed method -> NotAllowed method
+      NotFound -> NotFound
+
+newtype ResourceRouter m c c' = ResourceRouter (Middleware m c (RoutingResult c'))
 
 instance functorResourceRouter :: Functor m => Functor (ResourceRouter m c) where
   map f (ResourceRouter r) = ResourceRouter $ \conn -> map (map f) (r conn)
 
 instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
-  -- We only want to run 'g' if 'f' resulted in a 'Nothing'.
+  -- NOTE: We have strict evaluation, and we only want to run 'g' if 'f'
+  -- resulted in a `NotFound`.
   alt (ResourceRouter f) (ResourceRouter g) = ResourceRouter $ \conn -> do
     result <- f conn
     case result of
-      Just conn' -> pure (Just conn')
-      Nothing -> g conn
+      RouteMatch conn' -> pure (RouteMatch conn')
+      NotAllowed method -> pure (NotAllowed method)
+      NotFound -> g conn
 
 type ResourceRecord m gr pr c c' =
   { path :: Path
@@ -110,20 +124,23 @@ router r =
     result conn =
       if r.path == pathFromString conn.request.url
       then case handler' conn of
-        Just mw -> Just <$> mw conn
-        Nothing -> pure Nothing
-      else pure Nothing
+        Just mw -> RouteMatch <$> mw conn
+        Nothing -> pure (NotAllowed conn.request.method)
+      else pure NotFound
 
-fallbackTo :: forall m req req' res res' c c'.
-              Monad m =>
-              Middleware m (Conn req res c) (Conn req' res' c')
-              -> ResourceRouter m (Conn req res c) (Conn req' res' c')
-              -> Middleware m (Conn req res c) (Conn req' res' c')
-fallbackTo fallback (ResourceRouter rr) conn = do
+runRouter
+  :: forall m req req' res res' c c'.
+     Monad m =>
+     (Middleware m (Conn req res c) (Conn req' res' c'))
+     -> (Method -> Middleware m (Conn req res c) (Conn req' res' c'))
+     -> ResourceRouter m (Conn req res c) (Conn req' res' c')
+     -> Middleware m (Conn req res c) (Conn req' res' c')
+runRouter onNotFound onNotAllowed (ResourceRouter rr) conn = do
   result <- rr conn
   case result of
-    Just conn' -> pure conn'
-    Nothing -> fallback conn
+    RouteMatch conn' -> pure conn'
+    NotAllowed method -> onNotAllowed method conn
+    NotFound -> onNotFound conn
 
 linkTo :: forall m c c' ms.
           { path :: Path
