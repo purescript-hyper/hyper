@@ -16,12 +16,12 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Authentication (setAuthentication)
+import Hyper.Authorization (authorized)
 import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
 import Hyper.HTML.DSL (HTML, li, ul, linkTo, h1, p, text, html)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (headers, respond, contentType)
+import Hyper.Response (contentType)
 import Hyper.Router (notSupported, resource, fallbackTo, handler)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
@@ -49,48 +49,12 @@ type Name = String
 data User = User Name
 
 
--- Authorization is specific to this example, and wraps the authenticated
--- User, in conn.components.authentication, with an Authorized value holding
--- the role.
+-- In this example there is a single authorization role that users can have.
+--
+-- Given that roles are static, you can represent each role with a distinct
+-- type (instead of having a single type with multiple constructors) to get
+-- compile-time errors when checks are missing.
 data Admin = Admin
-data Authorized r = Authorized User r
-
-
--- This could be a function checking the username/password in a database.
-userFromBasicAuth :: forall e. Tuple String String -> Aff e (Maybe User)
-userFromBasicAuth =
-  case _ of
-    Tuple "admin" "admin" -> pure (Just (User "administrator"))
-    Tuple "guest" "guest" -> pure (Just (User "guest"))
-    _ -> pure Nothing
-
-
--- A middleware that wraps another middleware, checking that the
--- authenticated user has role `Admin`. In this example it simply
--- checks the user name, but in a real application you would
--- likely do a database lookup or something like that.
-requireAdmin
-  :: forall m req res rw c.
-     (Monad m, ResponseWriter rw m) =>
-     (Middleware
-      m
-      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Authorized Admin | c })
-      (Conn req { writer :: rw ResponseEnded | res } { authentication :: Authorized Admin | c }))
-  -> Middleware
-     m
-     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: User | c })
-     (Conn req { writer :: rw ResponseEnded | res } { authentication :: User | c })
-requireAdmin mw conn =
-  case conn.components.authentication of
-    User "administrator" ->
-      conn
-      # setAuthentication (Authorized conn.components.authentication Admin)
-      # mw
-      # map (setAuthentication conn.components.authentication)
-    _ ->
-      writeStatus (Tuple 403 "Forbidden") conn
-      >>= headers []
-      >>= respond "You are not authorized."
 
 
 -- A handler that does not require an authenticated user, but displays the
@@ -117,26 +81,54 @@ profileHandler conn =
           p [] (text "You are not logged in.")
 
 
--- A handler that requires a `User` authorized as `Admin`. Note that
--- even if the actual authorization check does not happen here, we
--- cannot use this handler without doing authorization properly
--- somewhere before in the middleware chain.
+-- A handler that requires a user authorized as `Admin`. Note that
+-- even though the actual authentication and authorization checks are
+-- not made here, we can be confident they have been made somewhere
+-- before in the middleware chain. This allows you to safely and
+-- confidently refactor and evolve the application, without having
+-- to scatter authentication and authorization checks all over the
+-- place . You simply mark the requirement in the type signature,
+-- as seen below.
 adminHandler
   :: forall m req res rw c.
      (Monad m, ResponseWriter rw m) =>
      Middleware
      m
-     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Authorized Admin | c })
-     (Conn req { writer :: rw ResponseEnded | res } { authentication :: Authorized Admin | c })
+     (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
+     (Conn req { writer :: rw ResponseEnded | res } { authorization :: Admin, authentication :: User | c })
 adminHandler conn =
   htmlWithStatus
   statusOK
   (view conn.components.authentication)
   conn
   where
-    view (Authorized (User name) Admin) = do
+    view (User name) = do
       h1 [] (text "Administration")
       p [] (text ("Here be dragons, " <> name <> "."))
+
+
+-- This could be a function checking the username/password in a database
+-- in your application.
+userFromBasicAuth :: forall e. Tuple String String -> Aff e (Maybe User)
+userFromBasicAuth =
+  case _ of
+    Tuple "admin" "admin" -> pure (Just (User "admin"))
+    Tuple "guest" "guest" -> pure (Just (User "guest"))
+    _ -> pure Nothing
+
+-- This could be a function checking a database, or some session store, if the
+-- authenticated user has role `Admin`.
+getAdminRole :: forall m req res c.
+                Monad m =>
+                Conn
+                req
+                res
+                { authentication :: User , authorization :: Unit | c }
+             -> m (Maybe Admin)
+getAdminRole conn =
+  case conn.components.authentication of
+    User "admin" -> pure (Just Admin)
+    _ -> pure Nothing
 
 
 app :: forall e req res rw c.
@@ -145,10 +137,16 @@ app :: forall e req res rw c.
        (Aff (buffer :: BUFFER | e))
        (Conn { url :: String, method :: Method, headers :: StrMap String | req }
              { writer :: rw StatusLineOpen | res }
-             { authentication :: Unit | c })
+             { authentication :: Unit
+             , authorization :: Unit
+             | c
+             })
        (Conn { url :: String, method :: Method, headers :: StrMap String | req }
              { writer :: rw ResponseEnded | res }
-             { authentication :: Maybe User | c })
+             { authentication :: Maybe User
+             , authorization :: Unit
+             | c
+             })
 app =
   -- We always check for authentication.
   BasicAuth.withAuthentication userFromBasicAuth
@@ -178,18 +176,18 @@ app =
       admin = { path: ["admin"]
               -- To use the admin handler, we must ensure that the user is
               -- authenticated and authorized as `Admin`.
-              , "GET": handler (BasicAuth.authenticated (requireAdmin adminHandler))
+              , "GET": handler (BasicAuth.authenticated
+                                "Authorization Example"
+                                (authorized getAdminRole adminHandler))
               , "POST": notSupported
               }
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
-    -- Some nice console printing when the server starts, and if a request
-    -- fails (in this case when the request body is unreadable for some reason).
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
-    components = { authentication: unit }
-
-  -- Let's run it.
+    components = { authentication: unit
+                 , authorization: unit
+                 }
   in runServer defaultOptions onListening onRequestError components app

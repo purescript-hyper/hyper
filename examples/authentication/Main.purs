@@ -37,6 +37,6 @@ main =
       >>= html (p [] (text ("You are authenticated as " <> name <> ".")))
 
     app = BasicAuth.withAuthentication userFromBasicAuth
-          >=> BasicAuth.authenticated myProfilePage
+          >=> BasicAuth.authenticated "Authentication Example" myProfilePage
     components = { authentication: unit }
   in runServer defaultOptions onListening onRequestError components app

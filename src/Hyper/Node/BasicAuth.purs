@@ -19,6 +19,8 @@ import Hyper.Response (respond)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
 
+type Realm = String
+
 withAuthentication
   :: forall m e req res c t.
      MonadEff (buffer :: BUFFER | e) m =>
@@ -52,7 +54,8 @@ withAuthentication mapper conn = do
 authenticated
   :: forall m req res c rw t.
      (Monad m, ResponseWriter rw m) =>
-     Middleware
+     Realm
+  -> Middleware
       m
       (Conn
        req
@@ -72,11 +75,11 @@ authenticated
       req
       { writer :: rw ResponseEnded | res }
       { authentication :: Maybe t | c })
-authenticated mw conn =
+authenticated realm mw conn =
   case conn.components.authentication of
     Nothing ->
       writeStatus (Tuple 401 "Unauthorized") conn
-      >>= writeHeader (Tuple "WWW-Authenticate" "Basic realm=\"Hyper Authentication Example\"")
+      >>= writeHeader (Tuple "WWW-Authenticate" "Basic realm=\" <> realm <> \"")
       >>= closeHeaders
       >>= respond "Please authenticate."
     Just auth ->
