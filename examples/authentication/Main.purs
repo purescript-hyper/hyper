@@ -1,7 +1,7 @@
 module Main where
 
-import Hyper.Node.BasicAuth as BasicAuth
 import Prelude
+import Hyper.Node.BasicAuth as BasicAuth
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
