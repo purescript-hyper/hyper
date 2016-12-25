@@ -11,6 +11,7 @@ module Hyper.Routing.ResourceRouter ( Path
                                     , router
                                     , ResourceRouter()
                                     , runRouter
+                                    , defaultRouterFallbacks
                                     , linkTo
                                     , formTo
                                     ) where
@@ -22,9 +23,10 @@ import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (Middleware, Conn)
+import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, statusNotFound, writeStatus, statusMethodNotAllowed, Middleware, Conn)
 import Hyper.HTML (form, a, HTML)
 import Hyper.Method (Method(POST, GET))
+import Hyper.Response (respond, headers)
 
 type Path = Array String
 
@@ -128,19 +130,42 @@ router r =
         Nothing -> pure (NotAllowed conn.request.method)
       else pure NotFound
 
+type RouterFallbacks m c c' =
+  { onNotFound :: Middleware m c c'
+  , onMethodNotAllowed :: Method -> Middleware m c c'
+  }
+
+defaultRouterFallbacks
+  :: forall m rw req res c.
+     (Monad m, ResponseWriter rw m) =>
+     RouterFallbacks
+     m
+     (Conn req { writer :: rw StatusLineOpen | res } c)
+     (Conn req { writer :: rw ResponseEnded | res } c)
+defaultRouterFallbacks =
+  { onNotFound:
+    writeStatus statusNotFound
+    >=> headers []
+    >=> respond "Not Found"
+  , onMethodNotAllowed:
+    \method ->
+    writeStatus statusMethodNotAllowed
+    >=> headers []
+    >=> respond ("Method " <> show method <> " not allowed.")
+  }
+
 runRouter
-  :: forall m req req' res res' c c'.
+  :: forall m c c'.
      Monad m =>
-     (Middleware m (Conn req res c) (Conn req' res' c'))
-     -> (Method -> Middleware m (Conn req res c) (Conn req' res' c'))
-     -> ResourceRouter m (Conn req res c) (Conn req' res' c')
-     -> Middleware m (Conn req res c) (Conn req' res' c')
-runRouter onNotFound onNotAllowed (ResourceRouter rr) conn = do
+     RouterFallbacks m c c'
+     -> ResourceRouter m c c'
+     -> Middleware m c c'
+runRouter fallbacks (ResourceRouter rr) conn = do
   result <- rr conn
   case result of
     RouteMatch conn' -> pure conn'
-    NotAllowed method -> onNotAllowed method conn
-    NotFound -> onNotFound conn
+    NotAllowed method -> fallbacks.onMethodNotAllowed method conn
+    NotFound -> fallbacks.onNotFound conn
 
 linkTo :: forall m c c' ms.
           { path :: Path

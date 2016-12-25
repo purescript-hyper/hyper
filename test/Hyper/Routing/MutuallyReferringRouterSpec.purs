@@ -5,11 +5,11 @@ import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(..))
-import Hyper.Core (statusMethodNotAllowed, statusOK, StatusLineOpen, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
+import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
+import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -38,20 +38,8 @@ app :: forall m req res rw c.
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = runRouter notFound notAllowed (router about <|> router contact)
+app = runRouter defaultRouterFallbacks (router about <|> router contact)
   where
-    notFound =
-      writeStatus statusNotFound
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond (text "Not Found")
-
-    notAllowed method =
-      writeStatus statusMethodNotAllowed
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond ("Method \"" <> show method <> "\" is not allowed")
-
     about :: TestResource m rw Supported Unsupported
     about =
       resource

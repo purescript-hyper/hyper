@@ -7,12 +7,12 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (statusMethodNotAllowed, StatusLineOpen, statusOK, statusNotFound, writeStatus, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
+import Hyper.Core (StatusLineOpen, statusOK, writeStatus, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
 import Hyper.HTML (element_, h1, p, text)
 import Hyper.Method (Method)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (router, linkTo, resource, runRouter, handler)
+import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, resource, runRouter, handler)
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
@@ -27,9 +27,7 @@ app :: forall m req res rw c.
              c)
 app =
   runRouter
-  -- On routing miss:
-  notFound
-  notAllowed
+  defaultRouterFallbacks
   -- Resources:
   (router home <|> router about)
     where
@@ -38,16 +36,6 @@ app =
         >=> contentType textHTML
         >=> closeHeaders
         >=> respond x
-
-      notFound =
-        htmlWithStatus
-        statusNotFound
-        (text "Not Found")
-
-      notAllowed method =
-        htmlWithStatus
-        statusMethodNotAllowed
-        (text ("Method Not Allowed: " <> show method))
 
       homeView =
         element_ "section" [ h1 [] [ text "Welcome!" ]

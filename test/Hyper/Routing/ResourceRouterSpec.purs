@@ -4,12 +4,11 @@ import Prelude
 import Control.Alternative ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.Maybe (Maybe(Just))
-import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (statusMethodNotAllowed, StatusLineOpen, statusCreated, statusOK, closeHeaders, statusNotFound, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
+import Hyper.Core (StatusLineOpen, statusCreated, statusOK, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
-import Hyper.Response (contentType, headers, respond)
-import Hyper.Routing.ResourceRouter (runRouter, router, handler, resource)
+import Hyper.Response (headers, respond)
+import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, runRouter, router, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -24,20 +23,8 @@ app :: forall m req res rw c.
   (Conn { url :: String, method :: Method | req }
         { writer :: rw ResponseEnded | res }
         c)
-app = runRouter notFound notAllowed (router index <|> router greetings)
+app = runRouter defaultRouterFallbacks (router index <|> router greetings)
   where
-    notFound =
-      writeStatus statusNotFound
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond "Not Found"
-
-    notAllowed method =
-      writeStatus statusMethodNotAllowed
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond ("Method \"" <> show method <> "\" is not allowed")
-
     index =
       resource
       { path = []
