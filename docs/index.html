@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 4ebfb58
+  Version fe5e5d8
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -133,7 +133,7 @@ parseForm conn = ...</code></pre>
   , &quot;GET&quot; = handler (html (h1 [] (text &quot;Welcome!&quot;)))
   }</code></pre>
 <h3 id="resource-routers">Resource Routers</h3>
-<p>The <code>resource</code> function creates a <code>ResourceRouter</code> that tries to route HTTP requests to handlers in its resource. It should also add the application resources as a type in the components of the Conn, giving subsequent middleware access to that information. <em>The encoding of resource types in the Conn is NOT supported yet.</em></p>
+<p>The <code>router</code> function creates a <code>ResourceRouter</code> out of a resource record. The router tries to route HTTP requests to handlers in its resource. It should also add the application resources as a type in the components of the Conn, giving subsequent middleware access to that information. <em>The encoding of resource types in the Conn is NOT supported yet.</em></p>
 <pre class="purescript"><code>app = runRouter defaultRouterFallbacks (router index)</code></pre>
 <p>The <code>ResourceRouter</code> provides an instance for <code>Alt</code>, making it possible to chain resources and have them try to match the request in order.</p>
 <pre class="purescript"><code>app =

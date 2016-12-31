@@ -28,11 +28,11 @@ index =
 
 ## Resource Routers
 
-The `resource` function creates a `ResourceRouter` that tries to route HTTP
-requests to handlers in its resource. It should also add the application
-resources as a type in the components of the Conn, giving subsequent middleware
-access to that information. *The encoding of resource types in the Conn is NOT
-supported yet.*
+The `router` function creates a `ResourceRouter` out of a resource record. The
+router tries to route HTTP requests to handlers in its resource. It should
+also add the application resources as a type in the components of the Conn,
+giving subsequent middleware access to that information. *The encoding of
+resource types in the Conn is NOT supported yet.*
 
 ```purescript
 app = runRouter defaultRouterFallbacks (router index)
