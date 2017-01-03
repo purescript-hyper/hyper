@@ -1,5 +1,11 @@
 module Hyper.Core where
 
+import Control.Alt (class Alt)
+import Control.Applicative (pure)
+import Control.Monad (class Monad, bind)
+import Data.Function ((<<<), ($))
+import Data.Functor (map, class Functor)
+import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (class Newtype)
 import Data.Tuple (Tuple(Tuple))
 
@@ -70,3 +76,36 @@ class ResponseWriter rw m | rw -> m where
   closeHeaders :: ResponseStateTransition m rw HeadersOpen BodyOpen
   send :: String -> ResponseStateTransition m rw BodyOpen BodyOpen
   end :: ResponseStateTransition m rw BodyOpen ResponseEnded
+
+newtype TryMiddleware m c c' = TryMiddleware (Middleware m c (Maybe c'))
+
+instance functorTryMiddleware :: Functor m => Functor (TryMiddleware m c) where
+  map f (TryMiddleware mw) = TryMiddleware (map (map f) <<< mw)
+
+instance altTryMiddleware :: Monad m => Alt (TryMiddleware m c) where
+  -- NOTE: We have strict evaluation, and we only want to run 'm2' if 'm1'
+  -- resulted in a `Nothing`.
+  alt (TryMiddleware m1) (TryMiddleware m2) =
+    TryMiddleware $ \conn -> do
+      result <- m1 conn
+      case result of
+        Just conn' -> pure (Just conn')
+        Nothing -> m2 conn
+
+try
+  :: forall m c c'.
+     Middleware m c (Maybe c')
+  -> TryMiddleware m c c'
+try = TryMiddleware
+
+fallbackTo
+  :: forall m c c'.
+     Monad m =>
+     Middleware m c c'
+  -> TryMiddleware m c c'
+  -> Middleware m c c'
+fallbackTo fallback (TryMiddleware mw) conn = do
+  result <- mw conn
+  case result of
+    Just conn' -> pure conn'
+    Nothing -> fallback conn
