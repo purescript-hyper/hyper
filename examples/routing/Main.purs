@@ -7,19 +7,17 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.MediaType.Common (textHTML)
-import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (closeHeaders, statusMethodNotAllowed, statusNotFound, writeStatus, StatusLineOpen, statusOK, class ResponseWriter, ResponseEnded, Conn, Middleware, Port(Port))
-import Hyper.HTML (asString, element_, h1, p, text)
+import Hyper.Core (closeHeaders, writeStatus, StatusLineOpen, statusOK, class ResponseWriter, ResponseEnded, Conn, Middleware, Port(Port))
+import Hyper.HTML (element_, h1, p, text)
 import Hyper.Method (Method)
 import Hyper.Node.Server (ResponseBody, defaultOptions, runServer)
 import Hyper.Response (class Response, respond, contentType)
-import Hyper.Routing.ResourceRouter (router, linkTo, resource, runRouter, handler)
+import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, resource, runRouter, handler)
 import Node.Buffer (BUFFER)
-import Node.Encoding (Encoding(UTF8))
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
-       (Monad m, ResponseWriter rw m ResponseBody, Response m (Tuple String Encoding) ResponseBody) =>
+       (Monad m, ResponseWriter rw m ResponseBody, Response m String ResponseBody) =>
        Middleware
        m
        (Conn { url :: String, method :: Method | req }
@@ -30,25 +28,16 @@ app :: forall m req res rw c.
              c)
 app =
   runRouter
-  { onNotFound:
-    writeStatus statusNotFound
-    >=> closeHeaders
-    >=> respond (Tuple "Not Found" UTF8)
-  , onMethodNotAllowed:
-    \method ->
-    writeStatus statusMethodNotAllowed
-    >=> closeHeaders
-    >=> respond (Tuple ("Method " <> show method <> " not allowed.") UTF8)
-  }
+  defaultRouterFallbacks
 
   -- Resources:
   (router home <|> router about)
     where
-      htmlWithStatus status x =
+      htmlWithStatus status doc =
         writeStatus status
         >=> contentType textHTML
         >=> closeHeaders
-        >=> respond (Tuple (asString x) UTF8)
+        >=> respond doc
 
       homeView =
         element_ "section" [ h1 [] [ text "Welcome!" ]
