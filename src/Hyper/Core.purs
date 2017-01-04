@@ -70,7 +70,7 @@ type ResponseStateTransition m rw from to =
 
 -- | The operations that a response writer, provided by the server backend,
 -- | must support.
-class ResponseWriter rw b m | rw -> b where
+class ResponseWriter rw m b | rw -> b where
   writeStatus :: Status -> ResponseStateTransition m rw StatusLineOpen HeadersOpen
   writeHeader :: Header -> ResponseStateTransition m rw HeadersOpen HeadersOpen
   closeHeaders :: ResponseStateTransition m rw HeadersOpen BodyOpen

@@ -137,7 +137,7 @@ type RouterFallbacks m c c' =
 
 defaultRouterFallbacks
   :: forall m rw b req res c.
-     (Monad m, Response m String b, ResponseWriter rw b m) =>
+     (Monad m, Response m String b, ResponseWriter rw m b) =>
      RouterFallbacks
      m
      (Conn req { writer :: rw StatusLineOpen | res } c)

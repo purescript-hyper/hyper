@@ -2,19 +2,19 @@ module Hyper.Routing.ResourceRouterSpec where
 
 import Prelude
 import Control.Alternative ((<|>))
-import Control.Monad.Eff.Console (CONSOLE)
 import Data.Maybe (Maybe(Just))
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (StatusLineOpen, statusCreated, statusOK, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (class Response, headers, respond)
 import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, runRouter, router, handler, resource)
-import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
+import Hyper.Test.TestServer (StringBody, testStringBody, testResponseWriter, testStatus, testServer)
+import Node.Buffer (BUFFER)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-app :: forall m req res rw b c.
-  (Monad m, Response m String b, ResponseWriter rw b m) =>
+app :: forall m req res rw c.
+  (Monad m, Response m String StringBody, ResponseWriter rw m StringBody) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
@@ -44,7 +44,7 @@ app = runRouter defaultRouterFallbacks (router index <|> router greetings)
       }
 
 
-spec :: forall e. Spec (console :: CONSOLE | e) Unit
+spec :: forall e. Spec (buffer :: BUFFER | e) Unit
 spec = do
   describe "Hyper.Router" do
     it "can route a GET for the root resource" do
@@ -57,7 +57,7 @@ spec = do
         }
         # app
         # testServer
-      testBody conn `shouldEqual` "Hello!"
+      testStringBody conn `shouldEqual` "Hello!"
 
     it "can route a POST for the root resource" do
       conn ←
@@ -70,7 +70,7 @@ spec = do
             # app
             # testServer
       testStatus conn `shouldEqual` Just (Tuple 201 "Created")
-      testBody conn `shouldEqual` "OK, I've saved that for ya."
+      testStringBody conn `shouldEqual` "OK, I've saved that for ya."
 
     it "responds for non-allowed methods in existing resources" do
       conn ←

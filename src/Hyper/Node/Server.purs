@@ -86,7 +86,7 @@ withState s conn =
        HttpResponse _ r → conn { response = (conn.response { writer = HttpResponse s r }) }
 
 
-instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse ResponseBody m where
+instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
   writeStatus (Tuple code reason) conn =
     case conn.response.writer of
       HttpResponse _ r → do

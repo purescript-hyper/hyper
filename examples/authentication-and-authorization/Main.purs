@@ -31,7 +31,7 @@ import Node.HTTP (HTTP)
 -- Helper for responding with HTML.
 htmlWithStatus
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
      Status
   -> HTML
   -> Middleware
@@ -62,7 +62,7 @@ data Admin = Admin
 -- name if the user _is_ authenticated.
 profileHandler
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
@@ -93,7 +93,7 @@ profileHandler conn =
 -- as seen below.
 adminHandler
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
@@ -136,7 +136,7 @@ getAdminRole conn =
 
 
 app :: forall m e req res rw b c.
-       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw b m, Response m String b) =>
+       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw m b, Response m String b) =>
        Middleware
        m
        (Conn { url :: String, method :: Method, headers :: StrMap String | req }

@@ -19,7 +19,7 @@ import Node.Encoding (Encoding(UTF8))
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
-       (Monad m, ResponseWriter rw ResponseBody m, Response m (Tuple String Encoding) ResponseBody) =>
+       (Monad m, ResponseWriter rw m ResponseBody, Response m (Tuple String Encoding) ResponseBody) =>
        Middleware
        m
        (Conn { url :: String, method :: Method | req }

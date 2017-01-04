@@ -8,7 +8,7 @@ import Data.Tuple (fst, Tuple(Tuple))
 import Hyper.Core (statusOK, writeStatus)
 import Hyper.Node.BasicAuth (authenticated, withAuthentication)
 import Hyper.Response (headers, respond)
-import Hyper.Test.TestServer (testHeaders, testBody, testServer, testResponseWriter)
+import Hyper.Test.TestServer (testHeaders, testStringBody, testServer, testResponseWriter)
 import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -68,7 +68,7 @@ spec =
                 }
                 # authenticated "Test" respondUserName
                 # testServer
-        testBody conn `shouldEqual` "Alice"
+        testStringBody conn `shouldEqual` "Alice"
 
       it "sends WWW-Authenticate header when no authentication is available" do
         conn <- { request: {}
@@ -78,4 +78,4 @@ spec =
                 # authenticated "Test" respondUserName
                 # testServer
         testHeaders conn `shouldEqual` [Tuple "WWW-Authenticate" "Basic realm=\"Test\""]
-        testBody conn `shouldEqual` "Please authenticate."
+        testStringBody conn `shouldEqual` "Please authenticate."

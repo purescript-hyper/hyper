@@ -1,7 +1,6 @@
 module Hyper.Routing.MutuallyReferringRouterSpec where
 
 import Prelude
-import Hyper.HTML as HTML
 import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
@@ -9,9 +8,10 @@ import Data.Tuple (Tuple(..))
 import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
-import Hyper.Response (respond, contentType)
+import Hyper.Node.Assertions (bodyShouldEqual)
+import Hyper.Response (class Response, respond, contentType)
 import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
-import Hyper.Test.TestServer (TestResponse, testResponseWriter, testBody, testHeaders, testServer)
+import Hyper.Test.TestServer (StringBody(StringBody), testStringBody, TestResponse, testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -21,8 +21,8 @@ import Test.Spec.Assertions (shouldEqual)
 -- used in this test suite.
 
 type TestResource m rw gr pr =
-  forall req res c.
-  (Monad m, ResponseWriter rw String m) =>
+  forall req res c b.
+  (Monad m, ResponseWriter rw m b) =>
   ResourceRecord
   m
   gr
@@ -31,8 +31,8 @@ type TestResource m rw gr pr =
   (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 
 
-app :: forall m req res rw c.
-  (Monad m, ResponseWriter rw String m) =>
+app :: forall m req res rw b c.
+  (Monad m, ResponseWriter rw m b, Response m String b) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
@@ -51,7 +51,7 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
-                         >>= respond (HTML.asString (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"])))
+                         >>= respond (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"]))
       }
 
     contact :: TestResource m rw Supported Unsupported
@@ -62,11 +62,16 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
                           writeStatus statusOK conn
                           >>= contentType textHTML
                           >>= closeHeaders
-                          >>= respond (HTML.asString (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"])))
+                          >>= respond (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"]))
       }
 
 
-getResponse :: forall m. Monad m => Method -> String -> m (TestResponse String)
+getResponse
+  :: forall m.
+     (Monad m, Response m String StringBody) =>
+     Method ->
+     String ->
+     m (TestResponse StringBody)
 getResponse method url =
   let conn = { request: { method: method
                         , url: url
@@ -83,9 +88,9 @@ spec = do
     it "can linkTo an existing route" do
       response <- getResponse GET "about"
       testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
-      testBody response `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
+      testStringBody response `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
 
     it "can linkTo another existing route" do
       response <- getResponse GET "contact"
       testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
-      testBody response `shouldEqual` "<a href=\"/about\">About Me</a>"
+      testStringBody response `shouldEqual` "<a href=\"/about\">About Me</a>"

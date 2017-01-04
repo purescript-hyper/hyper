@@ -20,7 +20,7 @@ withAuthorization a conn =
 
 authorized
   :: forall a m req res rw b c.
-     (Monad m, Response m String b, ResponseWriter rw b m) =>
+     (Monad m, Response m String b, ResponseWriter rw m b) =>
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Unit | c } -> m (Maybe a))
   -> (Middleware
       m

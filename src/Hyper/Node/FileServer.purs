@@ -23,7 +23,7 @@ import Node.Path (FilePath)
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
   :: forall m e rw b req res c.
-     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response m Buffer b, ResponseWriter rw b m) =>
+     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response m Buffer b, ResponseWriter rw m b) =>
      FilePath
   -> Middleware
      m

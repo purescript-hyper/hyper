@@ -9,7 +9,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, Conn, BodyOpen, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
 headers :: forall t m req res rw b c.
-           (Traversable t, Monad m, ResponseWriter rw b m) =>
+           (Traversable t, Monad m, ResponseWriter rw m b) =>
            t Header
         -> Middleware
            m
@@ -22,7 +22,7 @@ headers hs conn = do
     writeOne c header = writeHeader header c
 
 contentType :: forall m req res rw b c.
-               (Monad m, ResponseWriter rw b m) =>
+               (Monad m, ResponseWriter rw m b) =>
                MediaType
             -> Middleware
                m
@@ -33,11 +33,13 @@ contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 class Response m r t | r -> t where
   toResponse :: r -> m t
 
+{-
 instance responseString :: Monad m => Response m String String where
   toResponse = pure <<< id
+-}
 
 respond :: forall r m req res rw b c.
-           (Monad m, Response m r b, ResponseWriter rw b m) =>
+           (Monad m, Response m r b, ResponseWriter rw m b) =>
            r
         -> Middleware
            m
