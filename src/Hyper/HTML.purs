@@ -3,6 +3,7 @@ module Hyper.HTML
        , HTML
        , AttrName
        , Attr
+       , asString
        , element
        , element_
        , text
@@ -42,25 +43,23 @@ data HTML
 
 
 -- TODO: Escape HTML
-instance responseElement :: Response HTML where
-  toResponse =
-    case _ of
-      Element tagName attrs children ->
-        let
-          printAttr (Tuple attrName value) = " " <> attrName <> "=\"" <> value <> "\""
-          attrsStr = if null attrs
-                       then ""
-                       else fold (map printAttr attrs)
-          startTag = "<" <> tagName <> attrsStr <> ">"
-          endTag = "</" <> tagName <> ">"
-        in
-         startTag
-         <>
-         fold (map toResponse children)
-         <>
-         endTag
-      Text s -> s
+asString :: HTML -> String
+asString =
+  case _ of
+    Element tagName attrs children ->
+      let
+        printAttr (Tuple attrName value) = " " <> attrName <> "=\"" <> value <> "\""
+        attrsStr = if null attrs
+                   then ""
+                   else fold (map printAttr attrs)
+        startTag = "<" <> tagName <> attrsStr <> ">"
+        endTag = "</" <> tagName <> ">"
+      in startTag <> fold (map asString children) <> endTag
+    Text s -> s
 
+
+instance responseElement :: Response m String t => Response m HTML t where
+  toResponse = toResponse <<< asString
 
 -- | Create an HTML text.
 text :: String -> HTML

@@ -9,8 +9,8 @@ module Main where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
-import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
+import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -23,15 +23,15 @@ import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound
 import Hyper.HTML (a, li, ul, element_, p, text, h1, HTML)
 import Hyper.Method (Method(GET))
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (respond, contentType)
+import Hyper.Response (class Response, respond, contentType)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
 
 -- Helper for responding with HTML.
 htmlWithStatus
-  :: forall m req res rw c.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall m req res rw b c.
+     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
      Status
   -> HTML
   -> Middleware
@@ -61,8 +61,8 @@ data Admin = Admin
 -- A handler that does not require an authenticated user, but displays the
 -- name if the user _is_ authenticated.
 profileHandler
-  :: forall m req res rw c.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall m req res rw b c.
+     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
@@ -92,8 +92,8 @@ profileHandler conn =
 -- place . You simply mark the requirement in the type signature,
 -- as seen below.
 adminHandler
-  :: forall m req res rw c.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall m req res rw b c.
+     (Monad m, ResponseWriter rw b m, Response m HTML b) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
@@ -112,7 +112,7 @@ adminHandler conn =
 
 -- This could be a function checking the username/password in a database
 -- in your application.
-userFromBasicAuth :: forall e. Tuple String String -> Aff e (Maybe User)
+userFromBasicAuth :: forall m e. MonadAff e m => Tuple String String -> m (Maybe User)
 userFromBasicAuth =
   case _ of
     Tuple "admin" "admin" -> pure (Just (User "admin"))
@@ -135,10 +135,10 @@ getAdminRole conn =
     _ -> pure Nothing
 
 
-app :: forall e req res rw c.
-       (ResponseWriter rw (Aff (buffer :: BUFFER | e))) =>
+app :: forall m e req res rw b c.
+       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw b m, Response m String b) =>
        Middleware
-       (Aff (buffer :: BUFFER | e))
+       m
        (Conn { url :: String, method :: Method, headers :: StrMap String | req }
              { writer :: rw StatusLineOpen | res }
              { authentication :: Unit

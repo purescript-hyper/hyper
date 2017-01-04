@@ -70,11 +70,11 @@ type ResponseStateTransition m rw from to =
 
 -- | The operations that a response writer, provided by the server backend,
 -- | must support.
-class ResponseWriter rw m | rw -> m where
+class ResponseWriter rw b m | rw -> b where
   writeStatus :: Status -> ResponseStateTransition m rw StatusLineOpen HeadersOpen
   writeHeader :: Header -> ResponseStateTransition m rw HeadersOpen HeadersOpen
   closeHeaders :: ResponseStateTransition m rw HeadersOpen BodyOpen
-  send :: String -> ResponseStateTransition m rw BodyOpen BodyOpen
+  send :: b -> ResponseStateTransition m rw BodyOpen BodyOpen
   end :: ResponseStateTransition m rw BodyOpen ResponseEnded
 
 newtype TryMiddleware m c c' = TryMiddleware (Middleware m c (Maybe c'))

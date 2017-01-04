@@ -7,16 +7,19 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (StatusLineOpen, statusOK, writeStatus, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
-import Hyper.HTML (element_, h1, p, text)
+import Data.Tuple (Tuple(Tuple))
+import Hyper.Core (closeHeaders, statusMethodNotAllowed, statusNotFound, writeStatus, StatusLineOpen, statusOK, class ResponseWriter, ResponseEnded, Conn, Middleware, Port(Port))
+import Hyper.HTML (asString, element_, h1, p, text)
 import Hyper.Method (Method)
-import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (respond, contentType)
-import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, resource, runRouter, handler)
+import Hyper.Node.Server (ResponseBody, defaultOptions, runServer)
+import Hyper.Response (class Response, respond, contentType)
+import Hyper.Routing.ResourceRouter (router, linkTo, resource, runRouter, handler)
+import Node.Buffer (BUFFER)
+import Node.Encoding (Encoding(UTF8))
 import Node.HTTP (HTTP)
 
 app :: forall m req res rw c.
-       (Monad m, ResponseWriter rw m) =>
+       (Monad m, ResponseWriter rw ResponseBody m, Response m (Tuple String Encoding) ResponseBody) =>
        Middleware
        m
        (Conn { url :: String, method :: Method | req }
@@ -27,7 +30,17 @@ app :: forall m req res rw c.
              c)
 app =
   runRouter
-  defaultRouterFallbacks
+  { onNotFound:
+    writeStatus statusNotFound
+    >=> closeHeaders
+    >=> respond (Tuple "Not Found" UTF8)
+  , onMethodNotAllowed:
+    \method ->
+    writeStatus statusMethodNotAllowed
+    >=> closeHeaders
+    >=> respond (Tuple ("Method " <> show method <> " not allowed.") UTF8)
+  }
+
   -- Resources:
   (router home <|> router about)
     where
@@ -35,7 +48,7 @@ app =
         writeStatus status
         >=> contentType textHTML
         >=> closeHeaders
-        >=> respond x
+        >=> respond (Tuple (asString x) UTF8)
 
       homeView =
         element_ "section" [ h1 [] [ text "Welcome!" ]
@@ -62,7 +75,7 @@ app =
                  }
 
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     -- Some nice console printing when the server starts, and if a request

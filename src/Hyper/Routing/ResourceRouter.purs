@@ -26,7 +26,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, statusNotFound, writeStatus, statusMethodNotAllowed, Middleware, Conn)
 import Hyper.HTML (form, a, HTML)
 import Hyper.Method (Method(POST, GET))
-import Hyper.Response (respond, headers)
+import Hyper.Response (class Response, respond, headers)
 
 type Path = Array String
 
@@ -136,8 +136,8 @@ type RouterFallbacks m c c' =
   }
 
 defaultRouterFallbacks
-  :: forall m rw req res c.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall m rw b req res c.
+     (Monad m, Response m String b, ResponseWriter rw b m) =>
      RouterFallbacks
      m
      (Conn req { writer :: rw StatusLineOpen | res } c)

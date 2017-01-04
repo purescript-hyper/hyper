@@ -7,14 +7,14 @@ import Data.Maybe (Maybe(Just))
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (StatusLineOpen, statusCreated, statusOK, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
-import Hyper.Response (headers, respond)
+import Hyper.Response (class Response, headers, respond)
 import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, runRouter, router, handler, resource)
 import Hyper.Test.TestServer (testResponseWriter, testStatus, testBody, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-app :: forall m req res rw c.
-  (Monad m, ResponseWriter rw m) =>
+app :: forall m req res rw b c.
+  (Monad m, Response m String b, ResponseWriter rw b m) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }

@@ -1,6 +1,7 @@
 module Hyper.Routing.MutuallyReferringRouterSpec where
 
 import Prelude
+import Hyper.HTML as HTML
 import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
@@ -10,9 +11,10 @@ import Hyper.HTML (text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (respond, contentType)
 import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
-import Hyper.Test.TestServer (testResponseWriter, testBody, testHeaders, testServer)
+import Hyper.Test.TestServer (TestResponse, testResponseWriter, testBody, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
+
 
 -- To have `app` and its routes be polymorphic, and still compile, we need to provide
 -- some type annotations. The following alias is a handy shortcut for the resources
@@ -20,7 +22,7 @@ import Test.Spec.Assertions (shouldEqual)
 
 type TestResource m rw gr pr =
   forall req res c.
-  (Monad m, ResponseWriter rw m) =>
+  (Monad m, ResponseWriter rw String m) =>
   ResourceRecord
   m
   gr
@@ -28,8 +30,9 @@ type TestResource m rw gr pr =
   (Conn { url :: String, method :: Method | req } { writer :: rw StatusLineOpen | res } c)
   (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 
+
 app :: forall m req res rw c.
-  (Monad m, ResponseWriter rw m) =>
+  (Monad m, ResponseWriter rw String m) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
@@ -48,7 +51,7 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
-                         >>= respond (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"]))
+                         >>= respond (HTML.asString (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"])))
       }
 
     contact :: TestResource m rw Supported Unsupported
@@ -56,35 +59,33 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
       resource
       { path = ["contact"]
       , "GET" = handler (\conn ->
-                         writeStatus statusOK conn
-                         >>= contentType textHTML
-                         >>= closeHeaders
-                         >>= respond (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"]))
+                          writeStatus statusOK conn
+                          >>= contentType textHTML
+                          >>= closeHeaders
+                          >>= respond (HTML.asString (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"])))
       }
+
+
+getResponse :: forall m. Monad m => Method -> String -> m (TestResponse String)
+getResponse method url =
+  let conn = { request: { method: method
+                        , url: url
+                        }
+             , response: { writer: testResponseWriter }
+             , components: {}
+             }
+  in testServer (app conn)
+
 
 spec :: forall e. Spec (console :: CONSOLE | e) Unit
 spec = do
   describe "Hyper.HTML.DSL" do
     it "can linkTo an existing route" do
-      response <- { request: { method: GET
-                             , url: "about"
-                             }
-                  , response: { writer: testResponseWriter }
-                  , components: {}
-                  }
-                  # app
-                  # testServer
+      response <- getResponse GET "about"
       testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
       testBody response `shouldEqual` "<a href=\"/contact\">Contact Me!</a>"
 
     it "can linkTo another existing route" do
-      response <- { request: { method: GET
-                             , url: "contact"
-                             }
-                  , response: { writer: testResponseWriter }
-                  , components: {}
-                  }
-                  # app
-                  # testServer
+      response <- getResponse GET "contact"
       testHeaders response `shouldEqual` [Tuple "Content-Type" "text/html"]
       testBody response `shouldEqual` "<a href=\"/about\">About Me</a>"

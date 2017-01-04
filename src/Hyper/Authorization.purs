@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Tuple (Tuple(Tuple))
 import Data.Unit (unit, Unit)
 import Hyper.Core (writeStatus, class ResponseWriter, Middleware, ResponseEnded, StatusLineOpen, Conn)
-import Hyper.Response (respond, headers)
+import Hyper.Response (class Response, respond, headers)
 
 withAuthorization :: forall a b req res c.
                      b
@@ -19,8 +19,8 @@ withAuthorization a conn =
 
 
 authorized
-  :: forall a m req res rw c.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall a m req res rw b c.
+     (Monad m, Response m String b, ResponseWriter rw b m) =>
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Unit | c } -> m (Maybe a))
   -> (Middleware
       m

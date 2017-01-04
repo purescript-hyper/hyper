@@ -8,8 +8,8 @@ import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, Conn, BodyOpen, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
 
-headers :: forall t m req res rw c.
-           (Traversable t, Monad m, ResponseWriter rw m) =>
+headers :: forall t m req res rw b c.
+           (Traversable t, Monad m, ResponseWriter rw b m) =>
            t Header
         -> Middleware
            m
@@ -21,8 +21,8 @@ headers hs conn = do
   where
     writeOne c header = writeHeader header c
 
-contentType :: forall m req res rw c.
-               (Monad m, ResponseWriter rw m) =>
+contentType :: forall m req res rw b c.
+               (Monad m, ResponseWriter rw b m) =>
                MediaType
             -> Middleware
                m
@@ -30,17 +30,19 @@ contentType :: forall m req res rw c.
                (Conn req { writer :: rw HeadersOpen | res } c)
 contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
-class Response r where
-  toResponse :: r -> String
+class Response m r t | r -> t where
+  toResponse :: r -> m t
 
-instance responseString :: Response String where
-  toResponse s = s
+instance responseString :: Monad m => Response m String String where
+  toResponse = pure <<< id
 
-respond :: forall r m req res rw c.
-           (Monad m, Response r, ResponseWriter rw m) =>
+respond :: forall r m req res rw b c.
+           (Monad m, Response m r b, ResponseWriter rw b m) =>
            r
         -> Middleware
            m
            (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
-respond r = send (toResponse r) >=> end
+respond r conn = do
+  body <- toResponse r
+  send body conn >>= end

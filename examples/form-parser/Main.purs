@@ -17,9 +17,10 @@ import Hyper.HTML (p, text, element)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
+import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     -- A view function that renders the name form.

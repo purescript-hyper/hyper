@@ -13,18 +13,17 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.Show (show)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, statusOK, writeStatus, ResponseEnded, StatusLineOpen, Conn, Middleware)
-import Hyper.Response (respond, headers)
-import Node.Buffer (BUFFER)
-import Node.Encoding (Encoding(UTF8))
+import Hyper.Response (class Response, respond, headers)
+import Node.Buffer (Buffer, BUFFER)
 import Node.FS (FS)
-import Node.FS.Aff (stat, readTextFile, exists)
+import Node.FS.Aff (readFile, stat, exists)
 import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m e rw req res c.
-     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, ResponseWriter rw m) =>
+  :: forall m e rw b req res c.
+     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response m Buffer b, ResponseWriter rw b m) =>
      FilePath
   -> Middleware
      m
@@ -34,14 +33,13 @@ fileServer dir conn@{ request: { url: url } } = do
   serve (Path.concat [dir, url])
   where
     serveFile path = do
-      contents <- liftAff (readTextFile UTF8 path)
-      buf <- liftAff (liftEff (Buffer.fromString contents UTF8))
+      buf <- liftAff (readFile path)
       contentLength <- liftAff (liftEff (Buffer.size buf))
       writeStatus statusOK conn
         >>= headers [ Tuple "Content-Type" "*/*; charset=utf-8"
                     , Tuple "Content-Length" (show contentLength)
                     ]
-        >>= respond contents
+        >>= respond buf
         # map Just
 
     serveStats absolutePath stats

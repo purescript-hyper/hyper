@@ -16,7 +16,7 @@ import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
 import Hyper.Authentication (setAuthentication)
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeHeader, writeStatus)
-import Hyper.Response (respond)
+import Hyper.Response (class Response, respond)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
 
@@ -53,8 +53,8 @@ withAuthentication mapper conn = do
             parts -> pure Nothing
 
 authenticated
-  :: forall m req res c rw t.
-     (Monad m, ResponseWriter rw m) =>
+  :: forall m req res c rw b t.
+     (Monad m, Response m String b, ResponseWriter rw b m) =>
      Realm
   -> Middleware
       m
