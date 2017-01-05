@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 4c5695c
+  Version 30f5d95
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -37,6 +37,10 @@
 <li><a href="#resources">Resources</a></li>
 <li><a href="#resource-routers">Resource Routers</a></li>
 <li><a href="#type-safe-links-and-forms">Type-Safe Links and Forms</a></li>
+</ul></li>
+<li><a href="#servers">Servers</a><ul>
+<li><a href="#nodejs">NodeJS</a></li>
+<li><a href="#testing">Testing</a></li>
 </ul></li>
 <li><a href="#contributing">Contributing</a></li>
 </ul>
@@ -186,6 +190,32 @@ in module Example
 
     Supported
 </code></pre>
+<h2 id="servers">Servers</h2>
+<p>Although Hyper middleware are regular functions, which can applied to Conn values, you often want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
+<h3 id="nodejs">NodeJS</h3>
+<p>The server in <code>Hyper.Node.Server</code> wraps the <code>http</code> module in NodeJS, and serves middleware using the <code>Aff</code> monad. Here is how you can start a Node server:</p>
+<pre class="purescript"><code>let
+  onListening (Port port) =
+    log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
+  onRequestError err =
+    log (&quot;Request failed: &quot; &lt;&gt; show err)
+  app =
+    writeStatus (Tuple 200 &quot;OK&quot;)
+    &gt;=&gt; closeHeaders
+    &gt;=&gt; respond &quot;Hello there!&quot;
+in runServer defaultOptions onListening onRequestError {} app</code></pre>
+<p>As seen above, <code>runServer</code> takes a record of options, two callbacks, an initial <em>components</em> record, and your application middleware.</p>
+<h3 id="testing">Testing</h3>
+<p>When running tests you might not want to start a full HTTP server and sends requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
+<pre class="purescript"><code>it &quot;responds with a friendly message&quot; do
+  conn &lt;- { request: {}
+          , response: { writer: testResponseWriter }
+          , components: {}
+          }
+          # app
+          # testServer
+  testStatus conn `shouldEqual` Just statusOK
+  testStringBody conn `shouldEqual` &quot;Hello there!&quot;</code></pre>
 <h2 id="contributing">Contributing</h2>
 <p>While Hyper is currently an experiment, and in constant flux, you are welcome to contribute. Please post ideas and start discussions using <a href="https://github.com/owickstrom/hyper/issues">the issue tracker on GitHub</a>. You can also contact <a href="https://wickstrom.tech/about.html">Oskar Wickström</a> directly for design discussions. If this project grows, we can setup a mailing list, or other some other means of communication.</p>
 <p>Please note that sending pull requests without first discussing the design is probably a waste of time, if not only fixing simple things like typos.</p>

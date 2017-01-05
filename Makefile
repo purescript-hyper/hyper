@@ -5,6 +5,7 @@ MD_SOURCES=docs/index.md \
 					 docs/design.md \
 					 docs/request-body-parsing.md \
 					 docs/resource-routing.md \
+					 docs/servers.md \
 					 docs/contributing.md
 
 .PHONY: docs
