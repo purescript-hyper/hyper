@@ -30,15 +30,10 @@ contentType :: forall m req res rw b c.
                (Conn req { writer :: rw HeadersOpen | res } c)
 contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
-class Response m r t | r -> t where
-  toResponse :: r -> m t
+class Response m r b | r -> b where
+  toResponse :: r -> m b
 
-{-
-instance responseString :: Monad m => Response m String String where
-  toResponse = pure <<< id
--}
-
-respond :: forall r m req res rw b c.
+respond :: forall m r b req res rw c.
            (Monad m, Response m r b, ResponseWriter rw m b) =>
            r
         -> Middleware

@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version fe5e5d8
+  Version 4c5695c
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -59,9 +59,10 @@
 </ul>
 <p>Can we use the PureScript type system to eradicate this class of errors? Let’s find out!</p>
 <h2 id="design">Design</h2>
-<p>These are the central components of <em>Hyper</em>. While focusing heavily on safety, Hyper tries to provide an open API that can support multiple PureScript backends, and different styles of web applications.</p>
+<p>We will start by looking at the central components of <em>Hyper</em>. While focusing heavily on safety, Hyper tries to provide an open API that can support multiple PureScript backends, and different styles of web applications.</p>
+<p>The design of Hyper is inspired by a number of projects. The middleware chain lends much from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate. You might also find similarities with <em>connect</em> in NodeJS. On the type system side, Hyper tries to bring in ideas from <em>Haskell</em> and <em>Idris</em>, specifically the use of phantom types and GADTs to lift invariants to the type level and increase safety.</p>
 <h3 id="conn">Conn</h3>
-<p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent - both request and response. This design is adopted from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate.</p>
+<p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent, both request and response.</p>
 <pre class="purescript"><code>type Conn req res components = { request :: req
                                , response :: res
                                , components :: components
@@ -71,28 +72,29 @@
 <pre class="purescript"><code>type Middleware m c c&#39; = c -&gt; m c&#39;</code></pre>
 <p>Being able to parameterize <code>Conn</code> with some type <code>m</code>, you can customize the chain depending on the needs of your middleware and handlers. Applications can use monad transformers to track state, provide configuration, gather metrics, and much more, in the chain of middleware.</p>
 <h3 id="response-state-transitions">Response State Transitions</h3>
-<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Functions usually constrain the <code>writer</code> field to be a value implementing the <code>Hyper.Core.ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
+<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Functions usually constrain the <code>writer</code> field to be a value implementing the <code>ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
 <p>The state of a response writer is tracked in its type parameter. This state tracking, and the type signatures of functions using the response writer, guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes. Let us have a look at the type signatures of some of response writing functions in <code>Hyper.Response</code>.</p>
 <p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response writer as headers being closed</em>.</p>
 <pre class="purescript"><code>headers :: forall t m req res rw c.
-           (Traversable t, Monad m, ResponseWriter rw m) =&gt;
+           (Traversable t, Monad m, ResponseWriter rw m b) =&gt;
            t Header
         -&gt; Middleware
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
            (Conn req { writer :: rw BodyOpen | res } c)</code></pre>
-<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response r</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
-<pre class="purescript"><code>respond :: forall r m req res rw c.
-           (Monad m, Response r, ResponseWriter rw m) =&gt;
+<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response m r b</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
+<pre class="purescript"><code>respond :: forall m r b req res rw c.
+           (Monad m, Response m r b, ResponseWriter rw m b) =&gt;
            r
         -&gt; Middleware
            m
            (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)</code></pre>
-<p>The <code>Response</code> type class describes types that can be written as responses.</p>
-<pre class="purescript"><code>class Response r where
-  toResponse :: r -&gt; String</code></pre>
-<p><strong>NOTE:</strong> The return type of <code>toResponse</code> should probably be something other than <code>String</code> (<a href="https://github.com/owickstrom/hyper/issues/5">GitHub issue</a>).</p>
+<p>The <code>Response</code> type class describes types that can be written as responses. It takes three type parameters, where <code>r</code> is the original response type, <code>m</code> is usually an Applicative or a Monad in which the transformation can be performed, and <code>b</code> is the target type.</p>
+<pre class="purescript"><code>class Response m r b | r -&gt; b where
+  toResponse :: r -&gt; m b</code></pre>
+<p>This mechanism allows servers to provide specific types for the response body, along with instances for common response types. When using the Node server, which has a response body type wrapping <code>Buffer</code>, you can still respond with a <code>String</code> or <code>HTML</code> value directly.</p>
+<p>Aside from convenience in having a single function for most response types and servers, the polymorphism of <code>respond</code> lets middleware be decoupled from specific servers. It only requires an instance matching the response type used by the middleware and the type required by the server.</p>
 <h2 id="request-body-parsing">Request Body Parsing</h2>
 <p>The request body is, when using the Node server, initially a <code>RequestBody</code> in the connection. The user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action. The following type signature resides in <code>Hyper.Node.Server</code>, and shows how a request body can be read into a <code>String</code>. The <code>Aff</code> monad, and the <code>AVAR</code> effect, is used to accomplish this asynchronously in the case of the Node server.</p>
 <pre class="purescript"><code>readBodyAsString
