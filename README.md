@@ -3,9 +3,12 @@
 *Type-safe, statically checked composition of HTTP servers, using PureScript.*
 
 Hyper is an **experiment**, trying to improve correctness in web server
-programming, and in HTTP middleware and request handlers specifically. Read
-about the goals and design of Hyper at [owickstrom.github.io/hyper/](
-https://owickstrom.github.io/hyper/).
+programming, and in HTTP middleware and request handlers specifically. To learn
+more about Hyper, check out these resources:
+
+* [Documentation](https://owickstrom.github.io/hyper/)
+* ["Hyper: Elegant Weapons for a More Civilized Page"](https://owickstrom.github.io/hyper/) (introductory blog post)
+* [Examples](examples/)
 
 ## Build
 
