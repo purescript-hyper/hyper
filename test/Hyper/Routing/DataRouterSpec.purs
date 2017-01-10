@@ -44,8 +44,13 @@ instance routablePOSTTestRoutes :: Routable TestRoutes POST where
       Route [] -> Just (SaveTask (Task "Be chill.") id)
       _ -> Nothing
 
--- The user-level routing handlerfunction, i.e. the one that responds
+-- The user-level routing handler function, i.e. the one that responds
 -- to requests for each route.
+--
+-- NOTE: It's a bit shaky that it can deconstruct the ListTasks and
+-- SaveTask constructors, regardless of their differently typed Leibniz
+-- arguments, but it seems OK as the Routable instance cannot incorrectly
+-- route POST to GET and vice versa.
 handler :: forall m method req res rw b c.
   (Monad m, Response m HTML b, ResponseWriter rw m b) =>
   TestRoutes method
@@ -81,9 +86,13 @@ app :: forall m req res rw b c.
         { writer :: rw ResponseEnded | res }
         c)
 app =
-  -- This is a little weird, but haven't found a better way yet.
-  -- If it can be generically derived the user would not have to
-  -- construct this record.
+  -- This record is a little weird, but haven't found any better way
+  -- yet (the only other approach I could come up with was type classes,
+  -- and that would results in massive type signatures as one parameter
+  -- would be the middleware type).
+  --
+  -- I hope that if the record it can be generically derived, then the user
+  -- will not have to construct it, only provide the handler function.
   router { get: handler, post: handler }
   # fallbackTo notFound
   where
