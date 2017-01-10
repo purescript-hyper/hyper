@@ -46,7 +46,7 @@ app = runRouter defaultRouterFallbacks (router index <|> router greetings)
 
 spec :: forall e. Spec (buffer :: BUFFER | e) Unit
 spec = do
-  describe "Hyper.Router" do
+  describe "Hyper.Routing.ResourceRouter" do
     it "can route a GET for the root resource" do
       conn ←
         { request: { method: GET
