@@ -7,8 +7,6 @@ module Hyper.Routing.DataRouter
        , toPath
        , class Routable
        , fromRoute
-       , class RoutableMethod
-       , getMethod
        , router
        , linkTo
        , formFor
@@ -43,15 +41,6 @@ class Addressable r where
 
 class Routable r m where
   fromRoute :: Route m -> Maybe (r m)
-
-class RoutableMethod m where
-  getMethod :: Method
-
-instance routableMethodGET :: RoutableMethod GET where
-  getMethod = Method.GET
-
-instance routableMethodPOST :: RoutableMethod POST where
-  getMethod = Method.POST
 
 type MethodRequestHandler r method m req res c req' res' c' =
   r method -> Middleware
