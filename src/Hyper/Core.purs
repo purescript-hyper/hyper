@@ -21,6 +21,9 @@ statusOK = Tuple 200 "OK"
 statusCreated :: Status
 statusCreated = Tuple 201 "Created"
 
+statusFound :: Status
+statusFound = Tuple 302 "Found"
+
 statusBadRequest :: Status
 statusBadRequest = Tuple 400 "Bad Request"
 

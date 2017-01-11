@@ -1,47 +1,59 @@
 module Hyper.Routing.DataRouterSpec where
 
 import Prelude
+import Data.Int as Int
 import Hyper.Method as Method
+import Data.Array (singleton)
 import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Newtype (class Newtype, unwrap)
-import Hyper.Core (statusNotFound, fallbackTo, class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeStatus, statusOK)
-import Hyper.HTML (p, h1, text, HTML)
+import Data.Tuple (Tuple(Tuple))
+import Hyper.Core (statusFound, statusNotFound, fallbackTo, class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeStatus, statusOK)
+import Hyper.HTML (li, ul, h1, text, HTML)
 import Hyper.Method (Method)
 import Hyper.Response (class Response, respond)
-import Hyper.Routing.DataRouter (class Addressable, class Routable, linkTo, formFor, router, POST, Route(Route), GET)
-import Hyper.Test.TestServer (testStringBody, testResponseWriter, testServer)
+import Hyper.Routing.DataRouter (linkTo, redirectTo, class Addressable, class Routable, formFor, router, POST, Route(Route), GET)
+import Hyper.Test.TestServer (testHeaders, testStatus, testStringBody, testResponseWriter, testServer)
 import Node.Buffer (BUFFER)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-newtype Task = Task String
+newtype TaskId = TaskId Int
 
-derive instance newtypeTask :: Newtype Task _
+derive instance newtypeTaskId :: Newtype TaskId _
 
-instance showTask :: Show Task where
-  show = unwrap
+instance showTaskId :: Show TaskId where
+  show = show <<< unwrap
 
 data TestRoutes m
   = ListTasks (m ~ GET)
-  | SaveTask Task (m ~ POST)
+  | NewTask (m ~ GET)
+  | CreateTask (m ~ POST)
+  | ShowTask TaskId (m ~ GET)
+  | UpdateTask TaskId (m ~ POST)
 
 instance addressableTestRoutes :: Addressable TestRoutes where
   toPath =
     case _ of
-      ListTasks _ -> []
-      SaveTask _ _ -> []
+      ListTasks _ -> ["tasks"]
+      NewTask _ -> ["tasks"]
+      CreateTask _ -> ["tasks"]
+      ShowTask taskId _ -> ["tasks", show taskId]
+      UpdateTask taskId _ -> ["tasks", show taskId]
 
 instance routableGETTestRoutes :: Routable TestRoutes GET where
   fromRoute =
     case _ of
-      Route [] -> Just (ListTasks id)
+      Route ["tasks"] -> Just (ListTasks id)
+      Route ["tasks", "new"] -> Just (NewTask id)
+      Route ["tasks", s] -> ShowTask <$> (TaskId <$> Int.fromString s) <*> pure id
       _ -> Nothing
 
 instance routablePOSTTestRoutes :: Routable TestRoutes POST where
   fromRoute =
     case _ of
-      Route [] -> Just (SaveTask (Task "Be chill.") id)
+      Route ["tasks"] -> Just (CreateTask id)
+      Route ["tasks", s] -> UpdateTask <$> (TaskId <$> Int.fromString s) <*> pure id
       _ -> Nothing
 
 -- The user-level routing handler function, i.e. the one that responds
@@ -65,15 +77,25 @@ handler :: forall m method req res rw b c.
 handler =
   case _ of
     ListTasks _ ->
+      let makeTaskLink taskId = linkTo (ShowTask (TaskId taskId)) [text ("Task #" <> show taskId)]
+      in writeStatus statusOK
+         >=> closeHeaders
+         >=> respond (ul [] (map (li [] <<< singleton <<< makeTaskLink) [1, 2, 3]))
+    NewTask _ ->
       writeStatus statusOK
       >=> closeHeaders
-      >=> respond (formFor SaveTask (Task "Be cool"))
-    SaveTask _ _ ->
+      >=> respond (formFor (CreateTask) [])
+    ShowTask taskId _ ->
       writeStatus statusOK
       >=> closeHeaders
-      >=> respond (p [] [ text "Saved. "
-                        , linkTo ListTasks [text "Back to tasks."]
-                        ])
+      >=> respond (h1 [] [text ("Task #" <> show taskId)])
+    CreateTask _ ->
+      -- Let's pretend this saved the Task in a database.
+      let createdId = TaskId 4
+      in redirectTo (ShowTask createdId)
+    UpdateTask taskId _ ->
+      -- Let's pretend this updated the Task in a database.
+      redirectTo (ShowTask taskId)
 
 app :: forall m req res rw b c.
   (Monad m, Response m HTML b, ResponseWriter rw m b) =>
@@ -114,10 +136,29 @@ spec = do
           # app
           # testServer
 
-    it "can route a GET" do
-      conn <- makeRequest Method.GET "/"
-      testStringBody conn `shouldEqual` "<form method=\"POST\" action=\"/\"><input name=\"value\" value=\"Be cool\"></input></form>"
+    it "lists tasks" do
+      conn <- makeRequest Method.GET "/tasks"
+      testStringBody conn `shouldEqual`
+        ("<ul>"
+         <> "<li><a href=\"/tasks/1\">Task #1</a></li>"
+         <> "<li><a href=\"/tasks/2\">Task #2</a></li>"
+         <> "<li><a href=\"/tasks/3\">Task #3</a></li>"
+         <> "</ul>")
 
-    it "can route a POST" do
-      conn <- makeRequest Method.POST "/"
-      testStringBody conn `shouldEqual` "<p>Saved. <a href=\"/\">Back to tasks.</a></p>"
+    it "show new task form" do
+      conn <- makeRequest Method.GET "/tasks/new"
+      testStringBody conn `shouldEqual` "<form method=\"POST\" action=\"/tasks\"></form>"
+
+    it "creates a new task" do
+      conn <- makeRequest Method.POST "/tasks"
+      testStatus conn `shouldEqual` Just statusFound
+      testHeaders conn `shouldEqual` [Tuple "Location" "/tasks/4"]
+
+    it "show a specific task" do
+      conn <- makeRequest Method.GET "/tasks/1"
+      testStringBody conn `shouldEqual` "<h1>Task #1</h1>"
+
+    it "updates a task" do
+      conn <- makeRequest Method.POST "/tasks/2"
+      testStatus conn `shouldEqual` Just statusFound
+      testHeaders conn `shouldEqual` [Tuple "Location" "/tasks/2"]

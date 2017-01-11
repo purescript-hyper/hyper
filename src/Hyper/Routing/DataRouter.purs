@@ -9,6 +9,7 @@ module Hyper.Routing.DataRouter
        , fromRoute
        , router
        , linkTo
+       , redirectTo
        , formFor
        ) where
 
@@ -19,9 +20,10 @@ import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.String (joinWith, Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (TryMiddleware(TryMiddleware), Conn, Middleware)
-import Hyper.HTML (element, a, form, HTML)
+import Hyper.Core (class ResponseWriter, statusFound, end, writeStatus, ResponseEnded, StatusLineOpen, TryMiddleware(TryMiddleware), Conn, Middleware)
+import Hyper.HTML (a, form, HTML)
 import Hyper.Method (Method)
+import Hyper.Response (headers)
 
 data GET
 data POST
@@ -82,27 +84,29 @@ linkTo
   -> Array HTML
   -> HTML
 linkTo r children =
-  case toPath (r id) of
-    path ->
-      a [Tuple "href" (pathToHtml path)] children
+  a [Tuple "href" (pathToHtml (toPath (r id)))] children
+
+redirectTo
+  :: forall m r req res c rw b.
+     (Monad m, Addressable r, ResponseWriter rw m b) =>
+     WithMethod GET r
+  -> Middleware
+     m
+     (Conn req { writer :: rw StatusLineOpen | res } c)
+     (Conn req { writer :: rw ResponseEnded | res } c)
+redirectTo r =
+  writeStatus statusFound
+  >=> headers [Tuple "Location" (pathToHtml (toPath (r id)))]
+  >=> end
 
 formFor
-  :: forall r a. (Addressable r, Show a) =>
-     (a -> WithMethod POST r)
-  -> a
+  :: forall r. (Addressable r) =>
+     WithMethod POST r
+  -> Array HTML
   -> HTML
-formFor r value =
-  case toPath (r value id) of
-    path ->
-      form
-      [ Tuple "method" "POST"
-      , Tuple "action" (pathToHtml path)
-      ]
-      -- Dummy implementation for now...
-      [ element
-        "input"
-        [ Tuple "name" "value"
-        , Tuple "value" (show value)
-        ]
-        []
-      ]
+formFor r children =
+  form
+  [ Tuple "method" "POST"
+  , Tuple "action" (pathToHtml (toPath (r id)))
+  ]
+  children
