@@ -7,7 +7,7 @@ programming, and in HTTP middleware and request handlers specifically. To learn
 more about Hyper, check out these resources:
 
 * [Documentation](https://owickstrom.github.io/hyper/)
-* ["Hyper: Elegant Weapons for a More Civilized Page"](https://owickstrom.github.io/hyper/) (introductory blog post)
+* ["Hyper: Elegant Weapons for a More Civilized Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html) (introductory blog post)
 * [Examples](examples/)
 
 ## Build
