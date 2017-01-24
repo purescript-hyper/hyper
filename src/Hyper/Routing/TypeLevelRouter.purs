@@ -10,13 +10,17 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Int (fromString)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype)
 import Data.Path.Pathy (dir, rootDir, (</>))
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Tuple (Tuple(..))
 import Data.URI (HierarchicalPart(..), URI(..))
+import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotFound, writeStatus)
+import Hyper.Method (Method)
+import Hyper.Response (class Response, respond)
 import Type.Proxy (Proxy(..))
 
 data Lit (v :: Symbol)
@@ -101,11 +105,11 @@ linkTo :: forall l t. HasLink l t => Proxy l -> t
 linkTo p = toLink p mempty
 
 type RoutingContext = { path :: (Array String)
-                      , method :: String
+                      , method :: Method
                       }
 
 data RoutingError
-  = HTTPError Int (Maybe String)
+  = HTTPError Status (Maybe String)
 
 derive instance genericRoutingError :: Generic RoutingError _
 
@@ -119,7 +123,7 @@ class Router e h r | e -> h, e -> r where
   route :: Proxy e -> RoutingContext -> h -> Either RoutingError r
 
 fallthrough :: RoutingError -> Boolean
-fallthrough (HTTPError code _) = code `elem` [404, 405]
+fallthrough (HTTPError (Tuple code _) _) = code `elem` [404, 405]
 
 instance routerEndpoints :: (Router e1 h1 out, Router e2 h2 out)
                             => Router (e1 :<|> e2) (h1 :<|> h2) out where
@@ -137,8 +141,8 @@ instance routerLit :: (Router e h out, IsSymbol lit)
     case uncons ctx.path of
       Just { head, tail } | head == expectedSegment ->
         route (Proxy :: Proxy e) ctx { path = tail} r
-      Just _ -> throwError (HTTPError 404 Nothing)
-      Nothing -> throwError (HTTPError 404 Nothing)
+      Just _ -> throwError (HTTPError statusNotFound Nothing)
+      Nothing -> throwError (HTTPError statusNotFound Nothing)
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
 
 instance routerLitSub :: (Router e h out, IsSymbol lit)
@@ -149,33 +153,56 @@ instance routerCapture :: (Router e h out, FromHttpData v)
                           => Router (Capture c v :> e) (v -> h) out where
   route _ ctx r =
     case uncons ctx.path of
-      Nothing -> throwError (HTTPError 404 Nothing)
+      Nothing -> throwError (HTTPError statusNotFound Nothing)
       Just { head, tail } ->
         case fromPathPiece head of
-          Left err -> throwError (HTTPError 400 (Just err))
+          Left err -> throwError (HTTPError statusBadRequest (Just err))
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
 instance routerVerb :: (IsSymbol m)
                        => Router (Verb m ct) h h where
   route _ context r =
-    if expectedMethod == context.method && null context.path
+    if expectedMethod == show context.method && null context.path
     then pure r
-    else throwError (HTTPError 405 (Just ("Method "
-                                          <> context.method
-                                          <> " did not match "
-                                          <> expectedMethod)))
+    else throwError (HTTPError
+                     statusMethodNotAllowed
+                     (Just ("Method "
+                            <> show context.method
+                            <> " did not match "
+                            <> expectedMethod
+                            <> ".")))
     where
       expectedMethod = reflectSymbol (SProxy :: SProxy m)
 
-runRouter
-  :: forall s r a.
-     Router s r a
-     => Proxy s
-     -> r
-     -> String
-     -> String
-     -> Either RoutingError a
-runRouter _ handler method url =
-  route (Proxy :: Proxy s) { path: p, method: method } handler
+router
+  :: forall s r m req res c rw b.
+     ( Monad m
+     , ResponseWriter rw m b
+     , Response b m String
+     , Router s r (Middleware
+                   m
+                   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+                   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
+     ) =>
+     Proxy s
+  -> r
+  -> TryMiddleware
+     m
+     (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+     (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
+router _ handler = TryMiddleware router'
   where
-    p = filter ((/=) "") (split (Pattern "/") url)
+    router' conn =
+      case route (Proxy :: Proxy s) { path: splitUrl conn.request.url
+                                    , method: conn.request.method
+                                    } handler of
+        Left (HTTPError (Tuple 404 _) _) ->
+          pure Nothing
+        Left (HTTPError status msg) ->
+          writeStatus status conn
+          >>= closeHeaders
+          >>= respond (maybe "" id msg)
+          # map Just
+        Right h ->
+          Just <$> h conn
+    splitUrl = filter ((/=) "") <<< split (Pattern "/")
