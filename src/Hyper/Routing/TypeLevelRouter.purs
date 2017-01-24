@@ -4,7 +4,7 @@ module Hyper.Routing.TypeLevelRouter where
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
-import Data.Array (elem, filter, foldl, uncons)
+import Data.Array (elem, filter, foldl, null, uncons)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
@@ -115,14 +115,14 @@ instance eqRoutingError :: Eq RoutingError where
 instance showRoutingError :: Show RoutingError where
   show = genericShow
 
-class HasRouter e h r | e -> h, e -> r where
+class Router e h r | e -> h, e -> r where
   route :: Proxy e -> RoutingContext -> h -> Either RoutingError r
 
 fallthrough :: RoutingError -> Boolean
 fallthrough (HTTPError code _) = code `elem` [404, 405]
 
-instance hasRouterEndpoints :: (HasRouter e1 h1 out, HasRouter e2 h2 out)
-                               => HasRouter (e1 :<|> e2) (h1 :<|> h2) out where
+instance routerEndpoints :: (Router e1 h1 out, Router e2 h2 out)
+                            => Router (e1 :<|> e2) (h1 :<|> h2) out where
   route _ context (h1 :<|> h2) =
     case route (Proxy :: Proxy e1) context h1 of
       Left err ->
@@ -131,8 +131,8 @@ instance hasRouterEndpoints :: (HasRouter e1 h1 out, HasRouter e2 h2 out)
         else Left err
       Right handler -> pure handler
 
-instance hasRouterLit :: (HasRouter e h out, IsSymbol lit)
-                         => HasRouter (Lit lit :> e) h out where
+instance routerLit :: (Router e h out, IsSymbol lit)
+                      => Router (Lit lit :> e) h out where
   route _ ctx r =
     case uncons ctx.path of
       Just { head, tail } | head == expectedSegment ->
@@ -141,12 +141,12 @@ instance hasRouterLit :: (HasRouter e h out, IsSymbol lit)
       Nothing -> throwError (HTTPError 404 Nothing)
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
 
-instance hasRouterLitSub :: (HasRouter e h out, IsSymbol lit)
-                         => HasRouter (lit :/ e) h out where
+instance routerLitSub :: (Router e h out, IsSymbol lit)
+                         => Router (lit :/ e) h out where
   route _ = route (Proxy :: Proxy (Lit lit :> e))
 
-instance hasRouterCapture :: (HasRouter e h out, FromHttpData v)
-                             => HasRouter (Capture c v :> e) (v -> h) out where
+instance routerCapture :: (Router e h out, FromHttpData v)
+                          => Router (Capture c v :> e) (v -> h) out where
   route _ ctx r =
     case uncons ctx.path of
       Nothing -> throwError (HTTPError 404 Nothing)
@@ -155,10 +155,10 @@ instance hasRouterCapture :: (HasRouter e h out, FromHttpData v)
           Left err -> throwError (HTTPError 400 (Just err))
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
-instance hasRouterVerb :: (IsSymbol m)
-                          => HasRouter (Verb m ct) h h where
+instance routerVerb :: (IsSymbol m)
+                       => Router (Verb m ct) h h where
   route _ context r =
-    if expectedMethod == context.method
+    if expectedMethod == context.method && null context.path
     then pure r
     else throwError (HTTPError 405 (Just ("Method "
                                           <> context.method
@@ -169,7 +169,7 @@ instance hasRouterVerb :: (IsSymbol m)
 
 runRouter
   :: forall s r a.
-     HasRouter s r a
+     Router s r a
      => Proxy s
      -> r
      -> String

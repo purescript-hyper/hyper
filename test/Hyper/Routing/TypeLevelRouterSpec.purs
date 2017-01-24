@@ -35,7 +35,7 @@ instance fromHttpDataUserID :: FromHttpData UserID where
 instance toHttpDataUserID :: ToHttpData UserID where
   toPathPiece (UserID s) = s
 
-type Root = "html" :/ Get "text/html"
+type Root = Get "text/html"
 type GetPost = "posts" :/ Capture "id" PostID :> Get "text/plain"
 type UserRoutes = "users" :/ Capture "user-id" UserID :> ("profile" :/ Get "text/plain"
                                                           :<|> "settings" :/ Get "text/plain")
@@ -65,14 +65,14 @@ spec =
   describe "Hyper.Routing.TypeLevelRouter" do
     describe "links" do
       it "returns link for Lit" $
-        printURI (linkTo (Proxy :: Proxy Root)) `shouldEqual` "/html/"
+        printURI (linkTo (Proxy :: Proxy Root)) `shouldEqual` "/"
 
       it "returns link for Lit and Capture" $
         printURI (linkTo (Proxy :: Proxy GetPost) (PostID 10)) `shouldEqual` "/posts/10/"
 
     describe "route" do
-      it "matches Lit" do
-        res <- request "GET" "/html"
+      it "matches root" do
+        res <- request "GET" "/"
         res `shouldEqual` Right "<h1>HTML</h1>"
 
       it "matches custom Capture" do
