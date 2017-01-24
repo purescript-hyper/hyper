@@ -1,6 +1,31 @@
 -- Highly experimental and naive implementation of servant-server style
--- routing for Hyper. Not much will be stable, nor usable, here.
-module Hyper.Routing.TypeLevelRouter where
+-- routing for Hyper. Not much will be stable here.
+module Hyper.Routing.TypeLevelRouter
+       ( Lit
+       , Capture
+       , Verb
+       , Get
+       , Sub
+       , LitSub
+       , Endpoints(..)
+       , type (:>)
+       , type (:/)
+       , type (:<|>)
+       , (:<|>)
+       , class ToHttpData
+       , toPathPiece
+       , class FromHttpData
+       , fromPathPiece
+       , Link
+       , class HasLink
+       , toLink
+       , class HasLinks
+       , toLinks
+       , RoutingError(..)
+       , class Router
+       , route
+       , router
+       ) where
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
@@ -31,7 +56,8 @@ data Verb (m :: Symbol)
 type Get = Verb "GET"
 
 data Sub e t
-data LitSub (v :: Symbol) t
+type LitSub (v :: Symbol) t = Sub (Lit v) t
+
 data Endpoints a b = Endpoints a b
 
 infixr 5 type Sub as :>
@@ -88,10 +114,6 @@ instance hasLinkLit :: (HasLink sub subMk, IsSymbol lit)
     toLink (Proxy :: Proxy sub) <<< flip append (Link [segment])
     where
       segment = reflectSymbol (SProxy :: SProxy lit)
-
-instance hasLinkLitSub :: (HasLink sub subMk, IsSymbol lit)
-                          => HasLink (lit :/ sub) subMk where
-  toLink _ = toLink (Proxy :: Proxy (Lit lit :> sub))
 
 instance hasLinkCapture :: (HasLink sub subMk, IsSymbol c, ToHttpData t)
                            => HasLink (Capture c t :> sub) (t -> subMk) where
@@ -155,10 +177,6 @@ instance routerLit :: (Router e h out, IsSymbol lit)
       Just _ -> throwError (HTTPError statusNotFound Nothing)
       Nothing -> throwError (HTTPError statusNotFound Nothing)
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
-
-instance routerLitSub :: (Router e h out, IsSymbol lit)
-                         => Router (lit :/ e) h out where
-  route _ = route (Proxy :: Proxy (Lit lit :> e))
 
 instance routerCapture :: (Router e h out, FromHttpData v)
                           => Router (Capture c v :> e) (v -> h) out where
