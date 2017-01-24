@@ -74,7 +74,7 @@ newtype StringBody = StringBody String
 
 derive instance newtypeStringBody :: Newtype StringBody _
 
-instance stringStringBody :: Applicative m => Response m String StringBody where
+instance responseStringBody :: Applicative m => Response StringBody m String where
   toResponse = pure <<< StringBody
 
 instance semigroupStringBody :: Semigroup StringBody where

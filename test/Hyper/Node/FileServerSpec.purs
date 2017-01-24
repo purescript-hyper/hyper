@@ -20,7 +20,7 @@ import Test.Spec.Assertions.String (shouldContain)
 
 serveFilesAndGet
   :: forall m e.
-     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response m Buffer TestResponseBody) =>
+     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response TestResponseBody m Buffer) =>
      String
   -> m (TestResponse TestResponseBody)
 serveFilesAndGet path =

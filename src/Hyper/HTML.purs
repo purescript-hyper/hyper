@@ -58,8 +58,8 @@ asString =
     Text s -> s
 
 
-instance responseElement :: Response m String t => Response m HTML t where
-  toResponse = toResponse <<< asString
+--instance responseElement :: Response t m String => Response t m HTML where
+--  toResponse = toResponse <<< asString
 
 -- | Create an HTML text.
 text :: String -> HTML

@@ -14,7 +14,7 @@ import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
 app :: forall m req res rw c.
-  (Monad m, Response m String StringBody, ResponseWriter rw m StringBody) =>
+  (Monad m, Response StringBody m String, ResponseWriter rw m StringBody) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }

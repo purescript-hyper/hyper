@@ -9,7 +9,7 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (statusFound, statusNotFound, fallbackTo, class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeStatus, statusOK)
-import Hyper.HTML (li, ul, h1, text, HTML)
+import Hyper.HTML (asString, h1, li, text, ul)
 import Hyper.Method (Method)
 import Hyper.Response (class Response, respond)
 import Hyper.Routing.DataRouter (linkTo, redirectTo, class Addressable, class Routable, formFor, router, POST, Route(Route), GET)
@@ -64,7 +64,7 @@ instance routablePOSTTestRoutes :: Routable TestRoutes POST where
 -- arguments, but it seems OK as the Routable instance cannot incorrectly
 -- route POST to GET and vice versa.
 handler :: forall m method req res rw b c.
-  (Monad m, Response m HTML b, ResponseWriter rw m b) =>
+  (Monad m, Response b m String, ResponseWriter rw m b) =>
   TestRoutes method
   -> Middleware
   m
@@ -80,15 +80,15 @@ handler =
       let makeTaskLink taskId = linkTo (ShowTask (TaskId taskId)) [text ("Task #" <> show taskId)]
       in writeStatus statusOK
          >=> closeHeaders
-         >=> respond (ul [] (map (li [] <<< singleton <<< makeTaskLink) [1, 2, 3]))
+         >=> respond (asString (ul [] (map (li [] <<< singleton <<< makeTaskLink) [1, 2, 3])))
     NewTask _ ->
       writeStatus statusOK
       >=> closeHeaders
-      >=> respond (formFor (CreateTask) [])
+      >=> respond (asString (formFor (CreateTask) []))
     ShowTask taskId _ ->
       writeStatus statusOK
       >=> closeHeaders
-      >=> respond (h1 [] [text ("Task #" <> show taskId)])
+      >=> respond (asString (h1 [] [text ("Task #" <> show taskId)]))
     CreateTask _ ->
       -- Let's pretend this saved the Task in a database.
       let createdId = TaskId 4
@@ -98,7 +98,7 @@ handler =
       redirectTo (ShowTask taskId)
 
 app :: forall m req res rw b c.
-  (Monad m, Response m HTML b, ResponseWriter rw m b) =>
+  (Monad m, Response b m String, ResponseWriter rw m b) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
@@ -121,7 +121,7 @@ app =
     notFound =
       writeStatus statusNotFound
       >=> closeHeaders
-      >=> respond (h1 [] [text "Not Found"])
+      >=> respond (asString (h1 [] [text "Not Found"]))
 
 spec :: forall e. Spec (buffer :: BUFFER | e) Unit
 spec = do

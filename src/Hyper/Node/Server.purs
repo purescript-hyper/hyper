@@ -39,15 +39,15 @@ newtype ResponseBody = ResponseBody Buffer
 
 derive instance newtypeResponseBody :: Newtype ResponseBody _
 
-instance stringResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response m String ResponseBody where
+instance stringResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response ResponseBody m String where
   toResponse body =
     map ResponseBody (liftAff (liftEff (Buffer.fromString body UTF8)))
 
-instance stringAndEncodingResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response m (Tuple String Encoding) ResponseBody where
+instance stringAndEncodingResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response ResponseBody m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
     map ResponseBody (liftAff (liftEff (Buffer.fromString body encoding)))
 
-instance bufferResponseBody :: Applicative m => Response m Buffer ResponseBody where
+instance bufferResponseBody :: Applicative m => Response ResponseBody m Buffer where
   toResponse = pure <<< ResponseBody
 
 

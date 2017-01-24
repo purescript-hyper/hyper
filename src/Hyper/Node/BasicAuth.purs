@@ -54,7 +54,7 @@ withAuthentication mapper conn = do
 
 authenticated
   :: forall m req res c rw b t.
-     (Monad m, Response m String b, ResponseWriter rw m b) =>
+     (Monad m, Response b m String, ResponseWriter rw m b) =>
      Realm
   -> Middleware
       m

@@ -19,7 +19,11 @@
     "purescript-node-http": "^3.0.1",
     "purescript-media-types": "^2.0.0",
     "purescript-st": "^2.0.0",
-    "purescript-node-fs-aff": "^3.0.0"
+    "purescript-node-fs-aff": "^3.0.0",
+    "purescript-generics-rep": "^4.1.0",
+    "purescript-proxy": "^1.0.0",
+    "purescript-symbols": "^2.0.0",
+    "purescript-uri": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0",

@@ -6,12 +6,11 @@ import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(..))
 import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
-import Hyper.HTML (text)
+import Hyper.HTML (asString, text)
 import Hyper.Method (Method(GET))
-import Hyper.Node.Assertions (bodyShouldEqual)
 import Hyper.Response (class Response, respond, contentType)
 import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
-import Hyper.Test.TestServer (StringBody(StringBody), testStringBody, TestResponse, testResponseWriter, testBody, testHeaders, testServer)
+import Hyper.Test.TestServer (StringBody, testStringBody, TestResponse, testResponseWriter, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -32,7 +31,7 @@ type TestResource m rw gr pr =
 
 
 app :: forall m req res rw b c.
-  (Monad m, ResponseWriter rw m b, Response m String b) =>
+  (Monad m, ResponseWriter rw m b, Response b m String) =>
   Middleware
   m
   (Conn { url :: String, method :: Method | req }
@@ -51,7 +50,7 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
                          writeStatus statusOK conn
                          >>= contentType textHTML
                          >>= closeHeaders
-                         >>= respond (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"]))
+                         >>= respond (asString (linkTo (contact ∷ TestResource m rw Supported Unsupported) [text "Contact Me!"])))
       }
 
     contact :: TestResource m rw Supported Unsupported
@@ -62,13 +61,13 @@ app = runRouter defaultRouterFallbacks (router about <|> router contact)
                           writeStatus statusOK conn
                           >>= contentType textHTML
                           >>= closeHeaders
-                          >>= respond (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"]))
+                          >>= respond (asString (linkTo (about ∷ TestResource m rw Supported Unsupported) [text "About Me"])))
       }
 
 
 getResponse
   :: forall m.
-     (Monad m, Response m String StringBody) =>
+     (Monad m, Response StringBody m String) =>
      Method ->
      String ->
      m (TestResponse StringBody)
