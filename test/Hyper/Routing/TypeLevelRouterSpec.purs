@@ -1,8 +1,6 @@
 module Hyper.Routing.TypeLevelRouterSpec (spec) where
 
 import Prelude
-import Control.Monad.Aff (Aff)
-import Control.Monad.Eff.Class (liftEff)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
@@ -45,18 +43,16 @@ type TestAPI =
   :<|> GetPost
   :<|> UserRoutes -- nested routes with capture
 
-request :: forall e. String -> String -> Aff e (Either RoutingError String)
+request :: String -> String -> Either RoutingError String
 request method url =
-  case runRouter (Proxy :: Proxy TestAPI) handlers method url of
-    Left err -> liftEff (pure (Left err))
-    Right e -> liftEff (Right <$> e)
+  runRouter (Proxy :: Proxy TestAPI) handlers method url
   where
-    renderHtml = pure "<h1>HTML</h1>"
-    renderPost (PostID n) = pure $ "Post #" <> show n
+    renderHtml = "<h1>HTML</h1>"
+    renderPost (PostID n) = "Post #" <> show n
 
     userHandlers userId = renderProfile userId :<|> renderSettings userId
-    renderProfile (UserID s) = pure $ "Profile of " <> s
-    renderSettings (UserID s) = pure $ "Settings of " <> s
+    renderProfile (UserID s) = "Profile of " <> s
+    renderSettings (UserID s) = "Settings of " <> s
 
     handlers = (renderHtml :<|> renderPost :<|> userHandlers)
 
@@ -72,17 +68,15 @@ spec =
 
     describe "route" do
       it "matches root" do
-        res <- request "GET" "/"
-        res `shouldEqual` Right "<h1>HTML</h1>"
+        request "GET" "/" `shouldEqual` Right "<h1>HTML</h1>"
 
       it "matches custom Capture" do
-        res <- request "GET" "/posts/123/"
-        res `shouldEqual` Right "Post #123"
+        request "GET" "/posts/123/" `shouldEqual` Right "Post #123"
 
       it "validates based on customer Capture instance" do
-        res <- request "GET" "/posts/0/"
-        res `shouldEqual` Left (HTTPError 400 (Just "PostID must be equal to or greater than 1."))
+        request "GET" "/posts/0/"
+          `shouldEqual`
+          Left (HTTPError 400 (Just "PostID must be equal to or greater than 1."))
 
       it "matches nested routes" do
-        res <- request "GET" "/users/owi/profile/"
-        res `shouldEqual` Right "Profile of owi"
+        request "GET" "/users/owi/profile/" `shouldEqual` Right "Profile of owi"
