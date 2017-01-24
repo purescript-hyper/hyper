@@ -37,10 +37,10 @@ instance fromHttpDataUserID :: FromHttpData UserID where
 instance toHttpDataUserID :: ToHttpData UserID where
   toPathPiece (UserID s) = s
 
-type Root = Get "text/html"
-type GetPost = "posts" :/ Capture "id" PostID :> Get "text/plain"
-type UserRoutes = "users" :/ Capture "user-id" UserID :> ("profile" :/ Get "text/plain"
-                                                          :<|> "settings" :/ Get "text/plain")
+type Root = Get
+type GetPost = "posts" :/ Capture "id" PostID :> Get
+type UserRoutes = "users" :/ Capture "user-id" UserID :> ("profile" :/ Get
+                                                          :<|> "settings" :/ Get)
 
 type TestAPI =
   Root

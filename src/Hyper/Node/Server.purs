@@ -50,7 +50,6 @@ instance stringAndEncodingResponseBody :: (MonadAff (buffer :: BUFFER | e) m) =>
 instance bufferResponseBody :: Applicative m => Response ResponseBody m Buffer where
   toResponse = pure <<< ResponseBody
 
-
 readBody :: forall e. RequestBody -> Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e) String
 readBody body = do
   let stream = requestAsStream (unwrap body)

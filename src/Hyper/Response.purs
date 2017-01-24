@@ -30,7 +30,7 @@ contentType :: forall m req res rw b c.
                (Conn req { writer :: rw HeadersOpen | res } c)
 contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
-class Response b m r | b -> r where
+class Response b m r where
   toResponse :: r -> m b
 
 respond :: forall m r b req res rw c.

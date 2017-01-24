@@ -26,9 +26,9 @@ import Type.Proxy (Proxy(..))
 data Lit (v :: Symbol)
 data Capture (v :: Symbol) t
 
-data Verb (m :: Symbol) (ct :: Symbol)
+data Verb (m :: Symbol)
 
-type Get ct = Verb "GET" ct
+type Get = Verb "GET"
 
 data Sub e t
 data LitSub (v :: Symbol) t
@@ -98,7 +98,7 @@ instance hasLinkCapture :: (HasLink sub subMk, IsSymbol c, ToHttpData t)
   toLink _ l (x :: t) =
     toLink (Proxy :: Proxy sub) $ append l (Link [toPathPiece x])
 
-instance hasLinkVerb :: HasLink (Verb m ct) URI where
+instance hasLinkVerb :: HasLink (Verb m) URI where
   toLink _ = linkToURI
 
 linkTo :: forall l t. HasLink l t => Proxy l -> t
@@ -160,7 +160,7 @@ instance routerCapture :: (Router e h out, FromHttpData v)
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
 instance routerVerb :: (IsSymbol m)
-                       => Router (Verb m ct) h h where
+                       => Router (Verb m) h h where
   route _ context r =
     if expectedMethod == show context.method && null context.path
     then pure r

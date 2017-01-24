@@ -28,7 +28,6 @@ import Prelude
 import Data.Array (null)
 import Data.Foldable (fold)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Response (toResponse, class Response)
 
 type TagName = String
 
@@ -56,10 +55,6 @@ asString =
         endTag = "</" <> tagName <> ">"
       in startTag <> fold (map asString children) <> endTag
     Text s -> s
-
-
---instance responseElement :: Response t m String => Response t m HTML where
---  toResponse = toResponse <<< asString
 
 -- | Create an HTML text.
 text :: String -> HTML

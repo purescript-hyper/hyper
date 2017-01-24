@@ -13,7 +13,7 @@ import Data.String (length)
 import Data.Tuple (lookup, Tuple(Tuple))
 import Hyper.Core (statusOK, statusBadRequest, writeStatus, closeHeaders, Port(Port))
 import Hyper.Form (Form(Form), parseForm)
-import Hyper.HTML (p, text, element)
+import Hyper.HTML (asString, element, p, text)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
@@ -45,7 +45,7 @@ main =
       writeStatus status
       >=> contentType textHTML
       >=> closeHeaders
-      >=> respond x
+      >=> respond (asString x)
 
     handlePost body conn =
       case body of

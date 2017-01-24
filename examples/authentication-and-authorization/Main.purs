@@ -20,7 +20,7 @@ import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
-import Hyper.HTML (a, li, ul, element_, p, text, h1, HTML)
+import Hyper.HTML (HTML, a, asString, element_, h1, li, p, text, ul)
 import Hyper.Method (Method(GET))
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (class Response, respond, contentType)
@@ -31,7 +31,7 @@ import Node.HTTP (HTTP)
 -- Helper for responding with HTML.
 htmlWithStatus
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response b m String) =>
      Status
   -> HTML
   -> Middleware
@@ -42,7 +42,7 @@ htmlWithStatus status x =
   writeStatus status
   >=> contentType textHTML
   >=> closeHeaders
-  >=> respond x
+  >=> respond (asString x)
 
 
 -- Users have user names.
@@ -62,7 +62,7 @@ data Admin = Admin
 -- name if the user _is_ authenticated.
 profileHandler
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response b m String) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
@@ -93,7 +93,7 @@ profileHandler conn =
 -- as seen below.
 adminHandler
   :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response m HTML b) =>
+     (Monad m, ResponseWriter rw m b, Response b m String) =>
      Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
@@ -136,7 +136,7 @@ getAdminRole conn =
 
 
 app :: forall m e req res rw b c.
-       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw m b, Response m String b) =>
+       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw m b, Response b m String) =>
        Middleware
        m
        (Conn { url :: String, method :: Method, headers :: StrMap String | req }
