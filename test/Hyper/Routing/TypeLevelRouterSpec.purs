@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
 import Data.URI (printURI)
-import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:<|>), type (:>), Capture, Get, Handler(..), Lit, RoutingError(..), fromPathPiece, linkTo, runRouter, (:<|>))
+import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:<|>), type (:>), Capture, Get, Lit, RoutingError(..), fromPathPiece, linkTo, runRouter, (:<|>))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
@@ -51,12 +51,12 @@ request method url =
     Left err -> liftEff (pure (Left err))
     Right e -> liftEff (Right <$> e)
   where
-    renderHtml = Handler (pure "<h1>HTML</h1>")
-    renderPost (PostID n) = Handler (pure $ "Post #" <> show n)
+    renderHtml = pure "<h1>HTML</h1>"
+    renderPost (PostID n) = pure $ "Post #" <> show n
 
     userHandlers i = renderProfile i :<|> renderSettings i
-    renderProfile (UserID s) = Handler (pure $ "Profile of " <> s)
-    renderSettings (UserID s) = Handler (pure $ "Settings of " <> s)
+    renderProfile (UserID s) = pure $ "Profile of " <> s
+    renderSettings (UserID s) = pure $ "Settings of " <> s
 
     server = (renderHtml :<|> renderPost :<|> userHandlers)
 

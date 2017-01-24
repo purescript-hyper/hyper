@@ -1,3 +1,5 @@
+-- Highly experimental and naive implementation of servant-server style
+-- routing for Hyper. Not much will be stable, nor usable, here.
 module Hyper.Routing.TypeLevelRouter where
 
 import Prelude
@@ -92,11 +94,6 @@ instance hasLinkVerb :: HasLink (Verb m ct) URI where
 linkTo :: forall l t. HasLink l t => Proxy l -> t
 linkTo p = toLink p mempty
 
-newtype Handler e = Handler (Eff e String)
-
-runHandler :: forall e. Handler e -> Eff e String
-runHandler (Handler h) = h
-
 type RoutingContext = { path :: (Array String)
                       , method :: String
                       }
@@ -160,19 +157,15 @@ instance hasRouterVerb :: (IsSymbol m)
     where
       expectedMethod = reflectSymbol (SProxy :: SProxy m)
 
-infix 4 type TypeConcat as <>
-
 runRouter
-  :: forall s r e.
-     HasRouter s r (Handler e)
+  :: forall s r e a.
+     HasRouter s r (Eff e a)
      => Proxy s
      -> r
      -> String
      -> String
-     -> Either RoutingError (Eff e String)
+     -> Either RoutingError (Eff e a)
 runRouter _ handler method url =
-  case route (Proxy :: Proxy s) { path: p, method: method } handler of
-    Left err -> Left err
-    Right h -> Right (runHandler h)
+  route (Proxy :: Proxy s) { path: p, method: method } handler
   where
     p = filter ((/=) "") (split (Pattern "/") url)
