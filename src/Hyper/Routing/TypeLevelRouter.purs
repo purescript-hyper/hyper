@@ -104,6 +104,17 @@ instance hasLinkVerb :: HasLink (Verb m) URI where
 linkTo :: forall l t. HasLink l t => Proxy l -> t
 linkTo p = toLink p mempty
 
+class HasLinks e mk | e -> mk where
+  toLinks :: Proxy e -> Link -> mk
+
+instance hasLinksEndpoints :: (HasLink e1 mk1, HasLink e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
+  toLinks _ link =
+    toLink (Proxy :: Proxy e1) link
+    :<|> toLink (Proxy :: Proxy e2) link
+
+linksTo :: forall e t. HasLinks e t => Proxy e -> t
+linksTo e = toLinks e mempty
+
 type RoutingContext = { path :: (Array String)
                       , method :: Method
                       }

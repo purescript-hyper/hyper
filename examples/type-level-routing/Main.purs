@@ -8,13 +8,11 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.Array ((..))
 import Data.Either (Either(..))
 import Data.MediaType.Common (textHTML)
-import Data.Tuple (Tuple(..))
-import Data.URI (printURI)
 import Hyper.Core (Port(Port), closeHeaders, fallbackTo, statusNotFound, statusOK, writeStatus)
-import Hyper.HTML (a, asString, element_, h1, li, p, text, ul)
+import Hyper.HTML (asString, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:/), type (:>), type (:<|>), (:<|>), Capture, Get, fromPathPiece, linkTo, router)
+import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:/), type (:<|>), type (:>), Capture, Get, fromPathPiece, linksTo, router, (:<|>))
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Type.Proxy (Proxy(..))
@@ -31,50 +29,48 @@ instance fromHttpDataPostID :: FromHttpData PostID where
 instance toHttpDataPostID :: ToHttpData PostID where
   toPathPiece (PostID n) = show n
 
-type Archive = Get
-type ShowPost = "posts" :/ Capture "id" PostID :> Get
-type App = Archive :<|> ShowPost
+type Site = Get :<|> "posts" :/ Capture "id" PostID :> Get
+
+site :: Proxy Site
+site = Proxy
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
-main =
-  router (Proxy :: Proxy App) (renderArchive :<|> renderPost)
-  # fallbackTo notFound
-  # runServer defaultOptions onListening onRequestError {}
-
+main = app (linksTo site)
   where
-    renderArchive =
-      htmlWithStatus statusOK $
-      element_ "section" [ h1 [] [ text "Archive" ]
-                         , ul [] (map postLink (1..10))
-                         ]
+    -- Automatic type-safe link functions!
+    app (archiveURI :<|> postURI) =
 
-    -- Type-safe linking
+      router (Proxy :: Proxy Site) (renderArchive :<|> renderPost)
+      # fallbackTo notFound
+      # runServer defaultOptions onListening onRequestError {}
 
-    postLink n =
-      let uri = (linkTo (Proxy :: Proxy ShowPost) (PostID n))
-      in li [] [a [Tuple "href" (printURI uri)] [text ("Post #" <> show n)]]
+      where
+        renderArchive =
+          htmlWithStatus statusOK $
+          element_ "section" [ h1 [] [ text "Archive" ]
+                             , ul [] (map postLink (1..10))
+                             ]
 
-    homeLink =
-      a [ Tuple "href" (printURI (linkTo (Proxy :: Proxy Archive)))] [ text "Home" ]
+        postLink n = li [] [linkTo (postURI (PostID n)) [ text ("Post #" <> show n) ]]
 
-    renderPost (PostID pId) =
-      htmlWithStatus statusOK $
-      element_ "section" [ h1 [] [ text ("Post " <> show pId) ]
-                         , p [] [ text "Lorem whatever..." ]
-                         , p [] [ homeLink ]
-                         ]
+        renderPost (PostID pId) =
+          htmlWithStatus statusOK $
+          element_ "section" [ h1 [] [ text ("Post " <> show pId) ]
+                             , p [] [ text "Lorem whatever..." ]
+                             , p [] [ linkTo archiveURI [ text "Archive" ] ]
+                             ]
 
-    notFound =
-      htmlWithStatus statusNotFound $
-      element_ "section" [ h1 [] [ text "Not Found!" ]
-                         , p [] [ text "The resource you requested does not exist." ]
-                         ]
+        notFound =
+          htmlWithStatus statusNotFound $
+          element_ "section" [ h1 [] [ text "Not Found!" ]
+                             , p [] [ text "The resource you requested does not exist." ]
+                             ]
 
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
+        onListening (Port port) = log ("Listening on http://localhost:" <> show port)
+        onRequestError err = log ("Request failed: " <> show err)
 
-    htmlWithStatus status doc =
-      writeStatus status
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond (asString doc)
+        htmlWithStatus status doc =
+          writeStatus status
+          >=> contentType textHTML
+          >=> closeHeaders
+          >=> respond (asString doc)

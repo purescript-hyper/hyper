@@ -22,12 +22,14 @@ module Hyper.HTML
        , div
        , a
        , form
+       , linkTo
        ) where
 
 import Prelude
 import Data.Array (null)
 import Data.Foldable (fold)
 import Data.Tuple (Tuple(Tuple))
+import Data.URI (URI, printURI)
 
 type TagName = String
 
@@ -115,3 +117,6 @@ a = Element "a"
 
 form :: Array Attr -> Array HTML -> HTML
 form = Element "form"
+
+linkTo :: URI -> Array HTML -> HTML
+linkTo uri = a [Tuple "href" (printURI uri)]
