@@ -3,7 +3,6 @@
 module Hyper.Routing.TypeLevelRouter where
 
 import Prelude
-import Control.Monad.Eff (Eff)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (elem, filter, foldl, uncons)
 import Data.Either (Either(..))
@@ -158,13 +157,13 @@ instance hasRouterVerb :: (IsSymbol m)
       expectedMethod = reflectSymbol (SProxy :: SProxy m)
 
 runRouter
-  :: forall s r e a.
-     HasRouter s r (Eff e a)
+  :: forall s r a.
+     HasRouter s r a
      => Proxy s
      -> r
      -> String
      -> String
-     -> Either RoutingError (Eff e a)
+     -> Either RoutingError a
 runRouter _ handler method url =
   route (Proxy :: Proxy s) { path: p, method: method } handler
   where
