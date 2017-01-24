@@ -114,8 +114,8 @@ class HasRouter e h r | e -> h, e -> r where
 fallthrough :: RoutingError -> Boolean
 fallthrough (HTTPError code _) = code `elem` [404, 405]
 
-instance hasRouterEndpoints :: (HasRouter e1 in1 out, HasRouter e2 in2 out)
-                               => HasRouter (e1 :<|> e2) (in1 :<|> in2) out where
+instance hasRouterEndpoints :: (HasRouter e1 h1 out, HasRouter e2 h2 out)
+                               => HasRouter (e1 :<|> e2) (h1 :<|> h2) out where
   route _ context (h1 :<|> h2) =
     case route (Proxy :: Proxy e1) context h1 of
       Left err ->

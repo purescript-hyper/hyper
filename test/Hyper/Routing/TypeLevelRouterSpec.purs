@@ -43,22 +43,22 @@ type UserRoutes = Lit "users" :> Capture "user-id" UserID :> (Lit "profile" :> G
 type TestAPI =
   Root
   :<|> GetPost
-  :<|> UserRoutes
+  :<|> UserRoutes -- nested routes with capture
 
 request :: forall e. String -> String -> Aff e (Either RoutingError String)
 request method url =
-  case runRouter (Proxy :: Proxy TestAPI) server method url of
+  case runRouter (Proxy :: Proxy TestAPI) handlers method url of
     Left err -> liftEff (pure (Left err))
     Right e -> liftEff (Right <$> e)
   where
     renderHtml = pure "<h1>HTML</h1>"
     renderPost (PostID n) = pure $ "Post #" <> show n
 
-    userHandlers i = renderProfile i :<|> renderSettings i
+    userHandlers userId = renderProfile userId :<|> renderSettings userId
     renderProfile (UserID s) = pure $ "Profile of " <> s
     renderSettings (UserID s) = pure $ "Settings of " <> s
 
-    server = (renderHtml :<|> renderPost :<|> userHandlers)
+    handlers = (renderHtml :<|> renderPost :<|> userHandlers)
 
 spec :: forall e. Spec e Unit
 spec =
