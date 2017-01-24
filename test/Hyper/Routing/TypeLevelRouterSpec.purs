@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
 import Data.URI (printURI)
-import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:<|>), type (:>), Capture, Get, Lit, RoutingError(..), fromPathPiece, linkTo, runRouter, (:<|>))
+import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:/), type (:<|>), type (:>), Capture, Get, RoutingError(..), fromPathPiece, linkTo, runRouter, (:<|>))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
@@ -35,10 +35,10 @@ instance fromHttpDataUserID :: FromHttpData UserID where
 instance toHttpDataUserID :: ToHttpData UserID where
   toPathPiece (UserID s) = s
 
-type Root = Lit "html" :> Get "text/html"
-type GetPost = Lit "posts" :> Capture "id" PostID :> Get "text/plain"
-type UserRoutes = Lit "users" :> Capture "user-id" UserID :> (Lit "profile" :> Get "text/plain"
-                                                              :<|> Lit "settings" :> Get "text/plain")
+type Root = "html" :/ Get "text/html"
+type GetPost = "posts" :/ Capture "id" PostID :> Get "text/plain"
+type UserRoutes = "users" :/ Capture "user-id" UserID :> ("profile" :/ Get "text/plain"
+                                                          :<|> "settings" :/ Get "text/plain")
 
 type TestAPI =
   Root

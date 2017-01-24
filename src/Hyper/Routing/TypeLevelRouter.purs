@@ -27,12 +27,13 @@ data Verb (m :: Symbol) (ct :: Symbol)
 type Get ct = Verb "GET" ct
 
 data Sub e t
+data LitSub (v :: Symbol) t
 data Endpoints a b = Endpoints a b
 
 infixr 5 type Sub as :>
+infixr 5 type LitSub as :/
 infixl 4 type Endpoints as :<|>
 infixl 4 Endpoints as :<|>
-
 
 newtype Link = Link (Array String)
 
@@ -77,13 +78,19 @@ instance fromHttpDataInt :: FromHttpData Int where
 class HasLink e mk | e -> mk where
   toLink :: Proxy e -> Link -> mk
 
-instance hasLinkLit :: (HasLink sub subMk, IsSymbol lit) => HasLink (Lit lit :> sub) subMk where
+instance hasLinkLit :: (HasLink sub subMk, IsSymbol lit)
+                       => HasLink (Lit lit :> sub) subMk where
   toLink _ =
     toLink (Proxy :: Proxy sub) <<< flip append (Link [segment])
     where
       segment = reflectSymbol (SProxy :: SProxy lit)
 
-instance hasLinkCapture :: (HasLink sub subMk, IsSymbol c, ToHttpData t) => HasLink (Capture c t :> sub) (t -> subMk) where
+instance hasLinkLitSub :: (HasLink sub subMk, IsSymbol lit)
+                          => HasLink (lit :/ sub) subMk where
+  toLink _ = toLink (Proxy :: Proxy (Lit lit :> sub))
+
+instance hasLinkCapture :: (HasLink sub subMk, IsSymbol c, ToHttpData t)
+                           => HasLink (Capture c t :> sub) (t -> subMk) where
   toLink _ l (x :: t) =
     toLink (Proxy :: Proxy sub) $ append l (Link [toPathPiece x])
 
@@ -133,6 +140,10 @@ instance hasRouterLit :: (HasRouter e h out, IsSymbol lit)
       Just _ -> throwError (HTTPError 404 Nothing)
       Nothing -> throwError (HTTPError 404 Nothing)
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
+
+instance hasRouterLitSub :: (HasRouter e h out, IsSymbol lit)
+                         => HasRouter (lit :/ e) h out where
+  route _ = route (Proxy :: Proxy (Lit lit :> e))
 
 instance hasRouterCapture :: (HasRouter e h out, FromHttpData v)
                              => HasRouter (Capture c v :> e) (v -> h) out where
