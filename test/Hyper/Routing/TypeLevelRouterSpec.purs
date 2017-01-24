@@ -54,6 +54,7 @@ spec = do
         writeStatus statusOK
         >=> headers []
         >=> respond "<h1>HTML</h1>"
+
       renderPost (PostID n) =
         writeStatus statusOK
         >=> headers []

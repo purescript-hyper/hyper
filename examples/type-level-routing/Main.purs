@@ -42,15 +42,6 @@ main =
   # runServer defaultOptions onListening onRequestError {}
 
   where
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
-
-    htmlWithStatus status doc =
-      writeStatus status
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond (asString doc)
-
     renderArchive =
       htmlWithStatus statusOK $
       element_ "section" [ h1 [] [ text "Archive" ]
@@ -78,3 +69,12 @@ main =
       element_ "section" [ h1 [] [ text "Not Found!" ]
                          , p [] [ text "The resource you requested does not exist." ]
                          ]
+
+    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
+    onRequestError err = log ("Request failed: " <> show err)
+
+    htmlWithStatus status doc =
+      writeStatus status
+      >=> contentType textHTML
+      >=> closeHeaders
+      >=> respond (asString doc)
