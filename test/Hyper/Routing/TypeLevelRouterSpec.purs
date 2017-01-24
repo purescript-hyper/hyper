@@ -1,6 +1,8 @@
 module Hyper.Routing.TypeLevelRouterSpec (spec) where
 
 import Prelude
+import Control.Monad.Aff (Aff)
+import Control.Monad.Eff.Class (liftEff)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
@@ -43,19 +45,20 @@ type TestAPI =
   :<|> GetPost
   :<|> UserRoutes
 
-request :: String -> String -> Either RoutingError String
+request :: forall e. String -> String -> Aff e (Either RoutingError String)
 request method url =
-  runRouter (Proxy :: Proxy TestAPI) (renderHtml
-                                      :<|> renderPost
-                                      :<|> userHandlers
-                                     ) method url
+  case runRouter (Proxy :: Proxy TestAPI) server method url of
+    Left err -> liftEff (pure (Left err))
+    Right e -> liftEff (Right <$> e)
   where
-    renderHtml = Handler (const "<h1>HTML</h1>")
-    renderPost (PostID n) = Handler (\_ -> "Post #" <> show n)
+    renderHtml = Handler (pure "<h1>HTML</h1>")
+    renderPost (PostID n) = Handler (pure $ "Post #" <> show n)
 
     userHandlers i = renderProfile i :<|> renderSettings i
-    renderProfile (UserID s) = Handler (\_ -> "Profile of " <> s)
-    renderSettings (UserID s) = Handler (\_ -> "Settings of " <> s)
+    renderProfile (UserID s) = Handler (pure $ "Profile of " <> s)
+    renderSettings (UserID s) = Handler (pure $ "Settings of " <> s)
+
+    server = (renderHtml :<|> renderPost :<|> userHandlers)
 
 spec :: forall e. Spec e Unit
 spec =
@@ -68,14 +71,18 @@ spec =
         printURI (linkTo (Proxy :: Proxy GetPost) (PostID 10)) `shouldEqual` "/posts/10/"
 
     describe "route" do
-      it "matches Lit" $
-        request "GET" "/html" `shouldEqual` Right "<h1>HTML</h1>"
+      it "matches Lit" do
+        res <- request "GET" "/html"
+        res `shouldEqual` Right "<h1>HTML</h1>"
 
-      it "matches custom Capture" $
-        request "GET" "/posts/123/" `shouldEqual` Right "Post #123"
+      it "matches custom Capture" do
+        res <- request "GET" "/posts/123/"
+        res `shouldEqual` Right "Post #123"
 
-      it "validates based on customer Capture instance" $
-        request "GET" "/posts/0/" `shouldEqual` Left (HTTPError 400 (Just "PostID must be equal to or greater than 1."))
+      it "validates based on customer Capture instance" do
+        res <- request "GET" "/posts/0/"
+        res `shouldEqual` Left (HTTPError 400 (Just "PostID must be equal to or greater than 1."))
 
-      it "matches nested routes" $
-        request "GET" "/users/owi/profile/" `shouldEqual` Right "Profile of owi"
+      it "matches nested routes" do
+        res <- request "GET" "/users/owi/profile/"
+        res `shouldEqual` Right "Profile of owi"

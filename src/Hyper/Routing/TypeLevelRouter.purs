@@ -1,6 +1,7 @@
 module Hyper.Routing.TypeLevelRouter where
 
 import Prelude
+import Control.Monad.Eff (Eff)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (elem, filter, foldl, uncons)
 import Data.Either (Either(..))
@@ -91,10 +92,10 @@ instance hasLinkVerb :: HasLink (Verb m ct) URI where
 linkTo :: forall l t. HasLink l t => Proxy l -> t
 linkTo p = toLink p mempty
 
-newtype Handler = Handler (Unit -> String)
+newtype Handler e = Handler (Eff e String)
 
-runHandler :: Handler -> String
-runHandler (Handler h) = h unit
+runHandler :: forall e. Handler e -> Eff e String
+runHandler (Handler h) = h
 
 type RoutingContext = { path :: (Array String)
                       , method :: String
@@ -161,7 +162,14 @@ instance hasRouterVerb :: (IsSymbol m)
 
 infix 4 type TypeConcat as <>
 
-runRouter :: forall s r. HasRouter s r Handler => Proxy s -> r -> String -> String -> Either RoutingError String
+runRouter
+  :: forall s r e.
+     HasRouter s r (Handler e)
+     => Proxy s
+     -> r
+     -> String
+     -> String
+     -> Either RoutingError (Eff e String)
 runRouter _ handler method url =
   case route (Proxy :: Proxy s) { path: p, method: method } handler of
     Left err -> Left err
