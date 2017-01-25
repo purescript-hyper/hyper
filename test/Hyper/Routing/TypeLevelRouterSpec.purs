@@ -106,13 +106,16 @@ spec = do
             printURI root `shouldEqual` "/"
 
           it "returns link for Lit and Capture" $
-            printURI (getPost (PostID 10)) `shouldEqual` "/posts/10/"
+            printURI (getPost (PostID 10)) `shouldEqual` "/posts/10"
 
           it "returns link for nested routes" $
             case userRoutes (UserID "owi") of
               (profile :<|> settings) -> do
-                  printURI profile `shouldEqual` "/users/owi/profile/"
-                  printURI settings `shouldEqual` "/users/owi/settings/"
+                  printURI profile `shouldEqual` "/users/owi/profile"
+                  printURI settings `shouldEqual` "/users/owi/settings"
+
+          it "returns link for CaptureAll" $
+            printURI (wiki ["foo", "bar", "baz.txt"]) `shouldEqual` "/wiki/foo/bar/baz.txt"
 
     describe "route" do
       it "matches root" do
@@ -120,16 +123,16 @@ spec = do
         testStringBody conn `shouldEqual` "<h1>HTML</h1>"
 
       it "matches custom Capture" do
-        conn <- makeRequest GET "/posts/123/"
+        conn <- makeRequest GET "/posts/123"
         testStringBody conn `shouldEqual` "Post #123"
 
       it "validates based on customer Capture instance" do
-        conn <- makeRequest GET "/posts/0/"
+        conn <- makeRequest GET "/posts/0"
         testStatus conn `shouldEqual` Just statusBadRequest
         testStringBody conn `shouldEqual` "PostID must be equal to or greater than 1."
 
       it "matches nested routes" do
-        conn <- makeRequest GET "/users/owi/profile/"
+        conn <- makeRequest GET "/users/owi/profile"
         testStringBody conn `shouldEqual` "Profile of owi"
 
       it "matches CaptureAll route" do

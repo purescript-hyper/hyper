@@ -25,7 +25,7 @@ module Hyper.Routing.TypeLevelRouter
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
-import Data.Array (elem, filter, foldl, null, singleton, uncons)
+import Data.Array (elem, filter, foldl, null, singleton, uncons, unsnoc)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
@@ -33,7 +33,7 @@ import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype)
-import Data.Path.Pathy (dir, rootDir, (</>))
+import Data.Path.Pathy (dir, file, rootDir, (</>))
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
@@ -82,11 +82,16 @@ linkToURI :: Link -> URI
 linkToURI (Link segments) =
   URI
   Nothing
-  (HierarchicalPart
-   Nothing
-   (Just (Left (foldl (</>) rootDir (map dir segments)))))
+  (HierarchicalPart Nothing (Just path))
   Nothing
   Nothing
+  where
+    path =
+      case unsnoc segments of
+        Just { init, last } ->
+          Right (foldl (</>) rootDir (map dir init) </> file last)
+        Nothing ->
+          Left rootDir
 
 class HasLinks e mk | e -> mk where
   toLinks :: Proxy e -> Link -> mk
