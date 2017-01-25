@@ -3,6 +3,7 @@
 module Hyper.Routing.TypeLevelRouter
        ( Lit
        , Capture
+       , CaptureAll
        , Verb
        , Get
        , Sub
@@ -17,10 +18,9 @@ module Hyper.Routing.TypeLevelRouter
        , class FromHttpData
        , fromPathPiece
        , Link
-       , class HasLink
-       , toLink
        , class HasLinks
        , toLinks
+       , linksTo
        , RoutingError(..)
        , class Router
        , route
@@ -29,7 +29,7 @@ module Hyper.Routing.TypeLevelRouter
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
-import Data.Array (elem, filter, foldl, null, uncons)
+import Data.Array (elem, filter, foldl, null, singleton, uncons)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
@@ -41,6 +41,7 @@ import Data.Newtype (class Newtype)
 import Data.Path.Pathy (dir, rootDir, (</>))
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
+import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.URI (HierarchicalPart(..), URI(..))
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotFound, writeStatus)
@@ -50,6 +51,7 @@ import Type.Proxy (Proxy(..))
 
 data Lit (v :: Symbol)
 data Capture (v :: Symbol) t
+data CaptureAll (v :: Symbol) t
 
 data Verb (m :: Symbol)
 
@@ -93,11 +95,17 @@ linkToURI (Link segments) =
 class ToHttpData x where
   toPathPiece :: x -> String
 
+instance toHttpDataString :: ToHttpData String where
+  toPathPiece = id
+
 instance toHttpDataInt :: ToHttpData Int where
   toPathPiece = show
 
 class FromHttpData x where
   fromPathPiece :: String -> Either String x
+
+instance fromHttpDataString :: FromHttpData String where
+  fromPathPiece = Right
 
 instance fromHttpDataInt :: FromHttpData Int where
   fromPathPiece s =
@@ -105,34 +113,33 @@ instance fromHttpDataInt :: FromHttpData Int where
       Just n -> Right n
       Nothing -> Left ("Invalid Int: " <> s)
 
-class HasLink e mk | e -> mk where
-  toLink :: Proxy e -> Link -> mk
-
-instance hasLinkLit :: (HasLink sub subMk, IsSymbol lit)
-                       => HasLink (Lit lit :> sub) subMk where
-  toLink _ =
-    toLink (Proxy :: Proxy sub) <<< flip append (Link [segment])
-    where
-      segment = reflectSymbol (SProxy :: SProxy lit)
-
-instance hasLinkCapture :: (HasLink sub subMk, IsSymbol c, ToHttpData t)
-                           => HasLink (Capture c t :> sub) (t -> subMk) where
-  toLink _ l (x :: t) =
-    toLink (Proxy :: Proxy sub) $ append l (Link [toPathPiece x])
-
-instance hasLinkVerb :: HasLink (Verb m) URI where
-  toLink _ = linkToURI
-
-linkTo :: forall l t. HasLink l t => Proxy l -> t
-linkTo p = toLink p mempty
-
 class HasLinks e mk | e -> mk where
   toLinks :: Proxy e -> Link -> mk
 
-instance hasLinksEndpoints :: (HasLink e1 mk1, HasLink e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
+instance hasLinksLit :: (HasLinks sub subMk, IsSymbol lit)
+                       => HasLinks (Lit lit :> sub) subMk where
+  toLinks _ =
+    toLinks (Proxy :: Proxy sub) <<< flip append (Link [segment])
+    where
+      segment = reflectSymbol (SProxy :: SProxy lit)
+
+instance hasLinksCapture :: (HasLinks sub subMk, IsSymbol c, ToHttpData t)
+                           => HasLinks (Capture c t :> sub) (t -> subMk) where
+  toLinks _ l =
+    toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< singleton <<< toPathPiece
+
+instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToHttpData t)
+                              => HasLinks (CaptureAll c t :> sub) (Array t -> subMk) where
+  toLinks _ l =
+    toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
+
+instance hasLinksVerb :: HasLinks (Verb m) URI where
+  toLinks _ = linkToURI
+
+instance hasLinksEndpoints :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
   toLinks _ link =
-    toLink (Proxy :: Proxy e1) link
-    :<|> toLink (Proxy :: Proxy e2) link
+    toLinks (Proxy :: Proxy e1) link
+    :<|> toLinks (Proxy :: Proxy e2) link
 
 linksTo :: forall e t. HasLinks e t => Proxy e -> t
 linksTo e = toLinks e mempty
@@ -187,6 +194,13 @@ instance routerCapture :: (Router e h out, FromHttpData v)
         case fromPathPiece head of
           Left err -> throwError (HTTPError statusBadRequest (Just err))
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
+
+instance routerCaptureAll :: (Router e h out, FromHttpData v)
+                             => Router (CaptureAll c v :> e) (Array v -> h) out where
+  route _ ctx r =
+    case traverse fromPathPiece ctx.path of
+      Left err -> throwError (HTTPError statusBadRequest (Just err))
+      Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
 
 instance routerVerb :: (IsSymbol m)
                        => Router (Verb m) h h where
