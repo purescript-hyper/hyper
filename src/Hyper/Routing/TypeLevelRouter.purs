@@ -13,10 +13,6 @@ module Hyper.Routing.TypeLevelRouter
        , type (:/)
        , type (:<|>)
        , (:<|>)
-       , class ToHttpData
-       , toPathPiece
-       , class FromHttpData
-       , fromPathPiece
        , Link
        , class HasLinks
        , toLinks
@@ -34,7 +30,6 @@ import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Int (fromString)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype)
@@ -47,6 +42,7 @@ import Data.URI (HierarchicalPart(..), URI(..))
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotFound, writeStatus)
 import Hyper.Method (Method)
 import Hyper.Response (class Response, respond)
+import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
 import Type.Proxy (Proxy(..))
 
 data Lit (v :: Symbol)
@@ -92,27 +88,6 @@ linkToURI (Link segments) =
   Nothing
   Nothing
 
-class ToHttpData x where
-  toPathPiece :: x -> String
-
-instance toHttpDataString :: ToHttpData String where
-  toPathPiece = id
-
-instance toHttpDataInt :: ToHttpData Int where
-  toPathPiece = show
-
-class FromHttpData x where
-  fromPathPiece :: String -> Either String x
-
-instance fromHttpDataString :: FromHttpData String where
-  fromPathPiece = Right
-
-instance fromHttpDataInt :: FromHttpData Int where
-  fromPathPiece s =
-    case fromString s of
-      Just n -> Right n
-      Nothing -> Left ("Invalid Int: " <> s)
-
 class HasLinks e mk | e -> mk where
   toLinks :: Proxy e -> Link -> mk
 
@@ -123,12 +98,12 @@ instance hasLinksLit :: (HasLinks sub subMk, IsSymbol lit)
     where
       segment = reflectSymbol (SProxy :: SProxy lit)
 
-instance hasLinksCapture :: (HasLinks sub subMk, IsSymbol c, ToHttpData t)
+instance hasLinksCapture :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
                            => HasLinks (Capture c t :> sub) (t -> subMk) where
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< singleton <<< toPathPiece
 
-instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToHttpData t)
+instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
                               => HasLinks (CaptureAll c t :> sub) (Array t -> subMk) where
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
@@ -185,7 +160,7 @@ instance routerLit :: (Router e h out, IsSymbol lit)
       Nothing -> throwError (HTTPError statusNotFound Nothing)
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
 
-instance routerCapture :: (Router e h out, FromHttpData v)
+instance routerCapture :: (Router e h out, FromPathPiece v)
                           => Router (Capture c v :> e) (v -> h) out where
   route _ ctx r =
     case uncons ctx.path of
@@ -195,7 +170,7 @@ instance routerCapture :: (Router e h out, FromHttpData v)
           Left err -> throwError (HTTPError statusBadRequest (Just err))
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
-instance routerCaptureAll :: (Router e h out, FromHttpData v)
+instance routerCaptureAll :: (Router e h out, FromPathPiece v)
                              => Router (CaptureAll c v :> e) (Array v -> h) out where
   route _ ctx r =
     case traverse fromPathPiece ctx.path of

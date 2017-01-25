@@ -8,7 +8,8 @@ import Data.URI (printURI)
 import Hyper.Core (closeHeaders, fallbackTo, statusBadRequest, statusNotFound, statusOK, writeStatus)
 import Hyper.Method (Method(..))
 import Hyper.Response (headers, respond)
-import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:/), type (:<|>), type (:>), Capture, CaptureAll, Get, fromPathPiece, linksTo, router, (:<|>))
+import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece)
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Get, linksTo, router, (:<|>))
 import Hyper.Test.TestServer (testResponseWriter, testServer, testStatus, testStringBody)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -16,25 +17,25 @@ import Type.Proxy (Proxy(..))
 
 newtype PostID = PostID Int
 
-instance fromHttpDataPostID :: FromHttpData PostID where
+instance fromPathPiecePostID :: FromPathPiece PostID where
   fromPathPiece s = do
     n <- fromPathPiece s
     if n >= 1
       then Right (PostID n)
       else Left "PostID must be equal to or greater than 1."
 
-instance toHttpDataPostID :: ToHttpData PostID where
+instance toPathPiecePostID :: ToPathPiece PostID where
   toPathPiece (PostID n) = show n
 
 newtype UserID = UserID String
 
-instance fromHttpDataUserID :: FromHttpData UserID where
+instance fromPathPieceUserID :: FromPathPiece UserID where
   fromPathPiece s =
     case trim s of
       "" -> Left "UserID cannot be blank."
       s' -> Right (UserID s')
 
-instance toHttpDataUserID :: ToHttpData UserID where
+instance toPathPieceUserID :: ToPathPiece UserID where
   toPathPiece (UserID s) = s
 
 type TestAPI =
