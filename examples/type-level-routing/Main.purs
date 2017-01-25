@@ -12,22 +12,23 @@ import Hyper.Core (Port(Port), closeHeaders, fallbackTo, statusNotFound, statusO
 import Hyper.HTML (asString, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
-import Hyper.Routing.TypeLevelRouter (class FromHttpData, class ToHttpData, type (:/), type (:<|>), type (:>), Capture, Get, fromPathPiece, linksTo, router, (:<|>))
+import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, Get, linksTo, router, (:<|>))
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Type.Proxy (Proxy(..))
 
 newtype PostID = PostID Int
 
-instance fromHttpDataPostID :: FromHttpData PostID where
+instance fromPathPiecePostID :: FromPathPiece PostID where
   fromPathPiece s = do
     n <- fromPathPiece s
     if n >= 1
       then Right (PostID n)
       else Left "Post ID must be equal to or greater than 1."
 
-instance toHttpDataPostID :: ToHttpData PostID where
-  toPathPiece (PostID n) = show n
+instance toPathPiecePostID :: ToPathPiece PostID where
+  toPathPiece (PostID n) = toPathPiece n
 
 type Site = Get :<|> "posts" :/ Capture "id" PostID :> Get
 
