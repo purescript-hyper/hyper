@@ -1,14 +1,14 @@
--- Highly experimental and naive implementation of servant-server style
--- routing for Hyper. Not much will be stable here.
+-- Highly experimental (and naive) implementation of servant-server style
+-- routing for Hyper.
 module Hyper.Routing.TypeLevelRouter
        ( Lit
        , Capture
        , CaptureAll
-       , Verb
+       , Handler
        , Get
        , Sub
        , LitSub
-       , Endpoints(..)
+       , AltE(..)
        , type (:>)
        , type (:/)
        , type (:<|>)
@@ -45,23 +45,56 @@ import Hyper.Response (class Response, respond)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
 import Type.Proxy (Proxy(..))
 
+-- | A literal path segment, matching paths where the next segment is equal
+-- | to the value of the `Symbol`.
+-- |
+-- | For example, the type `Lit "settings" :> Lit "general" :> "reset"`  would
+-- | match the path `/settings/general/reset`.
 data Lit (v :: Symbol)
+
+-- | Captures one segment of a path as type `t`. The `v` is a
+-- | `Symbol` that describes the captured value.
 data Capture (v :: Symbol) t
+
+-- | Captures all remaining segments of a path, all as type `t`. The `v`
+-- | is a `Symbol` that describes
 data CaptureAll (v :: Symbol) t
 
-data Verb (m :: Symbol)
+-- | A type-level description of the handler function, terminating a chain of
+-- | path literals, captures, and other endpoint type constructs. The `m` symbol
+-- | is the HTTP method that is handled.
+data Handler (m :: Symbol)
 
-type Get = Verb "GET"
+-- | Handy alias for GET handlers.
+type Get = Handler "GET"
 
+-- | The `Sub` is used to create the chain of `Lit`, `Capture`, `Handler`,
+-- | and other such type constructs that build up an endpoint type. `Sub`
+-- | is more often used infix with the `:>` operator.
 data Sub e t
+
+-- | A handy type alias for `Sub (Lit v)`, meant to be used infix with the `:/`
+-- | operator. Instead of writing `Lit "a" :> Lit "b" :> ...`, you can write
+-- | `"a" :/ "b" :/ ...`.
 type LitSub (v :: Symbol) t = Sub (Lit v) t
 
-data Endpoints a b = Endpoints a b
+-- | `AltE`` respresents choice, i.e. that endpoint `a` is tried first, and if
+-- | it fails, `b` is tried next. `AltE` is written infix using `:<|>` and is
+-- | used to compose multiple endpoint types into a larger API or site. It is
+-- | used to build up recursive structures, so `AltE a (AltE b c)` can be
+-- | written `a :<|> b :<|> c`.
+-- |
+-- | It it also used to extract information from a type, where the information
+-- | has the same structure as the type. For instance, when extracting links
+-- | from an `AltE` type, you can pattern match the result using `:<|>`
+-- | to access the links of `a` and `b`. That also works recursively with a
+-- | pattern match like `a :<|> b :<|> c :<|> d`.
+data AltE a b = AltE a b
 
 infixr 5 type Sub as :>
 infixr 5 type LitSub as :/
-infixl 4 type Endpoints as :<|>
-infixl 4 Endpoints as :<|>
+infixl 4 type AltE as :<|>
+infixl 4 AltE as :<|>
 
 newtype Link = Link (Array String)
 
@@ -113,10 +146,10 @@ instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
 
-instance hasLinksVerb :: HasLinks (Verb m) URI where
+instance hasLinksHandler :: HasLinks (Handler m) URI where
   toLinks _ = linkToURI
 
-instance hasLinksEndpoints :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
+instance hasLinksAltE :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
   toLinks _ link =
     toLinks (Proxy :: Proxy e1) link
     :<|> toLinks (Proxy :: Proxy e2) link
@@ -145,7 +178,7 @@ class Router e h r | e -> h, e -> r where
 fallthrough :: RoutingError -> Boolean
 fallthrough (HTTPError (Tuple code _) _) = code `elem` [404, 405]
 
-instance routerEndpoints :: (Router e1 h1 out, Router e2 h2 out)
+instance routerAltE :: (Router e1 h1 out, Router e2 h2 out)
                             => Router (e1 :<|> e2) (h1 :<|> h2) out where
   route _ context (h1 :<|> h2) =
     case route (Proxy :: Proxy e1) context h1 of
@@ -182,8 +215,8 @@ instance routerCaptureAll :: (Router e h out, FromPathPiece v)
       Left err -> throwError (HTTPError statusBadRequest (Just err))
       Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
 
-instance routerVerb :: (IsSymbol m)
-                       => Router (Verb m) h h where
+instance routerHandler :: (IsSymbol m)
+                       => Router (Handler m) h h where
   route _ context r =
     if expectedMethod == show context.method && null context.path
     then pure r
