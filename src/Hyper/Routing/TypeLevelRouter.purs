@@ -39,9 +39,10 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.URI (HierarchicalPart(..), URI(..))
-import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotFound, writeStatus)
+import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotAcceptable, statusNotFound, writeStatus)
 import Hyper.Method (Method)
 import Hyper.Response (class Response, respond)
+import Hyper.Routing.ContentType (class Accept, contentTypes)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
 import Type.Proxy (Proxy(..))
 
@@ -62,8 +63,8 @@ data CaptureAll (v :: Symbol) t
 
 -- | A type-level description of the handler function, terminating a chain of
 -- | path literals, captures, and other endpoint type constructs. The `m` symbol
--- | is the HTTP method that is handled.
-data Handler (m :: Symbol)
+-- | is the HTTP method that is handled. `ct` is the content type.
+data Handler (m :: Symbol) ct
 
 -- | Handy alias for GET handlers.
 type Get = Handler "GET"
@@ -146,7 +147,7 @@ instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
 
-instance hasLinksHandler :: HasLinks (Handler m) URI where
+instance hasLinksHandler :: HasLinks (Handler m ct) URI where
   toLinks _ = linkToURI
 
 instance hasLinksAltE :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
@@ -162,7 +163,9 @@ type RoutingContext = { path :: (Array String)
                       }
 
 data RoutingError
-  = HTTPError Status (Maybe String)
+  = HTTPError { status :: Status
+              , message :: (Maybe String)
+              }
 
 derive instance genericRoutingError :: Generic RoutingError _
 
@@ -175,18 +178,25 @@ instance showRoutingError :: Show RoutingError where
 class Router e h r | e -> h, e -> r where
   route :: Proxy e -> RoutingContext -> h -> Either RoutingError r
 
-fallthrough :: RoutingError -> Boolean
-fallthrough (HTTPError (Tuple code _) _) = code `elem` [404, 405]
-
 instance routerAltE :: (Router e1 h1 out, Router e2 h2 out)
                             => Router (e1 :<|> e2) (h1 :<|> h2) out where
   route _ context (h1 :<|> h2) =
     case route (Proxy :: Proxy e1) context h1 of
-      Left err ->
-        if fallthrough err
-        then route (Proxy :: Proxy e2) context h2
-        else Left err
+      Left err1 ->
+        case route (Proxy :: Proxy e2) context h2 of
+          -- The Error that's thrown depends on the Errors' HTTP codes.
+          Left err2 -> throwError (selectError err1 err2)
+          Right handler -> pure handler
       Right handler -> pure handler
+    where
+      fallbackCodes = [404, 405]
+      selectError (HTTPError errL) (HTTPError errR) =
+        case Tuple errL.status errR.status of
+          Tuple (Tuple code _) (Tuple code' _)
+            | code `elem` fallbackCodes && code' == 404 -> HTTPError errL
+            | code /= 404 && code' `elem` fallbackCodes -> HTTPError errL
+            | otherwise -> HTTPError errR
+
 
 instance routerLit :: (Router e h out, IsSymbol lit)
                       => Router (Lit lit :> e) h out where
@@ -194,41 +204,64 @@ instance routerLit :: (Router e h out, IsSymbol lit)
     case uncons ctx.path of
       Just { head, tail } | head == expectedSegment ->
         route (Proxy :: Proxy e) ctx { path = tail} r
-      Just _ -> throwError (HTTPError statusNotFound Nothing)
-      Nothing -> throwError (HTTPError statusNotFound Nothing)
+      Just _ -> throwError (HTTPError { status: statusNotFound
+                                      , message: Nothing
+                                      })
+      Nothing -> throwError (HTTPError { status: statusNotFound
+                                       , message: Nothing
+                                       })
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
 
 instance routerCapture :: (Router e h out, FromPathPiece v)
                           => Router (Capture c v :> e) (v -> h) out where
   route _ ctx r =
     case uncons ctx.path of
-      Nothing -> throwError (HTTPError statusNotFound Nothing)
+      Nothing -> throwError (HTTPError { status: statusNotFound
+                                       , message: Nothing
+                                       })
       Just { head, tail } ->
         case fromPathPiece head of
-          Left err -> throwError (HTTPError statusBadRequest (Just err))
+          Left err -> throwError (HTTPError { status: statusBadRequest
+                                            , message: Just err
+                                            })
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
 instance routerCaptureAll :: (Router e h out, FromPathPiece v)
                              => Router (CaptureAll c v :> e) (Array v -> h) out where
   route _ ctx r =
     case traverse fromPathPiece ctx.path of
-      Left err -> throwError (HTTPError statusBadRequest (Just err))
+      Left err -> throwError (HTTPError { status: statusBadRequest
+                                        , message: Just err
+                                        })
       Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
 
-instance routerHandler :: (IsSymbol m)
-                       => Router (Handler m) h h where
-  route _ context r =
-    if expectedMethod == show context.method && null context.path
-    then pure r
-    else throwError (HTTPError
-                     statusMethodNotAllowed
-                     (Just ("Method "
-                            <> show context.method
-                            <> " did not match "
-                            <> expectedMethod
-                            <> ".")))
+instance routerHandler :: (IsSymbol m, Accept ct)
+                       => Router (Handler m ct) h h where
+  route _ context r = do
+    unless (expectedMethod == show context.method && null context.path) $
+      throwError (HTTPError { status: statusMethodNotAllowed
+                            , message: Just ("Method "
+                                             <> show context.method
+                                             <> " did not match "
+                                             <> expectedMethod
+                                             <> ".")
+                            })
+
+    -- TODO: Check context accept header properly
+    unless (not (null accepts)) $
+      throwError (HTTPError { status: statusNotAcceptable
+                            , message: (Just ("None of the content types "
+                                              <> "???"
+                                              <> " are acceptable. Accepted ones are: "
+                                              <> show accepts
+                                              <> "."))
+                            })
+
+    pure r
+
     where
       expectedMethod = reflectSymbol (SProxy :: SProxy m)
+      accepts = contentTypes (Proxy :: Proxy ct)
 
 router
   :: forall s r m req res c rw b.
@@ -252,12 +285,12 @@ router _ handler = TryMiddleware router'
       case route (Proxy :: Proxy s) { path: splitUrl conn.request.url
                                     , method: conn.request.method
                                     } handler of
-        Left (HTTPError (Tuple 404 _) _) ->
+        Left (HTTPError { status }) | status == statusNotFound ->
           pure Nothing
-        Left (HTTPError status msg) ->
+        Left (HTTPError { status, message }) ->
           writeStatus status conn
           >>= closeHeaders
-          >>= respond (maybe "" id msg)
+          >>= respond (maybe "" id message)
           # map Just
         Right h ->
           Just <$> h conn

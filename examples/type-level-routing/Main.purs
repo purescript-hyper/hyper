@@ -12,6 +12,7 @@ import Hyper.Core (Port(Port), closeHeaders, fallbackTo, statusNotFound, statusO
 import Hyper.HTML (asString, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
+import Hyper.Routing.ContentType (TextHTML)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
 import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, Get, linksTo, router, (:<|>))
 import Node.Buffer (BUFFER)
@@ -30,7 +31,8 @@ instance fromPathPiecePostID :: FromPathPiece PostID where
 instance toPathPiecePostID :: ToPathPiece PostID where
   toPathPiece (PostID n) = toPathPiece n
 
-type Site = Get :<|> "posts" :/ Capture "id" PostID :> Get
+type Site = Get TextHTML
+            :<|> "posts" :/ Capture "id" PostID :> Get TextHTML
 
 site :: Proxy Site
 site = Proxy

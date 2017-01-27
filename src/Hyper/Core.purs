@@ -13,6 +13,8 @@ newtype Port = Port Int
 
 derive instance newtypePort :: Newtype Port _
 
+-- TODO:
+-- Replace with following https://github.com/chrisdotcode/purescript-http-types ?
 type Status = Tuple Int String
 
 statusOK :: Status
@@ -32,6 +34,9 @@ statusNotFound = Tuple 404 "Not Found"
 
 statusMethodNotAllowed :: Status
 statusMethodNotAllowed = Tuple 405 "Method Not Allowed"
+
+statusNotAcceptable :: Status
+statusNotAcceptable = Tuple 406 "Not Acceptable"
 
 type Header = Tuple String String
 

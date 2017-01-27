@@ -5,9 +5,10 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.String (joinWith, trim)
 import Data.URI (printURI)
-import Hyper.Core (closeHeaders, fallbackTo, statusBadRequest, statusNotFound, statusOK, writeStatus)
+import Hyper.Core (closeHeaders, fallbackTo, statusBadRequest, statusMethodNotAllowed, statusNotFound, statusOK, writeStatus)
 import Hyper.Method (Method(..))
 import Hyper.Response (headers, respond)
+import Hyper.Routing.ContentType (JSON)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece)
 import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Get, linksTo, router, (:<|>))
 import Hyper.Test.TestServer (testResponseWriter, testServer, testStatus, testStringBody)
@@ -39,12 +40,12 @@ instance toPathPieceUserID :: ToPathPiece UserID where
   toPathPiece (UserID s) = s
 
 type TestAPI =
-  Get
-  :<|> "posts" :/ Capture "id" PostID :> Get
+  Get JSON
+  :<|> "posts" :/ Capture "id" PostID :> Get JSON
   -- nested routes with capture
-  :<|> "users" :/ Capture "user-id" UserID :> ("profile" :/ Get :<|> "settings" :/ Get)
+  :<|> "users" :/ Capture "user-id" UserID :> ("profile" :/ Get JSON :<|> "settings" :/ Get JSON)
   -- capture all
-  :<|> "wiki" :/ CaptureAll "segments" String :> Get
+  :<|> "wiki" :/ CaptureAll "segments" String :> Get JSON
 
 testApi :: Proxy TestAPI
 testApi = Proxy
@@ -138,3 +139,7 @@ spec = do
       it "matches CaptureAll route" do
         conn <- makeRequest GET "/wiki/foo/bar/baz.txt"
         testStringBody conn `shouldEqual` "Viewing file: foo/bar/baz.txt"
+
+      it "checks HTTP method" do
+        conn <- makeRequest POST "/"
+        testStatus conn `shouldEqual` Just statusMethodNotAllowed
