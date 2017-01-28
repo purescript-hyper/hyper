@@ -25,7 +25,7 @@ import Data.String (Pattern(Pattern), split, joinWith)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, statusNotFound, writeStatus, statusMethodNotAllowed, Middleware, Conn)
 import Hyper.HTML (form, a, HTML)
-import Hyper.Method (Method(POST, GET))
+import Hyper.Method (Method(..))
 import Hyper.Response (class Response, respond, headers)
 
 type Path = Array String
@@ -87,20 +87,38 @@ instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
 
 type ResourceRecord m gr pr c c' =
   { path :: Path
+  , "OPTIONS" :: ResourceMethod gr m c c'
   , "GET" :: ResourceMethod gr m c c'
-  , "POST" :: ResourceMethod pr m c c'
+  , "HEAD" :: ResourceMethod gr m c c'
+  , "POST" :: ResourceMethod gr m c c'
+  , "PUT" :: ResourceMethod gr m c c'
+  , "DELETE" :: ResourceMethod gr m c c'
+  , "TRACE" :: ResourceMethod gr m c c'
+  , "CONNECT" :: ResourceMethod gr m c c'
   }
 
 resource
   :: forall m req res c req' res' c'.
      { path :: Unit
+     , "OPTIONS" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "GET" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "HEAD" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "POST" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "PUT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "DELETE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "TRACE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "CONNECT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      }
 resource =
   { path: unit
+  , "OPTIONS": notSupported
   , "GET": notSupported
+  , "HEAD": notSupported
   , "POST": notSupported
+  , "PUT": notSupported
+  , "DELETE": notSupported
+  , "TRACE": notSupported
+  , "CONNECT": notSupported
   }
 
 router
@@ -121,8 +139,14 @@ router r =
   where
     handler' conn =
       case conn.request.method of
+        OPTIONS -> methodHandler r."OPTIONS"
         GET -> methodHandler r."GET"
+        HEAD -> methodHandler r."HEAD"
         POST -> methodHandler r."POST"
+        PUT -> methodHandler r."PUT"
+        DELETE -> methodHandler r."DELETE"
+        TRACE -> methodHandler r."TRACE"
+        CONNECT -> methodHandler r."CONNECT"
     result conn =
       if r.path == pathFromString conn.request.url
       then case handler' conn of

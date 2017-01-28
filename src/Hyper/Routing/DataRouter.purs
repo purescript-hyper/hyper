@@ -75,6 +75,7 @@ router handlers = TryMiddleware router'
       in case conn.request.method of
         Method.GET -> routeWith conn (Route path) handlers.get
         Method.POST -> routeWith conn (Route path) handlers.post
+        _ -> pure Nothing
 
 type WithMethod m r = (m ~ m) -> r m
 
