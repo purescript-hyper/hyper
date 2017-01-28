@@ -5,7 +5,6 @@ module Hyper.Routing.TypeLevelRouter
        , Capture
        , CaptureAll
        , Handler
-       , Get
        , Sub
        , LitSub
        , AltE(..)
@@ -64,9 +63,6 @@ data CaptureAll (v :: Symbol) t
 -- | path literals, captures, and other endpoint type constructs. The `m` symbol
 -- | is the HTTP method that is handled.
 data Handler (m :: Symbol)
-
--- | Handy alias for GET handlers.
-type Get = Handler "GET"
 
 -- | The `Sub` is used to create the chain of `Lit`, `Capture`, `Handler`,
 -- | and other such type constructs that build up an endpoint type. `Sub`
