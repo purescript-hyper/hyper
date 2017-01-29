@@ -20,10 +20,11 @@ import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.String (joinWith, Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, statusFound, end, writeStatus, ResponseEnded, StatusLineOpen, TryMiddleware(TryMiddleware), Conn, Middleware)
+import Hyper.Core (class ResponseWriter, end, writeStatus, ResponseEnded, StatusLineOpen, TryMiddleware(TryMiddleware), Conn, Middleware)
 import Hyper.HTML (a, form, HTML)
 import Hyper.Method (Method)
 import Hyper.Response (headers)
+import Hyper.Status (statusFound)
 
 data GET
 data POST

@@ -26,6 +26,7 @@ import Data.Unit (Unit, unit)
 import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, BodyOpen(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
 import Hyper.Method (Method)
 import Hyper.Response (class Response)
+import Hyper.Status (Status(..))
 import Node.Buffer (BUFFER, Buffer)
 import Node.Encoding (Encoding(..))
 
@@ -86,12 +87,12 @@ withState s conn =
 
 
 instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
-  writeStatus (Tuple code reason) conn =
+  writeStatus (Status { code, reasonPhrase }) conn =
     case conn.response.writer of
       HttpResponse _ r → do
         liftEff do
           setStatusCode r code
-          setStatusMessage r reason
+          setStatusMessage r reasonPhrase
         pure (withState HeadersOpen conn)
 
   writeHeader (Tuple name value) conn =

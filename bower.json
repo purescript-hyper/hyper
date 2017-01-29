@@ -24,7 +24,8 @@
     "purescript-symbols": "^2.0.0",
     "purescript-uri": "^2.0.0",
     "purescript-argonaut": "^2.0.0",
-    "purescript-arrays": "^3.2.0"
+    "purescript-arrays": "^3.2.0",
+    "purescript-argonaut-codecs": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0",

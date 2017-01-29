@@ -23,10 +23,11 @@ import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, statusNotFound, writeStatus, statusMethodNotAllowed, Middleware, Conn)
+import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, writeStatus, Middleware, Conn)
 import Hyper.HTML (form, a, HTML)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Response (class Response, respond, headers)
+import Hyper.Status (statusMethodNotAllowed, statusNotFound)
 
 type Path = Array String
 

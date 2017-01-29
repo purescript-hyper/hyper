@@ -11,8 +11,9 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
-import Hyper.Core (StatusLineOpen(StatusLineOpen), HeadersOpen(HeadersOpen), Status, class ResponseWriter, Header, BodyOpen(BodyOpen), ResponseEnded(ResponseEnded), Conn)
+import Hyper.Core (StatusLineOpen(StatusLineOpen), HeadersOpen(HeadersOpen), class ResponseWriter, Header, BodyOpen(BodyOpen), ResponseEnded(ResponseEnded), Conn)
 import Hyper.Response (class Response)
+import Hyper.Status (Status)
 
 data TestResponse b = TestResponse (Maybe Status) (Array Header) (Array b)
 
