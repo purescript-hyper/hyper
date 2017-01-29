@@ -86,16 +86,16 @@ instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
       NotAllowed method -> pure (NotAllowed method)
       NotFound -> g conn
 
-type ResourceRecord m gr pr c c' =
+type ResourceRecord m options get head post put delete trace connect c c' =
   { path :: Path
-  , "OPTIONS" :: ResourceMethod gr m c c'
-  , "GET" :: ResourceMethod gr m c c'
-  , "HEAD" :: ResourceMethod gr m c c'
-  , "POST" :: ResourceMethod gr m c c'
-  , "PUT" :: ResourceMethod gr m c c'
-  , "DELETE" :: ResourceMethod gr m c c'
-  , "TRACE" :: ResourceMethod gr m c c'
-  , "CONNECT" :: ResourceMethod gr m c c'
+  , "OPTIONS" :: ResourceMethod options m c c'
+  , "GET" :: ResourceMethod get m c c'
+  , "HEAD" :: ResourceMethod head m c c'
+  , "POST" :: ResourceMethod post m c c'
+  , "PUT" :: ResourceMethod put m c c'
+  , "DELETE" :: ResourceMethod delete m c c'
+  , "TRACE" :: ResourceMethod trace m c c'
+  , "CONNECT" :: ResourceMethod connect m c c'
   }
 
 resource
@@ -123,12 +123,18 @@ resource =
   }
 
 router
-  :: forall gr pr m req res c req' res' c'.
+  :: forall options get head post put delete trace connect m req res c req' res' c'.
      Applicative m =>
      ResourceRecord
      m
-     gr
-     pr
+     options
+     get
+     head
+     post
+     put
+     delete
+     trace
+     connect
      (Conn { url :: String, method :: Method | req } res c)
      (Conn { url :: String, method :: Method | req' } res' c')
   -> ResourceRouter
