@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 30f5d95
+  Version 1a24bc8
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -33,6 +33,7 @@
 <li><a href="#response-state-transitions">Response State Transitions</a></li>
 </ul></li>
 <li><a href="#request-body-parsing">Request Body Parsing</a></li>
+<li><a href="#type-level-routing">Type-Level Routing</a></li>
 <li><a href="#resource-routing">Resource Routing</a><ul>
 <li><a href="#resources">Resources</a></li>
 <li><a href="#resource-routers">Resource Routers</a></li>
@@ -129,7 +130,30 @@
                   c)
 parseForm conn = ...</code></pre>
 <p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
+<h2 id="type-level-routing">Type-Level Routing</h2>
+<p><code>Hyper.Routing.TypeLevelRouter</code> provides an API for expressing the web application routes and their characterics as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. From this type you get static guarantees about having handled all cases, linking only to existing routes. You also get a lot of stuff for free, such as type-safe parameters for handlers and links.</p>
+<p>Let’s say we want to render a <code>User</code> value as HTML on the <code>/</code> path. We start out by declaring the structure of our site:</p>
+<pre class="purescript"><code>newtype User = User { firstName :: String
+                    , lastName :: String
+                    }
+
+type MySite = Get HTML User</code></pre>
+<p><code>Get HTML User</code> describes a structure with only one endpoint, rendering a User as HTML.</p>
+<p>So where does the User value come from? We provide it using a <em>handler</em>. A handler for <code>MySite</code> would be some value of the following type:</p>
+<pre class="purescript"><code>forall m. Monad m =&gt; ExceptT RoutingError m User</code></pre>
+<p>We can construct such a value using <code>pure</code> and a <code>User</code> value:</p>
+<pre class="purescript"><code>root = pure (User { firstName: &quot;John&quot;, lastName: &quot;Bonham&quot; })</code></pre>
+<p>Nice! But what comes out on the other end? We need something that renders the <code>User</code> value as HTML. The <code>MimeRender</code> type class encapsulates this concept. We provide an instance for <code>User</code> and the <code>HTML</code> content type.</p>
+<pre class="purescript"><code>instance mimeRenderUserHTML :: MimeRender User HTML String where
+  mimeRender _ (User { firstName, lastName }) =
+    asString $
+    p [] [ text firstName
+         , text &quot; &quot;
+         , text lastName
+         ]</code></pre>
+<p><em><strong>TODO:</strong> Show how to construct a router and runnable server. Also talk about value-level respresentation using Proxy.</em></p>
 <h2 id="resource-routing">Resource Routing</h2>
+<p><em>This module is <strong>deprecated</strong> in favor of the one described in <a href="#type-level-routing">Type-Level Routing</a>.</em></p>
 <p><code>Hyper.Routing.ResourceRouter</code> aims to provide type-safe routing, based on REST resources. It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>
 <h3 id="resources">Resources</h3>
 <p>The central concept is <em>resources</em>, as in RESTful resources. Each resource is a record describing its <em>path</em>, along with a set of HTTP methods and handlers. Each method implemented must be specified explicitly in the record with a <code>ResourceMethod</code> value, and those values are parameterized with one of the marker types describing if it is routed - <code>Supported</code> or <code>NotSupported</code>. The helper function <code>handler</code> is used to construct <code>ResourceMethod</code> values with the <code>Supported</code> type parameter.</p>

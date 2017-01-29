@@ -4,6 +4,7 @@ MD_SOURCES=docs/index.md \
 					 docs/goals.md \
 					 docs/design.md \
 					 docs/request-body-parsing.md \
+					 docs/type-level-routing.md \
 					 docs/resource-routing.md \
 					 docs/servers.md \
 					 docs/contributing.md
