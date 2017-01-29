@@ -1,12 +1,15 @@
 module Main where
 
 import Prelude
+import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
+import Control.Monad.Reader (ReaderT, ask)
+import Control.Monad.Reader.Trans (runReaderT)
 import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
 import Data.Array (find, (..))
 import Data.Generic (class Generic)
@@ -71,25 +74,22 @@ type Site = Get HTML PostsView
 site :: Proxy Site
 site = Proxy
 
--- Simple handlers that are given all available posts
--- (would be a database in a real app):
+-- Simple handlers that can access available posts in
+-- the Reader monad (would likely be a database query in
+-- a real app):
 
-allPosts :: forall m. Monad m =>
-            Array Post
-         -> ExceptT RoutingError m (Array Post)
-allPosts = pure
+type AppM e a = ExceptT RoutingError (ReaderT (Array Post) (Aff e)) a
 
-postsView :: forall m. Monad m =>
-             Array Post
-          -> ExceptT RoutingError m PostsView
-postsView = pure <<< PostsView
+allPosts :: forall e. AppM e (Array Post)
+allPosts = ask
 
-viewPost :: forall m. Monad m =>
-            Array Post
-         -> PostID
-         -> ExceptT RoutingError m Post
-viewPost posts postId = do
-  case find (\(Post p) -> p.id == postId) posts of
+postsView :: forall e. AppM e PostsView
+postsView = PostsView <$> ask
+
+viewPost :: forall e. PostID -> AppM e Post
+viewPost postId =
+  find (\(Post p) -> p.id == postId) <$> ask >>=
+  case _ of
     Just post -> pure post
     -- You can throw 404 Not Found in here as well.
     Nothing -> throwError (HTTPError { status: statusNotFound
@@ -99,11 +99,11 @@ viewPost posts postId = do
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
-  runServer defaultOptions onListening onRequestError {} siteRouter
+  runServer defaultOptions onListening onRequestError {} (siteRouter >>> flip runReaderT posts)
   where
     posts = (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
 
-    siteRouter = router site (postsView posts :<|> viewPost posts :<|> allPosts posts) onRoutingError
+    siteRouter = router site (postsView :<|> viewPost :<|> allPosts) onRoutingError
 
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
