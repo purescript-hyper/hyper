@@ -2,6 +2,10 @@
 
 *Type-safe, statically checked composition of HTTP servers, using PureScript.*
 
+[![Build Status](https://travis-ci.org/owickstrom/hyper.svg?branch=master)](https://travis-ci.org/owickstrom/hyper)
+
+<hr>
+
 Hyper is an experimental project, trying to improve correctness in web server
 programming, and in HTTP middleware and request handlers specifically. To learn
 more about Hyper, check out these resources:
