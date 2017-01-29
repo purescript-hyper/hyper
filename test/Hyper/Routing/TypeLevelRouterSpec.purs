@@ -4,18 +4,20 @@ import Prelude
 import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
+import Data.MediaType.Common (textPlain)
 import Data.String (joinWith, trim)
+import Data.Tuple (Tuple(..))
 import Data.URI (printURI)
-import Hyper.Core (writeStatus)
+import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
 import Hyper.HTML (HTML, asString, h1, text)
 import Hyper.Method (Method(..))
-import Hyper.Response (headers, respond)
+import Hyper.Response (class Response, contentType, headers, respond)
 import Hyper.Routing.ContentType (class MimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece)
-import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, linksTo, router, (:<|>))
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Raw, linksTo, router, (:<|>))
 import Hyper.Routing.TypeLevelRouter.Method (Get)
-import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
-import Hyper.Test.TestServer (testResponseWriter, testServer, testStatus, testStringBody)
+import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
+import Hyper.Test.TestServer (testHeaders, testResponseWriter, testServer, testStatus, testStringBody)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
@@ -55,6 +57,8 @@ type TestAPI =
                                                :<|> "friends" :/ Get Json (Array User))
   -- capture all
   :<|> "wiki" :/ CaptureAll "segments" String :> Get HTML WikiPage
+  -- raw middleware
+  :<|> "about" :/ Raw "GET"
 
 testSite :: Proxy TestAPI
 testSite = Proxy
@@ -74,12 +78,29 @@ friends (UserID uid) =
 wiki :: forall m. Applicative m => Array String -> m WikiPage
 wiki segments = pure (WikiPage (joinWith "/" segments))
 
+about :: forall m req res c rw rb.
+         ( Monad m
+         , ResponseWriter rw m rb
+         , Response rb m String
+         )
+         => Middleware
+            m
+            (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+            (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
+about =
+  writeStatus statusOK
+  >=> contentType textPlain
+  >=> closeHeaders
+  >=> respond "This is a test."
+
+
 spec :: forall e. Spec e Unit
 spec = do
   let userHandlers userId = profile userId :<|> friends userId
       handlers = home
                  :<|> userHandlers
                  :<|> wiki
+                 :<|> about
 
       onRoutingError status msg =
         writeStatus status
@@ -102,7 +123,7 @@ spec = do
     describe "links" $
 
       case linksTo testSite of
-        (homeUri :<|> userLinks :<|> wikiUri) -> do
+        (homeUri :<|> userLinks :<|> wikiUri :<|> aboutUri) -> do
 
           it "returns link for Lit" $
             printURI homeUri `shouldEqual` "/"
@@ -112,8 +133,12 @@ spec = do
               (profileUri :<|> friendsUri) -> do
                   printURI profileUri `shouldEqual` "/users/owi/profile"
                   printURI friendsUri `shouldEqual` "/users/owi/friends"
+
           it "returns link for CaptureAll" $
             printURI (wikiUri ["foo", "bar", "baz.txt"]) `shouldEqual` "/wiki/foo/bar/baz.txt"
+
+          it "returns link for Raw" $
+            printURI aboutUri `shouldEqual` "/about"
 
     describe "route" do
       it "matches root" do
@@ -136,6 +161,11 @@ spec = do
       it "matches CaptureAll route" do
         conn <- makeRequest GET "/wiki/foo/bar/baz.txt"
         testStringBody conn `shouldEqual` "Viewing page: foo/bar/baz.txt"
+
+      it "matches Raw route" do
+        conn <- makeRequest GET "/about"
+        testHeaders conn `shouldEqual` [ Tuple "Content-Type" "text/plain" ]
+        testStringBody conn `shouldEqual` "This is a test."
 
       it "checks HTTP method" do
         conn <- makeRequest POST "/"

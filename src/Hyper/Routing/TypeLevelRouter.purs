@@ -18,7 +18,6 @@ module Hyper.Routing.TypeLevelRouter
        , toLinks
        , linksTo
        , RoutingError(..)
-       , RawHandler(Raw)
        , class Router
        , route
        , router
@@ -266,13 +265,6 @@ routeEndpoint _ context r methodProxy = do
                           })
   pure r
 
-newtype RawHandler m req res c rw =
-  Raw
-  (Middleware
-   m
-   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
-
 instance routerHandler :: ( Monad m
                           , ResponseWriter rw m wb
                           , Response wb m r
@@ -283,7 +275,15 @@ instance routerHandler :: ( Monad m
                        => Router
                           (Handler method ct body)
                           (m body)
-                          (RawHandler m req res c rw) where
+                          ({ request :: { method :: Method, url :: String | req }
+                           , response :: { writer :: rw StatusLineOpen | res }
+                           , components :: c
+                           }
+                           -> m { request :: { method :: Method, url :: String | req }
+                                , response :: { writer :: rw ResponseEnded | res }
+                                , components :: c
+                                })
+                                                      where
   route proxy context action = do
     let handler conn = do
           body <- action
@@ -291,10 +291,28 @@ instance routerHandler :: ( Monad m
             >>= contentType (getMediaType (Proxy :: Proxy ct))
             >>= closeHeaders
             >>= respond (mimeRender (Proxy :: Proxy ct) body)
-    routeEndpoint proxy context (Raw handler) (SProxy :: SProxy method)
+    routeEndpoint proxy context handler (SProxy :: SProxy method)
 
 instance routerRaw :: (IsSymbol method)
-                       => Router (Raw method) (RawHandler m req res c rw) (RawHandler m req res c rw) where
+                   => Router
+                      (Raw method)
+                      ({ request :: { method :: Method, url :: String | req }
+                       , response :: { writer :: rw StatusLineOpen | res }
+                       , components :: c
+                       }
+                       -> m { request :: { method :: Method, url :: String | req }
+                            , response :: { writer :: rw ResponseEnded | res }
+                            , components :: c
+                            })
+                      ({ request :: { method :: Method, url :: String | req }
+                       , response :: { writer :: rw StatusLineOpen | res }
+                       , components :: c
+                       }
+                       -> m { request :: { method :: Method, url :: String | req }
+                            , response :: { writer :: rw ResponseEnded | res }
+                            , components :: c
+                            })
+                      where
   route proxy context r =
     routeEndpoint proxy context r (SProxy :: SProxy method)
 
@@ -302,7 +320,10 @@ router
   :: forall s r m req res c rw wb.
      ( Monad m
      , ResponseWriter rw m wb
-     , Router s r (RawHandler m req res c rw)
+     , Router s r (Middleware
+                   m
+                   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+                   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
      ) =>
      Proxy s
   -> r
@@ -322,7 +343,7 @@ router _ handler onRoutingError conn =
                                 } handler of
     Left (HTTPError { status, message }) ->
       onRoutingError status message conn
-    Right (Raw h) ->
+    Right h ->
       h conn
   where
     splitUrl = filter ((/=) "") <<< split (Pattern "/")
