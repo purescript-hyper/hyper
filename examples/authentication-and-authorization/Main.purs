@@ -19,11 +19,12 @@ import Data.MediaType.Common (textHTML)
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
-import Hyper.Core (writeStatus, Status, StatusLineOpen, statusOK, statusNotFound, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
+import Hyper.Core (writeStatus, StatusLineOpen, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
 import Hyper.HTML (HTML, a, asString, element_, h1, li, p, text, ul)
 import Hyper.Method (Method(GET))
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (class Response, respond, contentType)
+import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -156,6 +157,7 @@ app = BasicAuth.withAuthentication userFromBasicAuth >=> router
       notFound = htmlWithStatus
                  statusNotFound
                  (text "Not Found")
+
 
       homeView =
         element_ "section" [ h1 [] [text "Home"]
