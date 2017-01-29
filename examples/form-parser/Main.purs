@@ -11,12 +11,13 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.String (length)
 import Data.Tuple (lookup, Tuple(Tuple))
-import Hyper.Core (statusOK, statusBadRequest, writeStatus, closeHeaders, Port(Port))
+import Hyper.Core (writeStatus, closeHeaders, Port(Port))
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.HTML (asString, element, p, text)
 import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
+import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
@@ -68,14 +69,21 @@ main =
               (renderNameForm (Just "Name is missing."))
               conn
 
-    -- Our router.
+    -- Our (rather primitive) router.
     router conn =
       case conn.request.method of
-        GET -> htmlWithStatus
-               statusOK
-               (renderNameForm Nothing)
-               conn
-        POST -> handlePost conn.request.body conn
+        GET ->
+          htmlWithStatus
+          statusOK
+          (renderNameForm Nothing)
+          conn
+        POST ->
+          handlePost conn.request.body conn
+        method ->
+          htmlWithStatus
+          statusMethodNotAllowed
+          (text ("Method not supported: " <> show method))
+          conn
 
     -- A chain of middleware for parsing the form, and then our response
     -- handler.

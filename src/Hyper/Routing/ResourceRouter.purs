@@ -23,10 +23,11 @@ import Data.Leibniz (type (~))
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (Pattern(Pattern), split, joinWith)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, statusNotFound, writeStatus, statusMethodNotAllowed, Middleware, Conn)
+import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, writeStatus, Middleware, Conn)
 import Hyper.HTML (form, a, HTML)
-import Hyper.Method (Method(POST, GET))
+import Hyper.Method (Method(..))
 import Hyper.Response (class Response, respond, headers)
+import Hyper.Status (statusMethodNotAllowed, statusNotFound)
 
 type Path = Array String
 
@@ -85,31 +86,55 @@ instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
       NotAllowed method -> pure (NotAllowed method)
       NotFound -> g conn
 
-type ResourceRecord m gr pr c c' =
+type ResourceRecord m options get head post put delete trace connect c c' =
   { path :: Path
-  , "GET" :: ResourceMethod gr m c c'
-  , "POST" :: ResourceMethod pr m c c'
+  , "OPTIONS" :: ResourceMethod options m c c'
+  , "GET" :: ResourceMethod get m c c'
+  , "HEAD" :: ResourceMethod head m c c'
+  , "POST" :: ResourceMethod post m c c'
+  , "PUT" :: ResourceMethod put m c c'
+  , "DELETE" :: ResourceMethod delete m c c'
+  , "TRACE" :: ResourceMethod trace m c c'
+  , "CONNECT" :: ResourceMethod connect m c c'
   }
 
 resource
   :: forall m req res c req' res' c'.
      { path :: Unit
+     , "OPTIONS" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "GET" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "HEAD" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "POST" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "PUT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "DELETE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "TRACE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "CONNECT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      }
 resource =
   { path: unit
+  , "OPTIONS": notSupported
   , "GET": notSupported
+  , "HEAD": notSupported
   , "POST": notSupported
+  , "PUT": notSupported
+  , "DELETE": notSupported
+  , "TRACE": notSupported
+  , "CONNECT": notSupported
   }
 
 router
-  :: forall gr pr m req res c req' res' c'.
+  :: forall options get head post put delete trace connect m req res c req' res' c'.
      Applicative m =>
      ResourceRecord
      m
-     gr
-     pr
+     options
+     get
+     head
+     post
+     put
+     delete
+     trace
+     connect
      (Conn { url :: String, method :: Method | req } res c)
      (Conn { url :: String, method :: Method | req' } res' c')
   -> ResourceRouter
@@ -121,8 +146,14 @@ router r =
   where
     handler' conn =
       case conn.request.method of
+        OPTIONS -> methodHandler r."OPTIONS"
         GET -> methodHandler r."GET"
+        HEAD -> methodHandler r."HEAD"
         POST -> methodHandler r."POST"
+        PUT -> methodHandler r."PUT"
+        DELETE -> methodHandler r."DELETE"
+        TRACE -> methodHandler r."TRACE"
+        CONNECT -> methodHandler r."CONNECT"
     result conn =
       if r.path == pathFromString conn.request.url
       then case handler' conn of

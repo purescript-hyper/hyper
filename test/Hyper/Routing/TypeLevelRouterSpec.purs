@@ -1,90 +1,89 @@
 module Hyper.Routing.TypeLevelRouterSpec (spec) where
 
 import Prelude
+import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Data.String (joinWith, trim)
 import Data.URI (printURI)
-import Hyper.Core (closeHeaders, fallbackTo, statusBadRequest, statusMethodNotAllowed, statusNotFound, statusOK, writeStatus)
+import Hyper.Core (writeStatus)
+import Hyper.HTML (HTML, asString, h1, text)
 import Hyper.Method (Method(..))
 import Hyper.Response (headers, respond)
-import Hyper.Routing.ContentType (JSON)
-import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece)
-import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Get, linksTo, router, (:<|>))
+import Hyper.Routing.ContentType (class MimeRender)
+import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece)
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, linksTo, router, (:<|>))
+import Hyper.Routing.TypeLevelRouter.Method (Get)
+import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
 import Hyper.Test.TestServer (testResponseWriter, testServer, testStatus, testStringBody)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
 
-newtype PostID = PostID Int
+data Home = Home
 
-instance fromPathPiecePostID :: FromPathPiece PostID where
-  fromPathPiece s = do
-    n <- fromPathPiece s
-    if n >= 1
-      then Right (PostID n)
-      else Left "PostID must be equal to or greater than 1."
-
-instance toPathPiecePostID :: ToPathPiece PostID where
-  toPathPiece (PostID n) = show n
+instance mimeRenderHome :: MimeRender Home HTML String where
+  mimeRender _ Home = asString (h1 [] [text "Home"])
 
 newtype UserID = UserID String
 
 instance fromPathPieceUserID :: FromPathPiece UserID where
   fromPathPiece s =
     case trim s of
-      "" -> Left "UserID cannot be blank."
+      "" -> Left "UserID must not be blank."
       s' -> Right (UserID s')
 
 instance toPathPieceUserID :: ToPathPiece UserID where
   toPathPiece (UserID s) = s
 
-type TestAPI =
-  Get JSON
-  :<|> "posts" :/ Capture "id" PostID :> Get JSON
-  -- nested routes with capture
-  :<|> "users" :/ Capture "user-id" UserID :> ("profile" :/ Get JSON :<|> "settings" :/ Get JSON)
-  -- capture all
-  :<|> "wiki" :/ CaptureAll "segments" String :> Get JSON
+data User = User UserID
 
-testApi :: Proxy TestAPI
-testApi = Proxy
+instance encodeUser :: EncodeJson User where
+  encodeJson (User (UserID userId)) =
+    "userId" := userId
+    ~> jsonEmptyObject
+
+data WikiPage = WikiPage String
+
+instance mimeRenderWikiPage :: MimeRender WikiPage HTML String where
+  mimeRender _ (WikiPage title) = asString (text ("Viewing page: " <> title))
+
+type TestAPI =
+  Get HTML Home
+  -- nested routes with capture
+  :<|> "users" :/ Capture "user-id" UserID :> ("profile" :/ Get Json User
+                                               :<|> "friends" :/ Get Json (Array User))
+  -- capture all
+  :<|> "wiki" :/ CaptureAll "segments" String :> Get HTML WikiPage
+
+testSite :: Proxy TestAPI
+testSite = Proxy
+
+home :: Home
+home = Home
+
+profile :: UserID -> User
+profile userId = User userId
+
+friends :: UserID -> Array User
+friends (UserID uid) = [ User (UserID "foo")
+                       , User (UserID "bar")
+                       ]
+
+wiki :: Array String -> WikiPage
+wiki segments = WikiPage (joinWith "/" segments)
 
 spec :: forall e. Spec e Unit
 spec = do
-  let renderHtml =
-        writeStatus statusOK
+  let userHandlers userId = profile userId :<|> friends userId
+      handlers = home
+                 :<|> userHandlers
+                 :<|> wiki
+
+      onRoutingError status msg =
+        writeStatus status
         >=> headers []
-        >=> respond "<h1>HTML</h1>"
-
-      renderPost (PostID n) =
-        writeStatus statusOK
-        >=> headers []
-        >=> respond ("Post #" <> show n)
-
-      userHandlers userId = renderProfile userId :<|> renderSettings userId
-
-      renderProfile (UserID s) =
-        writeStatus statusOK
-        >=> headers []
-        >=> respond ("Profile of " <> s)
-
-      renderSettings (UserID s) =
-        writeStatus statusOK
-        >=> headers []
-        >=> respond ("Settings of " <> s)
-
-      renderWiki segments =
-        writeStatus statusOK
-        >=> closeHeaders
-        >=> respond ("Viewing file: " <> joinWith "/" segments)
-
-      handlers = renderHtml :<|> renderPost :<|> userHandlers :<|> renderWiki
-
-      notFound =
-        writeStatus statusNotFound
-        >=> headers []
-        >=> respond "Not Found"
+        >=> respond (maybe "" id msg)
 
       makeRequest method path =
         { request: { method: method
@@ -93,52 +92,49 @@ spec = do
         , response: { writer: testResponseWriter }
         , components: {}
         }
-        # (router testApi handlers # fallbackTo notFound)
+        # (router testSite handlers onRoutingError)
         # testServer
 
   describe "Hyper.Routing.TypeLevelRouter" do
+    pure unit
 
     describe "links" $
 
-      case linksTo testApi of
-        (root :<|> getPost :<|> userRoutes :<|> wiki) -> do
+      case linksTo testSite of
+        (homeUri :<|> userLinks :<|> wikiUri) -> do
 
           it "returns link for Lit" $
-            printURI root `shouldEqual` "/"
-
-          it "returns link for Lit and Capture" $
-            printURI (getPost (PostID 10)) `shouldEqual` "/posts/10"
+            printURI homeUri `shouldEqual` "/"
 
           it "returns link for nested routes" $
-            case userRoutes (UserID "owi") of
-              (profile :<|> settings) -> do
-                  printURI profile `shouldEqual` "/users/owi/profile"
-                  printURI settings `shouldEqual` "/users/owi/settings"
-
+            case userLinks (UserID "owi") of
+              (profileUri :<|> friendsUri) -> do
+                  printURI profileUri `shouldEqual` "/users/owi/profile"
+                  printURI friendsUri `shouldEqual` "/users/owi/friends"
           it "returns link for CaptureAll" $
-            printURI (wiki ["foo", "bar", "baz.txt"]) `shouldEqual` "/wiki/foo/bar/baz.txt"
+            printURI (wikiUri ["foo", "bar", "baz.txt"]) `shouldEqual` "/wiki/foo/bar/baz.txt"
 
     describe "route" do
       it "matches root" do
         conn <- makeRequest GET "/"
-        testStringBody conn `shouldEqual` "<h1>HTML</h1>"
+        testStringBody conn `shouldEqual` "<h1>Home</h1>"
 
-      it "matches custom Capture" do
-        conn <- makeRequest GET "/posts/123"
-        testStringBody conn `shouldEqual` "Post #123"
-
-      it "validates based on customer Capture instance" do
-        conn <- makeRequest GET "/posts/0"
+      it "validates based on custom Capture instance" do
+        conn <- makeRequest GET "/users/ /profile"
         testStatus conn `shouldEqual` Just statusBadRequest
-        testStringBody conn `shouldEqual` "PostID must be equal to or greater than 1."
+        testStringBody conn `shouldEqual` "UserID must not be blank."
 
       it "matches nested routes" do
         conn <- makeRequest GET "/users/owi/profile"
-        testStringBody conn `shouldEqual` "Profile of owi"
+        testStringBody conn `shouldEqual` "{\"userId\":\"owi\"}"
+
+      it "supports arrays of JSON values" do
+        conn <- makeRequest GET "/users/owi/friends"
+        testStringBody conn `shouldEqual` "[{\"userId\":\"foo\"},{\"userId\":\"bar\"}]"
 
       it "matches CaptureAll route" do
         conn <- makeRequest GET "/wiki/foo/bar/baz.txt"
-        testStringBody conn `shouldEqual` "Viewing file: foo/bar/baz.txt"
+        testStringBody conn `shouldEqual` "Viewing page: foo/bar/baz.txt"
 
       it "checks HTTP method" do
         conn <- makeRequest POST "/"

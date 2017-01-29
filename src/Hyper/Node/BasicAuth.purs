@@ -17,6 +17,7 @@ import Data.Unit (Unit)
 import Hyper.Authentication (setAuthentication)
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeHeader, writeStatus)
 import Hyper.Response (class Response, respond)
+import Hyper.Status (statusUnauthorized)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
 
@@ -79,7 +80,7 @@ authenticated
 authenticated realm mw conn =
   case conn.components.authentication of
     Nothing ->
-      writeStatus (Tuple 401 "Unauthorized") conn
+      writeStatus statusUnauthorized conn
       >>= writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
       >>= closeHeaders
       >>= respond "Please authenticate."

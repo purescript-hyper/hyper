@@ -5,11 +5,12 @@ import Control.Alt ((<|>))
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(..))
-import Hyper.Core (statusOK, StatusLineOpen, closeHeaders, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
+import Hyper.Core (StatusLineOpen, closeHeaders, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.HTML (asString, text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (class Response, respond, contentType)
-import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, Unsupported, Supported, ResourceRecord, runRouter, handler, resource)
+import Hyper.Routing.ResourceRouter (ResourceRecord, Supported, Unsupported, defaultRouterFallbacks, handler, linkTo, resource, router, runRouter)
+import Hyper.Status (statusOK)
 import Hyper.Test.TestServer (StringBody, testStringBody, TestResponse, testResponseWriter, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -19,13 +20,19 @@ import Test.Spec.Assertions (shouldEqual)
 -- some type annotations. The following alias is a handy shortcut for the resources
 -- used in this test suite.
 
-type TestResource m rw gr pr =
+type TestResource m rw get post =
   forall req res c b.
   (Monad m, ResponseWriter rw m b) =>
   ResourceRecord
   m
-  gr
-  pr
+  Unsupported
+  get
+  post
+  Unsupported
+  Unsupported
+  Unsupported
+  Unsupported
+  Unsupported
   (Conn { url :: String, method :: Method | req } { writer :: rw StatusLineOpen | res } c)
   (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 

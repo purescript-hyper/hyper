@@ -5,10 +5,10 @@ import Control.Monad (class Monad)
 import Data.Function ((#))
 import Data.Functor (map)
 import Data.Maybe (Maybe(Nothing, Just))
-import Data.Tuple (Tuple(Tuple))
 import Data.Unit (unit, Unit)
 import Hyper.Core (writeStatus, class ResponseWriter, Middleware, ResponseEnded, StatusLineOpen, Conn)
 import Hyper.Response (class Response, respond, headers)
+import Hyper.Status (statusForbidden)
 
 withAuthorization :: forall a b req res c.
                      b
@@ -41,6 +41,6 @@ authorized authorizer mw conn =
           # mw
           # map (withAuthorization unit)
         Nothing ->
-          writeStatus (Tuple 403 "Forbidden") conn
+          writeStatus statusForbidden conn
           >>= headers []
           >>= respond "You are not authorized."

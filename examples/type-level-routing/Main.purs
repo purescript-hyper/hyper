@@ -5,75 +5,87 @@ import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
 import Data.Array ((..))
-import Data.Either (Either(..))
-import Data.MediaType.Common (textHTML)
-import Hyper.Core (Port(Port), closeHeaders, fallbackTo, statusNotFound, statusOK, writeStatus)
-import Hyper.HTML (asString, element_, h1, li, linkTo, p, text, ul)
+import Data.Generic (class Generic)
+import Data.Maybe (maybe)
+import Hyper.Core (Port(Port), closeHeaders, writeStatus)
+import Hyper.HTML (HTML, asString, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (respond, contentType)
-import Hyper.Routing.ContentType (TextHTML)
-import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
-import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, Get, linksTo, router, (:<|>))
+import Hyper.Response (respond)
+import Hyper.Routing.ContentType (class MimeRender)
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, linksTo, router, (:<|>))
+import Hyper.Routing.TypeLevelRouter.Method (Get)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Type.Proxy (Proxy(..))
 
-newtype PostID = PostID Int
+type PostID = Int
 
-instance fromPathPiecePostID :: FromPathPiece PostID where
-  fromPathPiece s = do
-    n <- fromPathPiece s
-    if n >= 1
-      then Right (PostID n)
-      else Left "Post ID must be equal to or greater than 1."
+newtype Post = Post { id :: PostID
+                    , title :: String
+                    }
 
-instance toPathPiecePostID :: ToPathPiece PostID where
-  toPathPiece (PostID n) = toPathPiece n
+derive instance genericPost :: Generic Post
 
-type Site = Get TextHTML
-            :<|> "posts" :/ Capture "id" PostID :> Get TextHTML
+instance encodePost :: EncodeJson Post where
+  encodeJson (Post { id, title }) =
+    "id" := id
+    ~> "title" := title
+    ~> jsonEmptyObject
+
+instance mimeRenderPost :: MimeRender Post HTML String where
+  mimeRender _ (Post { id: postId, title}) =
+    case linksTo site of
+      allPostsUri :<|> _ :<|> _ ->
+        asString $
+        element_ "section" [ h1 [] [ text title ]
+                           , p [] [ text "Contents..." ]
+                           , element_ "nav" [ linkTo allPostsUri [ text "All Posts" ]]
+                           ]
+
+newtype PostsView = PostsView (Array Post)
+
+instance mimeRenderPostsView :: MimeRender PostsView HTML String where
+  mimeRender _ (PostsView posts) =
+    case linksTo site of
+      _ :<|> getPostUri :<|> postsJsonUri ->
+        let postLink (Post { id: postId, title }) =
+              li [] [linkTo (getPostUri postId) [ text title ]]
+        in asString $
+           element_ "section" [ h1 [] [ text "Posts" ]
+                              , ul [] (map postLink posts)
+                              , p [] [ text "Get posts as "
+                                     , linkTo postsJsonUri [ text "JSON" ]
+                                     ]
+                              ]
+
+type Site = Get HTML PostsView
+            :<|> "posts" :/ Capture "id" PostID :> Get HTML Post
+            :<|> "posts.json" :/ Get Json (Array Post)
 
 site :: Proxy Site
 site = Proxy
 
+allPosts :: Array Post
+allPosts = map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10)
+
+postsView :: PostsView
+postsView = PostsView allPosts
+
+viewPost :: PostID -> Post
+viewPost postId = Post { id: postId, title: "Post #" <> show postId }
+
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
-main = app (linksTo site)
+main =
+  runServer defaultOptions onListening onRequestError {} siteRouter
   where
-    -- Automatic type-safe link functions!
-    app (archiveURI :<|> postURI) =
+    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
+    onRequestError err = log ("Request failed: " <> show err)
 
-      router (Proxy :: Proxy Site) (renderArchive :<|> renderPost)
-      # fallbackTo notFound
-      # runServer defaultOptions onListening onRequestError {}
+    siteRouter = router site (postsView :<|> viewPost :<|> allPosts) onRoutingError
 
-      where
-        renderArchive =
-          htmlWithStatus statusOK $
-          element_ "section" [ h1 [] [ text "Archive" ]
-                             , ul [] (map postLink (1..10))
-                             ]
-
-        postLink n = li [] [linkTo (postURI (PostID n)) [ text ("Post #" <> show n) ]]
-
-        renderPost (PostID pId) =
-          htmlWithStatus statusOK $
-          element_ "section" [ h1 [] [ text ("Post " <> show pId) ]
-                             , p [] [ text "Lorem whatever..." ]
-                             , p [] [ linkTo archiveURI [ text "Archive" ] ]
-                             ]
-
-        notFound =
-          htmlWithStatus statusNotFound $
-          element_ "section" [ h1 [] [ text "Not Found!" ]
-                             , p [] [ text "The resource you requested does not exist." ]
-                             ]
-
-        onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-        onRequestError err = log ("Request failed: " <> show err)
-
-        htmlWithStatus status doc =
-          writeStatus status
-          >=> contentType textHTML
-          >=> closeHeaders
-          >=> respond (asString doc)
+    onRoutingError status msg =
+      writeStatus status
+      >=> closeHeaders
+      >=> respond (maybe "" id msg)

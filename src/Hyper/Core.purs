@@ -7,36 +7,12 @@ import Data.Function ((<<<), ($))
 import Data.Functor (map, class Functor)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.Newtype (class Newtype)
-import Data.Tuple (Tuple(Tuple))
+import Data.Tuple (Tuple)
+import Hyper.Status (Status)
 
 newtype Port = Port Int
 
 derive instance newtypePort :: Newtype Port _
-
--- TODO:
--- Replace with following https://github.com/chrisdotcode/purescript-http-types ?
-type Status = Tuple Int String
-
-statusOK :: Status
-statusOK = Tuple 200 "OK"
-
-statusCreated :: Status
-statusCreated = Tuple 201 "Created"
-
-statusFound :: Status
-statusFound = Tuple 302 "Found"
-
-statusBadRequest :: Status
-statusBadRequest = Tuple 400 "Bad Request"
-
-statusNotFound :: Status
-statusNotFound = Tuple 404 "Not Found"
-
-statusMethodNotAllowed :: Status
-statusMethodNotAllowed = Tuple 405 "Method Not Allowed"
-
-statusNotAcceptable :: Status
-statusNotAcceptable = Tuple 406 "Not Acceptable"
 
 type Header = Tuple String String
 

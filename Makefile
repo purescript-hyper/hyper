@@ -37,3 +37,7 @@ docs/hyper.pdf: $(MD_SOURCES)
 	"--metadata=subtitle:$(VERSION)" \
 	-o docs/hyper.pdf \
 	$(MD_SOURCES)
+
+.PHONY: examples
+examples:
+	find examples -type d -depth 1 -exec rm -rf output/Main \; -exec pulp build -I {} \;

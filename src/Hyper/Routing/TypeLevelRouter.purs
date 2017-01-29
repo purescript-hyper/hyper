@@ -5,7 +5,7 @@ module Hyper.Routing.TypeLevelRouter
        , Capture
        , CaptureAll
        , Handler
-       , Get
+       , Raw
        , Sub
        , LitSub
        , AltE(..)
@@ -18,6 +18,7 @@ module Hyper.Routing.TypeLevelRouter
        , toLinks
        , linksTo
        , RoutingError(..)
+       , RawHandler(Raw)
        , class Router
        , route
        , router
@@ -30,7 +31,7 @@ import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype)
 import Data.Path.Pathy (dir, file, rootDir, (</>))
@@ -39,11 +40,12 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.URI (HierarchicalPart(..), URI(..))
-import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, Status, StatusLineOpen, TryMiddleware(..), closeHeaders, statusBadRequest, statusMethodNotAllowed, statusNotAcceptable, statusNotFound, writeStatus)
+import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
 import Hyper.Method (Method)
-import Hyper.Response (class Response, respond)
-import Hyper.Routing.ContentType (class Accept, contentTypes)
+import Hyper.Response (class Response, contentType, respond)
+import Hyper.Routing.ContentType (class HasMediaType, class MimeRender, getMediaType, mimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece, fromPathPiece, toPathPiece)
+import Hyper.Status (Status, statusBadRequest, statusMethodNotAllowed, statusNotFound, statusOK)
 import Type.Proxy (Proxy(..))
 
 -- | A literal path segment, matching paths where the next segment is equal
@@ -64,10 +66,12 @@ data CaptureAll (v :: Symbol) t
 -- | A type-level description of the handler function, terminating a chain of
 -- | path literals, captures, and other endpoint type constructs. The `m` symbol
 -- | is the HTTP method that is handled. `ct` is the content type.
-data Handler (m :: Symbol) ct
+data Handler (m :: Symbol) ct b
 
--- | Handy alias for GET handlers.
-type Get = Handler "GET"
+-- | A type-level description of a raw handler middleware, terminating a chain
+-- | of path literals, captures, and other endpoint type constructs. The `m`
+-- | symbol is the HTTP method that is handled.
+data Raw (m :: Symbol)
 
 -- | The `Sub` is used to create the chain of `Lit`, `Capture`, `Handler`,
 -- | and other such type constructs that build up an endpoint type. `Sub`
@@ -147,7 +151,10 @@ instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
 
-instance hasLinksHandler :: HasLinks (Handler m ct) URI where
+instance hasLinksHandler :: HasLinks (Handler m ct b) URI where
+  toLinks _ = linkToURI
+
+instance hasLinksRaw :: HasLinks (Raw m) URI where
   toLinks _ = linkToURI
 
 instance hasLinksAltE :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|> e2) (mk1 :<|> mk2) where
@@ -158,13 +165,13 @@ instance hasLinksAltE :: (HasLinks e1 mk1, HasLinks e2 mk2) => HasLinks (e1 :<|>
 linksTo :: forall e t. HasLinks e t => Proxy e -> t
 linksTo e = toLinks e mempty
 
-type RoutingContext = { path :: (Array String)
+type RoutingContext = { path :: Array String
                       , method :: Method
                       }
 
 data RoutingError
   = HTTPError { status :: Status
-              , message :: (Maybe String)
+              , message :: Maybe String
               }
 
 derive instance genericRoutingError :: Generic RoutingError _
@@ -189,12 +196,12 @@ instance routerAltE :: (Router e1 h1 out, Router e2 h2 out)
           Right handler -> pure handler
       Right handler -> pure handler
     where
-      fallbackCodes = [404, 405]
+      fallbackStatuses = [statusNotFound, statusMethodNotAllowed]
       selectError (HTTPError errL) (HTTPError errR) =
         case Tuple errL.status errR.status of
-          Tuple (Tuple code _) (Tuple code' _)
-            | code `elem` fallbackCodes && code' == 404 -> HTTPError errL
-            | code /= 404 && code' `elem` fallbackCodes -> HTTPError errL
+          Tuple  s1 s2
+            | s1 `elem` fallbackStatuses && s2 == statusNotFound -> HTTPError errL
+            | s1 /= statusNotFound && s2 `elem` fallbackStatuses -> HTTPError errL
             | otherwise -> HTTPError errR
 
 
@@ -226,6 +233,7 @@ instance routerCapture :: (Router e h out, FromPathPiece v)
                                             })
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
+
 instance routerCaptureAll :: (Router e h out, FromPathPiece v)
                              => Router (CaptureAll c v :> e) (Array v -> h) out where
   route _ ctx r =
@@ -235,63 +243,85 @@ instance routerCaptureAll :: (Router e h out, FromPathPiece v)
                                         })
       Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
 
-instance routerHandler :: (IsSymbol m, Accept ct)
-                       => Router (Handler m ct) h h where
-  route _ context r = do
-    unless (expectedMethod == show context.method && null context.path) $
-      throwError (HTTPError { status: statusMethodNotAllowed
-                            , message: Just ("Method "
-                                             <> show context.method
-                                             <> " did not match "
-                                             <> expectedMethod
-                                             <> ".")
-                            })
+routeEndpoint :: forall e r m. (IsSymbol m)
+                 => Proxy e
+                 -> RoutingContext
+                 -> r
+                 -> SProxy m
+                 -> Either RoutingError r
+routeEndpoint _ context r methodProxy = do
+  unless (null context.path) $
+    throwError (HTTPError { status: statusNotFound
+                          , message: Nothing
+                          })
 
-    -- TODO: Check context accept header properly
-    unless (not (null accepts)) $
-      throwError (HTTPError { status: statusNotAcceptable
-                            , message: (Just ("None of the content types "
-                                              <> "???"
-                                              <> " are acceptable. Accepted ones are: "
-                                              <> show accepts
-                                              <> "."))
-                            })
+  let expectedMethod = reflectSymbol methodProxy
+  unless (expectedMethod == show context.method) $
+    throwError (HTTPError { status: statusMethodNotAllowed
+                          , message: Just ("Method "
+                                           <> show context.method
+                                           <> " did not match "
+                                           <> expectedMethod
+                                           <> ".")
+                          })
+  pure r
 
-    pure r
+newtype RawHandler m req res c rw =
+  Raw
+  (Middleware
+   m
+   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
 
-    where
-      expectedMethod = reflectSymbol (SProxy :: SProxy m)
-      accepts = contentTypes (Proxy :: Proxy ct)
+instance routerHandler :: ( Monad m
+                          , ResponseWriter rw m wb
+                          , Response wb m r
+                          , IsSymbol method
+                          , MimeRender body ct r
+                          , HasMediaType ct
+                          )
+                       => Router
+                          (Handler method ct body)
+                          body
+                          (RawHandler m req res c rw) where
+  route proxy context body = do
+    let handler =
+          writeStatus statusOK
+          >=> contentType (getMediaType (Proxy :: Proxy ct))
+          >=> closeHeaders
+          >=> respond (mimeRender (Proxy :: Proxy ct) body)
+    routeEndpoint proxy context (Raw handler) (SProxy :: SProxy method)
+
+instance routerRaw :: (IsSymbol method)
+                       => Router (Raw method) (RawHandler m req res c rw) (RawHandler m req res c rw) where
+  route proxy context r =
+    routeEndpoint proxy context r (SProxy :: SProxy method)
 
 router
-  :: forall s r m req res c rw b.
+  :: forall s r m req res c rw wb.
      ( Monad m
-     , ResponseWriter rw m b
-     , Response b m String
-     , Router s r (Middleware
-                   m
-                   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-                   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
+     , ResponseWriter rw m wb
+     , Router s r (RawHandler m req res c rw)
      ) =>
      Proxy s
   -> r
-  -> TryMiddleware
+  -> (Status
+      -> Maybe String
+      -> Middleware
+         m
+         (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+         (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
+  -> Middleware
      m
      (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
      (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
-router _ handler = TryMiddleware router'
+router _ handler onRoutingError conn =
+  case route (Proxy :: Proxy s) { path: splitUrl conn.request.url
+                                , method: conn.request.method
+                                } handler of
+    Left (HTTPError { status, message }) ->
+      onRoutingError status message conn
+    Right (Raw h) ->
+      h conn
   where
-    router' conn =
-      case route (Proxy :: Proxy s) { path: splitUrl conn.request.url
-                                    , method: conn.request.method
-                                    } handler of
-        Left (HTTPError { status }) | status == statusNotFound ->
-          pure Nothing
-        Left (HTTPError { status, message }) ->
-          writeStatus status conn
-          >>= closeHeaders
-          >>= respond (maybe "" id message)
-          # map Just
-        Right h ->
-          Just <$> h conn
     splitUrl = filter ((/=) "") <<< split (Pattern "/")
