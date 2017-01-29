@@ -2,7 +2,7 @@
 
 *Type-safe, statically checked composition of HTTP servers, using PureScript.*
 
-Hyper is an **experiment**, trying to improve correctness in web server
+Hyper is an experimental project, trying to improve correctness in web server
 programming, and in HTTP middleware and request handlers specifically. To learn
 more about Hyper, check out these resources:
 
@@ -31,6 +31,14 @@ pulp test
 npm install # for examples using the node server
 pulp run -I examples/<example-name>
 ```
+
+### Building all Examples
+
+```bash
+npm install # for examples using the node server
+make examples
+```
+
 
 ## CodeScene Status
 
