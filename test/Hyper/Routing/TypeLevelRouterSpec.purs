@@ -59,19 +59,20 @@ type TestAPI =
 testSite :: Proxy TestAPI
 testSite = Proxy
 
-home :: Home
-home = Home
+home :: forall m. Applicative m => m Home
+home = pure Home
 
-profile :: UserID -> User
-profile userId = User userId
+profile :: forall m. Applicative m => UserID -> m User
+profile userId = pure (User userId)
 
-friends :: UserID -> Array User
-friends (UserID uid) = [ User (UserID "foo")
-                       , User (UserID "bar")
-                       ]
+friends :: forall m. Applicative m => UserID -> m (Array User)
+friends (UserID uid) =
+  pure [ User (UserID "foo")
+       , User (UserID "bar")
+       ]
 
-wiki :: Array String -> WikiPage
-wiki segments = WikiPage (joinWith "/" segments)
+wiki :: forall m. Applicative m => Array String -> m WikiPage
+wiki segments = pure (WikiPage (joinWith "/" segments))
 
 spec :: forall e. Spec e Unit
 spec = do

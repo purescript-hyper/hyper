@@ -67,14 +67,14 @@ type Site = Get HTML PostsView
 site :: Proxy Site
 site = Proxy
 
-allPosts :: Array Post
-allPosts = map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10)
+allPosts :: forall m. Applicative m => m (Array Post)
+allPosts = pure (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
 
-postsView :: PostsView
-postsView = PostsView allPosts
+postsView :: forall m. Applicative m => m PostsView
+postsView = PostsView <$> allPosts
 
-viewPost :: PostID -> Post
-viewPost postId = Post { id: postId, title: "Post #" <> show postId }
+viewPost :: forall m. Applicative m => PostID -> m Post
+viewPost postId = pure (Post { id: postId, title: "Post #" <> show postId })
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =

@@ -282,14 +282,15 @@ instance routerHandler :: ( Monad m
                           )
                        => Router
                           (Handler method ct body)
-                          body
+                          (m body)
                           (RawHandler m req res c rw) where
-  route proxy context body = do
-    let handler =
-          writeStatus statusOK
-          >=> contentType (getMediaType (Proxy :: Proxy ct))
-          >=> closeHeaders
-          >=> respond (mimeRender (Proxy :: Proxy ct) body)
+  route proxy context action = do
+    let handler conn = do
+          body <- action
+          writeStatus statusOK conn
+            >>= contentType (getMediaType (Proxy :: Proxy ct))
+            >>= closeHeaders
+            >>= respond (mimeRender (Proxy :: Proxy ct) body)
     routeEndpoint proxy context (Raw handler) (SProxy :: SProxy method)
 
 instance routerRaw :: (IsSymbol method)
