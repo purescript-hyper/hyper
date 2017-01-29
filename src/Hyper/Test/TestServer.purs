@@ -4,6 +4,7 @@ import Control.Alt ((<|>))
 import Control.Applicative (class Applicative, pure, (*>))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
+import Control.Monad.Writer.Class (class MonadTell)
 import Data.Foldable (fold)
 import Data.Function ((<<<))
 import Data.Functor (map)
@@ -11,7 +12,7 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
-import Hyper.Core (StatusLineOpen(StatusLineOpen), HeadersOpen(HeadersOpen), class ResponseWriter, Header, BodyOpen(BodyOpen), ResponseEnded(ResponseEnded), Conn)
+import Hyper.Core (class ResponseWriter, BodyOpen(BodyOpen), Conn, Header, HeadersOpen(HeadersOpen), ResponseEnded(ResponseEnded), StatusLineOpen(StatusLineOpen))
 import Hyper.Response (class Response)
 import Hyper.Status (Status)
 
@@ -52,10 +53,12 @@ withState s conn =
   case conn.response.writer of
        TestResponseWriter _ → conn { response = (conn.response { writer = TestResponseWriter s }) }
 
-instance responseWriterTestResponseWriter :: (Monad m) =>
+instance responseWriterTestResponseWriter :: ( Monad m
+                                             , MonadTell (TestResponse b) m
+                                             ) =>
                                              ResponseWriter
                                              TestResponseWriter
-                                             (WriterT (TestResponse b) m)
+                                             m
                                              b where
   writeStatus status conn =
     tell (TestResponse (Just status) [] []) *> pure (withState HeadersOpen conn)
@@ -69,7 +72,6 @@ instance responseWriterTestResponseWriter :: (Monad m) =>
     tell (TestResponse Nothing [] [chunk]) *> pure conn
 
   end = pure <<< withState ResponseEnded
-
 
 newtype StringBody = StringBody String
 

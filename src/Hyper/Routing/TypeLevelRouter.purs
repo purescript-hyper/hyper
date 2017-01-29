@@ -25,8 +25,9 @@ module Hyper.Routing.TypeLevelRouter
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Array (elem, filter, foldl, null, singleton, uncons, unsnoc)
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
@@ -185,7 +186,7 @@ class Router e h r | e -> h, e -> r where
   route :: Proxy e -> RoutingContext -> h -> Either RoutingError r
 
 instance routerAltE :: (Router e1 h1 out, Router e2 h2 out)
-                            => Router (e1 :<|> e2) (h1 :<|> h2) out where
+                       => Router (e1 :<|> e2) (h1 :<|> h2) out where
   route _ context (h1 :<|> h2) =
     case route (Proxy :: Proxy e1) context h1 of
       Left err1 ->
@@ -204,7 +205,9 @@ instance routerAltE :: (Router e1 h1 out, Router e2 h2 out)
             | otherwise -> HTTPError errR
 
 
-instance routerLit :: (Router e h out, IsSymbol lit)
+instance routerLit :: ( Router e h out
+                      , IsSymbol lit
+                      )
                       => Router (Lit lit :> e) h out where
   route _ ctx r =
     case uncons ctx.path of
@@ -218,7 +221,9 @@ instance routerLit :: (Router e h out, IsSymbol lit)
                                        })
     where expectedSegment = reflectSymbol (SProxy :: SProxy lit)
 
-instance routerCapture :: (Router e h out, FromPathPiece v)
+instance routerCapture :: ( Router e h out
+                          , FromPathPiece v
+                          )
                           => Router (Capture c v :> e) (v -> h) out where
   route _ ctx r =
     case uncons ctx.path of
@@ -233,7 +238,9 @@ instance routerCapture :: (Router e h out, FromPathPiece v)
           Right x -> route (Proxy :: Proxy e) ctx { path = tail } (r x)
 
 
-instance routerCaptureAll :: (Router e h out, FromPathPiece v)
+instance routerCaptureAll :: ( Router e h out
+                             , FromPathPiece v
+                             )
                              => Router (CaptureAll c v :> e) (Array v -> h) out where
   route _ ctx r =
     case traverse fromPathPiece ctx.path of
@@ -242,11 +249,12 @@ instance routerCaptureAll :: (Router e h out, FromPathPiece v)
                                         })
       Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
 
-routeEndpoint :: forall e r m. (IsSymbol m)
+routeEndpoint :: forall e r method.
+                 (IsSymbol method)
                  => Proxy e
                  -> RoutingContext
                  -> r
-                 -> SProxy m
+                 -> SProxy method
                  -> Either RoutingError r
 routeEndpoint _ context r methodProxy = do
   unless (null context.path) $
@@ -282,8 +290,7 @@ instance routerHandler :: ( Monad m
                            -> m { request :: { method :: Method, url :: String | req }
                                 , response :: { writer :: rw ResponseEnded | res }
                                 , components :: c
-                                })
-                                                      where
+                                }) where
   route proxy context action = do
     let handler conn = do
           body <- action
@@ -317,11 +324,10 @@ instance routerRaw :: (IsSymbol method)
     routeEndpoint proxy context r (SProxy :: SProxy method)
 
 router
-  :: forall s r m req res c rw wb.
+  :: forall s r m req res c rw.
      ( Monad m
-     , ResponseWriter rw m wb
      , Router s r (Middleware
-                   m
+                   (ExceptT RoutingError m)
                    (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
                    (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
      ) =>
@@ -338,12 +344,17 @@ router
      (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
      (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
 router _ handler onRoutingError conn =
-  case route (Proxy :: Proxy s) { path: splitUrl conn.request.url
-                                , method: conn.request.method
-                                } handler of
-    Left (HTTPError { status, message }) ->
-      onRoutingError status message conn
-    Right h ->
-      h conn
+  -- Run the routing to get a handler.
+  route (Proxy :: Proxy s) context handler
+  -- Then, if successful, run the handler, possibly also generating an HTTPError.
+  # either catch runHandler
   where
     splitUrl = filter ((/=) "") <<< split (Pattern "/")
+    context = { path: splitUrl conn.request.url
+              , method: conn.request.method
+              }
+    catch (HTTPError { status, message }) =
+      onRoutingError status message conn
+
+    runHandler h =
+      runExceptT (h conn) >>= either catch pure

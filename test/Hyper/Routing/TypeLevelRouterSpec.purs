@@ -1,6 +1,7 @@
 module Hyper.Routing.TypeLevelRouterSpec (spec) where
 
 import Prelude
+import Control.Monad.Except (ExceptT)
 import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
@@ -14,7 +15,7 @@ import Hyper.Method (Method(..))
 import Hyper.Response (class Response, contentType, headers, respond)
 import Hyper.Routing.ContentType (class MimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece)
-import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Raw, linksTo, router, (:<|>))
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Raw, RoutingError, linksTo, router, (:<|>))
 import Hyper.Routing.TypeLevelRouter.Method (Get)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
 import Hyper.Test.TestServer (testHeaders, testResponseWriter, testServer, testStatus, testStringBody)
@@ -63,28 +64,30 @@ type TestAPI =
 testSite :: Proxy TestAPI
 testSite = Proxy
 
-home :: forall m. Applicative m => m Home
+type Handler m a = ExceptT RoutingError m a
+
+home :: forall m. Monad m => Handler m Home
 home = pure Home
 
-profile :: forall m. Applicative m => UserID -> m User
+profile :: forall m. Monad m => UserID -> Handler m User
 profile userId = pure (User userId)
 
-friends :: forall m. Applicative m => UserID -> m (Array User)
+friends :: forall m. Monad m => UserID -> Handler m (Array User)
 friends (UserID uid) =
   pure [ User (UserID "foo")
        , User (UserID "bar")
        ]
 
-wiki :: forall m. Applicative m => Array String -> m WikiPage
+wiki :: forall m. Monad m => Array String -> Handler m WikiPage
 wiki segments = pure (WikiPage (joinWith "/" segments))
 
 about :: forall m req res c rw rb.
          ( Monad m
-         , ResponseWriter rw m rb
-         , Response rb m String
+         , ResponseWriter rw (ExceptT RoutingError m) rb
+         , Response rb (ExceptT RoutingError m) String
          )
          => Middleware
-            m
+            (ExceptT RoutingError m)
             (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
             (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
 about =
@@ -92,7 +95,6 @@ about =
   >=> contentType textPlain
   >=> closeHeaders
   >=> respond "This is a test."
-
 
 spec :: forall e. Spec e Unit
 spec = do
