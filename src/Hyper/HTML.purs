@@ -23,6 +23,8 @@ module Hyper.HTML
        , a
        , form
        , linkTo
+       , class EncodeHTML
+       , encodeHTML
        ) where
 
 import Prelude
@@ -120,3 +122,6 @@ form = Element "form"
 
 linkTo :: URI -> Array HTML -> HTML
 linkTo uri = a [Tuple "href" (printURI uri)]
+
+class EncodeHTML a where
+  encodeHTML :: a -> HTML

@@ -16,10 +16,9 @@ import Data.Generic (class Generic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
 import Hyper.Core (Port(Port), closeHeaders, writeStatus)
-import Hyper.HTML (HTML, asString, element_, h1, li, linkTo, p, text, ul)
+import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (contentType, respond)
-import Hyper.Routing.ContentType (class MimeRender)
 import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, RoutingError(..), linksTo, router, (:<|>))
 import Hyper.Routing.TypeLevelRouter.Method (Get)
 import Hyper.Status (statusNotFound)
@@ -41,11 +40,10 @@ instance encodePost :: EncodeJson Post where
     ~> "title" := title
     ~> jsonEmptyObject
 
-instance mimeRenderPost :: MimeRender Post HTML String where
-  mimeRender _ (Post { id: postId, title}) =
+instance encodeHTMLPost :: EncodeHTML Post where
+  encodeHTML (Post { id: postId, title}) =
     case linksTo site of
       allPostsUri :<|> _ :<|> _ ->
-        asString $
         element_ "section" [ h1 [] [ text title ]
                            , p [] [ text "Contents..." ]
                            , element_ "nav" [ linkTo allPostsUri [ text "All Posts" ]]
@@ -53,14 +51,13 @@ instance mimeRenderPost :: MimeRender Post HTML String where
 
 newtype PostsView = PostsView (Array Post)
 
-instance mimeRenderPostsView :: MimeRender PostsView HTML String where
-  mimeRender _ (PostsView posts) =
+instance encodeHTMLPostsView :: EncodeHTML PostsView where
+  encodeHTML (PostsView posts) =
     case linksTo site of
       _ :<|> getPostUri :<|> postsJsonUri ->
         let postLink (Post { id: postId, title }) =
               li [] [linkTo (getPostUri postId) [ text title ]]
-        in asString $
-           element_ "section" [ h1 [] [ text "Posts" ]
+        in element_ "section" [ h1 [] [ text "Posts" ]
                               , ul [] (map postLink posts)
                               , p [] [ text "Get posts as "
                                      , linkTo postsJsonUri [ text "JSON" ]

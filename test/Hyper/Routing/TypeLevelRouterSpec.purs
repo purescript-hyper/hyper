@@ -10,10 +10,9 @@ import Data.String (joinWith, trim)
 import Data.Tuple (Tuple(..))
 import Data.URI (printURI)
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
-import Hyper.HTML (HTML, asString, h1, text)
+import Hyper.HTML (class EncodeHTML, HTML, h1, text)
 import Hyper.Method (Method(..))
 import Hyper.Response (class Response, contentType, headers, respond)
-import Hyper.Routing.ContentType (class MimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, class ToPathPiece)
 import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, CaptureAll, Raw, RoutingError, linksTo, router, (:<|>))
 import Hyper.Routing.TypeLevelRouter.Method (Get)
@@ -25,8 +24,8 @@ import Type.Proxy (Proxy(..))
 
 data Home = Home
 
-instance mimeRenderHome :: MimeRender Home HTML String where
-  mimeRender _ Home = asString (h1 [] [text "Home"])
+instance encodeHTMLHome :: EncodeHTML Home where
+  encodeHTML Home = h1 [] [text "Home"]
 
 newtype UserID = UserID String
 
@@ -48,8 +47,8 @@ instance encodeUser :: EncodeJson User where
 
 data WikiPage = WikiPage String
 
-instance mimeRenderWikiPage :: MimeRender WikiPage HTML String where
-  mimeRender _ (WikiPage title) = asString (text ("Viewing page: " <> title))
+instance encodeHTMLWikiPage :: EncodeHTML WikiPage where
+  encodeHTML (WikiPage title) = text ("Viewing page: " <> title)
 
 type TestAPI =
   Get HTML Home
