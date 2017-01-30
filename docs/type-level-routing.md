@@ -47,7 +47,46 @@ instance mimeRenderUserHTML :: MimeRender User HTML String where
          ]
 ```
 
-_**TODO:** Show how to construct a router and runnable server. Also talk about
-value-level respresentation using Proxy._
+We are getting ready to create the server. First, we need a value-level
+representation of the `MySite` type, to be able to pass it to the `router`
+function. For that we use [Proxy][proxy]. Its documentation describes it as
+follows:
+
+> The Proxy type and values are for situations where type information is
+> required for an input to determine the type of an output, but where it is not
+> possible or convenient to provide a value for the input.
+
+We create a top-level definition of the type `Proxy MySite` with the value
+constructor `Proxy`.
+
+```purescript
+mySite :: Proxy MySite
+mySite = Proxy
+```
+
+We pass the proxy, our handler, and the `onRoutingError` function for cases
+where no route matched the request.
+
+```purescript
+onRoutingError status msg =
+  writeStatus status
+  >=> contentType textHTML
+  >=> closeHeaders
+  >=> respond (maybe "" id msg)
+
+siteRouter = router mySite root onRoutingError
+```
+
+The value returned by `router` is regular middleware, ready to be passed to a
+server.
+
+```purescript
+main =
+  runServer defaultOptions onListening onRequestError {} siteRouter
+  where
+    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
+    onRequestError err = log ("Request failed: " <> show err)
+```
 
 [servant]: https://haskell-servant.github.io
+[proxy]: https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy

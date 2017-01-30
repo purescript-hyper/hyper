@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 1a24bc8
+  Version 2b0b531
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -151,7 +151,27 @@ type MySite = Get HTML User</code></pre>
          , text &quot; &quot;
          , text lastName
          ]</code></pre>
-<p><em><strong>TODO:</strong> Show how to construct a router and runnable server. Also talk about value-level respresentation using Proxy.</em></p>
+<p>We are getting ready to create the server. First, we need a value-level representation of the <code>MySite</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
+<blockquote>
+<p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
+</blockquote>
+<p>We create a top-level definition of the type <code>Proxy MySite</code> with the value constructor <code>Proxy</code>.</p>
+<pre class="purescript"><code>mySite :: Proxy MySite
+mySite = Proxy</code></pre>
+<p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request.</p>
+<pre class="purescript"><code>onRoutingError status msg =
+  writeStatus status
+  &gt;=&gt; contentType textHTML
+  &gt;=&gt; closeHeaders
+  &gt;=&gt; respond (maybe &quot;&quot; id msg)
+
+siteRouter = router mySite root onRoutingError</code></pre>
+<p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
+<pre class="purescript"><code>main =
+  runServer defaultOptions onListening onRequestError {} siteRouter
+  where
+    onListening (Port port) = log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
+    onRequestError err = log (&quot;Request failed: &quot; &lt;&gt; show err)</code></pre>
 <h2 id="resource-routing">Resource Routing</h2>
 <p><em>This module is <strong>deprecated</strong> in favor of the one described in <a href="#type-level-routing">Type-Level Routing</a>.</em></p>
 <p><code>Hyper.Routing.ResourceRouter</code> aims to provide type-safe routing, based on REST resources. It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>

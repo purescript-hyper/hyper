@@ -127,6 +127,13 @@ a:hover {
   color: #8583d4;
 }
 
+blockquote {
+  color: #888;
+  font-style: italic;
+  font-size: 125%;
+  margin: 2em;
+}
+
 body > p {
   text-align: justify;
 }
