@@ -1,4 +1,4 @@
-module Hyper.Routing.MutuallyReferringRouterSpec where
+module Hyper.Deprecated.MutuallyReferringRouterSpec where
 
 import Prelude
 import Control.Alt ((<|>))

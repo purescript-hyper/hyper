@@ -1,77 +1,112 @@
 module Main where
 
 import Prelude
-import Control.Alternative ((<|>))
+import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Control.Monad.Error.Class (throwError)
+import Control.Monad.Except (ExceptT)
+import Control.Monad.Reader (ReaderT, ask)
+import Control.Monad.Reader.Trans (runReaderT)
+import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
+import Data.Array (find, (..))
+import Data.Generic (class Generic)
+import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (closeHeaders, writeStatus, StatusLineOpen, class ResponseWriter, ResponseEnded, Conn, Middleware, Port(Port))
-import Hyper.HTML (asString, element_, h1, p, text)
-import Hyper.Method (Method)
-import Hyper.Node.Server (ResponseBody, defaultOptions, runServer)
-import Hyper.Response (class Response, respond, contentType)
-import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, router, linkTo, resource, runRouter, handler)
-import Hyper.Status (statusOK)
+import Hyper.Core (Port(Port), closeHeaders, writeStatus)
+import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
+import Hyper.Node.Server (defaultOptions, runServer)
+import Hyper.Response (contentType, respond)
+import Hyper.Routing.TypeLevelRouter (type (:/), type (:<|>), type (:>), Capture, RoutingError(..), linksTo, router, (:<|>))
+import Hyper.Routing.TypeLevelRouter.Method (Get)
+import Hyper.Status (statusNotFound)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
+import Type.Proxy (Proxy(..))
 
-app :: forall m req res rw c.
-       (Monad m, ResponseWriter rw m ResponseBody, Response ResponseBody m String) =>
-       Middleware
-       m
-       (Conn { url :: String, method :: Method | req }
-             { writer :: rw StatusLineOpen | res }
-             c)
-       (Conn { url :: String, method :: Method | req }
-             { writer :: rw ResponseEnded | res }
-             c)
-app =
-  runRouter
-  defaultRouterFallbacks
+type PostID = Int
 
-  -- Resources:
-  (router home <|> router about)
-    where
-      htmlWithStatus status doc =
-        writeStatus status
-        >=> contentType textHTML
-        >=> closeHeaders
-        >=> respond (asString doc)
+newtype Post = Post { id :: PostID
+                    , title :: String
+                    }
 
-      homeView =
-        element_ "section" [ h1 [] [ text "Welcome!" ]
-                           , p [] [ text "Read more at "
-                                    -- Type-safe routing:
-                                  , linkTo about [text "About"]
-                                  , text "."
-                                  ]
+derive instance genericPost :: Generic Post
+
+instance encodePost :: EncodeJson Post where
+  encodeJson (Post { id, title }) =
+    "id" := id
+    ~> "title" := title
+    ~> jsonEmptyObject
+
+instance encodeHTMLPost :: EncodeHTML Post where
+  encodeHTML (Post { id: postId, title}) =
+    case linksTo site of
+      allPostsUri :<|> _ :<|> _ ->
+        element_ "section" [ h1 [] [ text title ]
+                           , p [] [ text "Contents..." ]
+                           , element_ "nav" [ linkTo allPostsUri [ text "All Posts" ]]
                            ]
 
-      home =
-        resource { path = []
-                 , "GET" = handler (htmlWithStatus statusOK homeView)
-                 }
+newtype PostsView = PostsView (Array Post)
 
-      aboutView =
-        element_ "section" [ h1 [] [ text "About" ]
-                           , p [] [ text "OK, about this example..." ]
-                           ]
+instance encodeHTMLPostsView :: EncodeHTML PostsView where
+  encodeHTML (PostsView posts) =
+    case linksTo site of
+      _ :<|> getPostUri :<|> postsJsonUri ->
+        let postLink (Post { id: postId, title }) =
+              li [] [linkTo (getPostUri postId) [ text title ]]
+        in element_ "section" [ h1 [] [ text "Posts" ]
+                              , ul [] (map postLink posts)
+                              , p [] [ text "Get posts as "
+                                     , linkTo postsJsonUri [ text "JSON" ]
+                                     ]
+                              ]
 
-      about =
-        resource { path = ["about"]
-                 , "GET" = handler (htmlWithStatus statusOK aboutView)
-                 }
+type Site = Get HTML PostsView
+            :<|> "posts" :/ Capture "id" PostID :> Get HTML Post
+            :<|> "posts.json" :/ Get Json (Array Post)
+
+site :: Proxy Site
+site = Proxy
+
+-- Simple handlers that can access available posts in
+-- the Reader monad (would likely be a database query in
+-- a real app):
+
+type AppM e a = ExceptT RoutingError (ReaderT (Array Post) (Aff e)) a
+
+allPosts :: forall e. AppM e (Array Post)
+allPosts = ask
+
+postsView :: forall e. AppM e PostsView
+postsView = PostsView <$> ask
+
+viewPost :: forall e. PostID -> AppM e Post
+viewPost postId =
+  find (\(Post p) -> p.id == postId) <$> ask >>=
+  case _ of
+    Just post -> pure post
+    -- You can throw 404 Not Found in here as well.
+    Nothing -> throwError (HTTPError { status: statusNotFound
+                                     , message: Just "Post not found."
+                                     })
 
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
-  let
-    -- Some nice console printing when the server starts, and if a request
-    -- fails (in this case when the request body is unreadable for some reason).
+  runServer defaultOptions onListening onRequestError {} (siteRouter >>> flip runReaderT posts)
+  where
+    posts = (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
+
+    siteRouter = router site (postsView :<|> viewPost :<|> allPosts) onRoutingError
+
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
 
-  -- Let's run it.
-  in runServer defaultOptions onListening onRequestError {} app
+    onRoutingError status msg =
+      writeStatus status
+      >=> contentType textHTML
+      >=> closeHeaders
+      >=> respond (maybe "" id msg)

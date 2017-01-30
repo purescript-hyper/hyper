@@ -1,4 +1,4 @@
-module Hyper.Routing.ResourceRouterSpec where
+module Hyper.Deprecated.ResourceBasedRouerSpec where
 
 import Prelude
 import Control.Alternative ((<|>))

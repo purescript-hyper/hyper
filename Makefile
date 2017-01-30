@@ -5,7 +5,6 @@ MD_SOURCES=docs/index.md \
 					 docs/design.md \
 					 docs/request-body-parsing.md \
 					 docs/type-level-routing.md \
-					 docs/resource-routing.md \
 					 docs/servers.md \
 					 docs/contributing.md
 
@@ -37,6 +36,10 @@ docs/hyper.pdf: $(MD_SOURCES)
 	--listings \
 	-H docs/purescript-language.tex \
 	-H docs/listings.tex \
+	-V links-as-notes=true \
+	-V documentclass=article \
+	--toc --toc-depth=2 \
+	 --number-sections \
 	--latex-engine=xelatex \
 	"--metadata=subtitle:$(VERSION)" \
 	-o docs/hyper.pdf \

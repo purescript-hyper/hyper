@@ -1,8 +1,5 @@
 # Resource Routing
 
-_This module is **deprecated** in favor of the one described in
-[Type-Level Routing](#type-level-routing)._
-
 `Hyper.Routing.ResourceRouter` aims to provide type-safe routing,
 based on REST resources. It should not be possible to link, using an
 HTML anchor, to a resource in the web application that does not exist,
