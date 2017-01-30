@@ -34,6 +34,9 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 docs/hyper.pdf: $(MD_SOURCES)
 	pandoc $(SHARED_PANDOC_OPTIONS) \
 	-t latex \
+	--listings \
+	-H docs/purescript-language.tex \
+	-H docs/listings.tex \
 	--latex-engine=xelatex \
 	"--metadata=subtitle:$(VERSION)" \
 	-o docs/hyper.pdf \

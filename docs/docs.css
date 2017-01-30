@@ -65,9 +65,11 @@ pre .text {
   color: #4d4d4c;
 }
 
+ol code,
+ul code,
 p code {
   display: inline-block;
-  background: #eee;
+  background: #f5f5f5;
   padding: 0 2px;
   line-height: 1.3;
 }
@@ -118,7 +120,7 @@ body > table {
 }
 
 a {
-  color: #706ec3;
+  color: #3737c1;
 }
 a:visited {
   color: #80808e;

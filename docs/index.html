@@ -7,7 +7,7 @@
   <meta name="author" content="Oskar Wickström">
   <title>Hyper</title>
 <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
-<link rel="stylesheet" href="tomorrow.min.css">
+<link rel="stylesheet" href="github.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 2b0b531
+  Version 4423a79
 </p>
 <cite class="author" itemprop="author">By Oskar Wickström</cite>
 </header>
@@ -33,7 +33,10 @@
 <li><a href="#response-state-transitions">Response State Transitions</a></li>
 </ul></li>
 <li><a href="#request-body-parsing">Request Body Parsing</a></li>
-<li><a href="#type-level-routing">Type-Level Routing</a></li>
+<li><a href="#type-level-routing">Type-Level Routing</a><ul>
+<li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
+<li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
+</ul></li>
 <li><a href="#resource-routing">Resource Routing</a><ul>
 <li><a href="#resources">Resources</a></li>
 <li><a href="#resource-routers">Resource Routers</a></li>
@@ -132,25 +135,19 @@ parseForm conn = ...</code></pre>
 <p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
 <h2 id="type-level-routing">Type-Level Routing</h2>
 <p><code>Hyper.Routing.TypeLevelRouter</code> provides an API for expressing the web application routes and their characterics as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. From this type you get static guarantees about having handled all cases, linking only to existing routes. You also get a lot of stuff for free, such as type-safe parameters for handlers and links.</p>
-<p>Let’s say we want to render a <code>User</code> value as HTML on the <code>/</code> path. We start out by declaring the structure of our site:</p>
-<pre class="purescript"><code>newtype User = User { firstName :: String
-                    , lastName :: String
-                    }
+<h3 id="a-single-endpoint-example">A Single-Endpoint Example</h3>
+<p>Let’s say we want to render a home page as HTML. We start out by declaring the endpoint data type <code>Home</code>, and the structure of our site:</p>
+<pre class="purescript"><code>data Home = Home
 
-type MySite = Get HTML User</code></pre>
-<p><code>Get HTML User</code> describes a structure with only one endpoint, rendering a User as HTML.</p>
-<p>So where does the User value come from? We provide it using a <em>handler</em>. A handler for <code>MySite</code> would be some value of the following type:</p>
-<pre class="purescript"><code>forall m. Monad m =&gt; ExceptT RoutingError m User</code></pre>
-<p>We can construct such a value using <code>pure</code> and a <code>User</code> value:</p>
-<pre class="purescript"><code>root = pure (User { firstName: &quot;John&quot;, lastName: &quot;Bonham&quot; })</code></pre>
-<p>Nice! But what comes out on the other end? We need something that renders the <code>User</code> value as HTML. The <code>MimeRender</code> type class encapsulates this concept. We provide an instance for <code>User</code> and the <code>HTML</code> content type.</p>
-<pre class="purescript"><code>instance mimeRenderUserHTML :: MimeRender User HTML String where
-  mimeRender _ (User { firstName, lastName }) =
-    asString $
-    p [] [ text firstName
-         , text &quot; &quot;
-         , text lastName
-         ]</code></pre>
+type MySite = Get HTML Home</code></pre>
+<p><code>Get HTML Home</code> is a routing type with only one endpoint, rendering a <code>Home</code> value as HTML. So where does the <code>Home</code> value come from? We provide it using a <em>handler</em>. A handler for <code>MySite</code> would be some value of the following type:</p>
+<pre class="purescript"><code>forall m. Monad m =&gt; ExceptT RoutingError m Home</code></pre>
+<p>We can construct such a value using <code>pure</code> and a <code>Home</code> value:</p>
+<pre class="purescript"><code>home = pure Home</code></pre>
+<p>Nice! But what comes out on the other end? We need something that renders the <code>Home</code> value as HTML. By providing an instance of <code>EncodeHTML</code> for <code>Home</code>, we instruct the endpoint how to render.</p>
+<pre class="purescript"><code>instance encodeHTMLHome :: EncodeHTML Home where
+  encodeHTML Home =
+    p [] [ text &quot;Welcome to my site!&quot; ]</code></pre>
 <p>We are getting ready to create the server. First, we need a value-level representation of the <code>MySite</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
 <blockquote>
 <p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
@@ -158,20 +155,116 @@ type MySite = Get HTML User</code></pre>
 <p>We create a top-level definition of the type <code>Proxy MySite</code> with the value constructor <code>Proxy</code>.</p>
 <pre class="purescript"><code>mySite :: Proxy MySite
 mySite = Proxy</code></pre>
-<p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request.</p>
+<p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request, to the <code>router</code> function.</p>
 <pre class="purescript"><code>onRoutingError status msg =
   writeStatus status
   &gt;=&gt; contentType textHTML
   &gt;=&gt; closeHeaders
   &gt;=&gt; respond (maybe &quot;&quot; id msg)
 
-siteRouter = router mySite root onRoutingError</code></pre>
+siteRouter = router mySite home onRoutingError</code></pre>
 <p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
 <pre class="purescript"><code>main =
   runServer defaultOptions onListening onRequestError {} siteRouter
   where
-    onListening (Port port) = log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
-    onRequestError err = log (&quot;Request failed: &quot; &lt;&gt; show err)</code></pre>
+    onListening (Port port) =
+      log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
+
+    onRequestError err =
+      log (&quot;Request failed: &quot; &lt;&gt; show err)</code></pre>
+<h3 id="routing-multiple-endpoints">Routing Multiple Endpoints</h3>
+<p>Real-world servers often need more than one endpoint. Let’s define a router for an application that shows a home page with links, a page listing users, and a page rendering a specific user.</p>
+<pre class="purescript"><code>data Home = Home
+
+data AllUsers = AllUsers (Array User)
+
+newtype User = User { id :: Int, name :: String }
+
+type MyOtherSite =
+  Get HTML Home
+  :&lt;|&gt; &quot;users&quot; :/ Get HTML AllUsers
+  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get HTML User
+
+otherSite :: Proxy MyOtherSite
+otherSite = Proxy</code></pre>
+<p>Let’s go through the new constructs used:</p>
+<ul>
+<li><code>:&lt;|&gt;</code> is a type operator that separates <em>alternatives</em>. A router for this type will try each route in order until one matches.</li>
+<li><code>:/</code> separates a literal path segment and the rest of the endpoint type.</li>
+<li><code>Capture</code> takes a descriptive string and a type. It takes the next available path segment and tries to convert it to the given type. Each capture in an endpoint type corresponds to an argument in the handler function.</li>
+<li><code>:&gt;</code> separates a an endpoint modifier, like <code>Capture</code>, and the rest of the endpoint type.</li>
+</ul>
+<p>We define handlers for our routes as regular functions on the specified data types, returning <code>ExceptT RoutingError m a</code> values, where <code>m</code> is the monad of our middleware, and <code>a</code> is the type to render for the endpoint.</p>
+<pre class="purescript"><code>home :: forall m. Monad m =&gt; ExceptT RoutingError m Home
+home = pure Home
+
+allUsers :: forall m. Monad m =&gt; ExceptT RoutingError m AllUsers
+allUsers = AllUsers &lt;$&gt; getUsers
+
+getUser :: forall m. Monad m =&gt; Int -&gt; ExceptT RoutingError m User
+getUser id&#39; =
+  find userWithId &lt;$&gt; getUsers &gt;&gt;=
+  case _ of
+    Just user -&gt; pure user
+    Nothing -&gt;
+      throwError (HTTPError { status: statusNotFound
+                            , message: Just &quot;User not found.&quot;
+                            })
+  where
+    userWithId (User u) = u.id == id&#39;</code></pre>
+<p>As in the single-endpoint example, we want to render as HTML. Let’s create instances for our data types. Notice how we can create links between routes in a type-safe manner.</p>
+<pre class="purescript"><code>instance encodeHTMLHome :: EncodeHTML Home where
+  encodeHTML Home =
+    case linksTo otherSite of
+      _ :&lt;|&gt; allUsers&#39; :&lt;|&gt; _ -&gt;
+        p [] [ text &quot;Welcome to my site! Go check out my &quot;
+             , linkTo allUsers&#39; [ text &quot;Users&quot; ]
+             , text &quot;.&quot;
+             ]
+
+instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
+  encodeHTML (AllUsers users) =
+    element_ &quot;div&quot; [ h1 [] [ text &quot;Users&quot; ]
+                   , ul [] (map linkToUser users)
+                   ]
+    where
+      linkToUser (User u) =
+        case linksTo otherSite of
+          _ :&lt;|&gt; _ :&lt;|&gt; getUser&#39; -&gt;
+            li [] [ linkTo (getUser&#39; u.id) [ text u.name ] ]
+
+instance encodeHTMLUser :: EncodeHTML User where
+  encodeHTML (User { name }) =
+    h1 [] [ text name ]</code></pre>
+<p>The pattern match on the value returned by <code>linksTo</code> must match the structure of the routing type. We use <code>:&lt;|&gt;</code> to pattern match on links. Each matched link will have a type based on the corresponding endpoint. <code>getUser</code> in the previous code has type <code>Int -&gt; URI</code>, while <code>allUsers</code> has no captures and thus has type <code>URI</code>.</p>
+<p>We are still missing <code>getUsers</code>, our source of User values. In a real application it would probably be a database query, but for this example we simply hard-code some famous users of proper instruments.</p>
+<pre class="purescript"><code>getUsers :: forall m. Applicative m =&gt; m (Array User)
+getUsers =
+  pure
+  [ User { id: 1, name: &quot;John Paul Jones&quot; }
+  , User { id: 2, name: &quot;Tal Wilkenfeld&quot; }
+  , User { id: 3, name: &quot;John Patitucci&quot; }
+  , User { id: 4, name: &quot;Jaco Pastorious&quot; }
+  ]</code></pre>
+<p>Almost done! We just need to create the router, and start a server.</p>
+<pre class="purescript"><code>main =
+  let otherSiteRouter =
+        router otherSite (home :&lt;|&gt; allUsers :&lt;|&gt; getUser) onRoutingError
+
+      onRoutingError status msg =
+        writeStatus status
+        &gt;=&gt; contentType textHTML
+        &gt;=&gt; closeHeaders
+        &gt;=&gt; respond (maybe &quot;&quot; id msg)
+
+      onListening (Port port) =
+        log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
+
+      onRequestError err =
+        log (&quot;Request failed: &quot; &lt;&gt; show err)
+
+  in runServer defaultOptions</code></pre>
+<p>Notice how the composition of handler functions, using the value-level operator <code>:&lt;|&gt;</code>, matches the structure of our routing type. If we fail to match the type we get a compile error.</p>
 <h2 id="resource-routing">Resource Routing</h2>
 <p><em>This module is <strong>deprecated</strong> in favor of the one described in <a href="#type-level-routing">Type-Level Routing</a>.</em></p>
 <p><code>Hyper.Routing.ResourceRouter</code> aims to provide type-safe routing, based on REST resources. It should not be possible to link, using an HTML anchor, to a resource in the web application that does not exist, or that does not handle the GET method. Neither should it be possible to create a form that posts to a non-existing resource, or a resource not handling POST requests.</p>

@@ -1,0 +1,30 @@
+\usepackage{upquote}
+\usepackage{xcolor}
+
+\def\postbreak{\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow\space}}}
+
+\lstset{
+  columns=fixed,
+  basewidth=.5em,
+  basicstyle=\ttfamily,
+  commentstyle=\color{gray}\textit,
+  keywordstyle=\color{purple}\ttfamily,
+  stringstyle=\ttfamily\color{olive},
+  numberstyle=\color{olive},
+  typestyle=\color{teal},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  postbreak=\postbreak,
+  breakindent=0pt,
+  upquote=true,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=12pt,
+  belowskip=12pt,
+  lineskip=0pt,
+  literate={\$$}{{\$$}}1,
+  mathescape=false,
+  escapechar=@,
+  language=purescript
+}

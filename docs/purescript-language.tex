@@ -1,0 +1,81 @@
+\makeatletter
+\lst@InstallKeywords k{types}{typestyle}\slshape{typestyle}{}ld
+\lst@InstallKeywords k{constructors}{constructorstyle}\slshape{constructorstyle}{}ld
+\makeatother
+
+\lstdefinelanguage{purescript}
+{
+  % list of keywords
+  morekeywords={
+    module,
+    import,
+    if,
+    then,
+    else,
+    let,
+    in,
+    case,
+    of,
+    type,
+    newtype,
+    data,
+    forall,
+    where,
+    class,
+    derive,
+    instance
+  },
+  otherkeywords={=,==,>,<,<=,>=,\\=,~,\$,\@,*,\&,<<<,>>>,>>=,<\$>,<=<,>=>,<>,<*>,<*,*>,->,<-,_,::,\(,\),\{,\},[,],\|},
+  moretypes={
+    Int,
+    String,
+    Maybe,
+    Either,
+    Error,
+    Functor,
+    Monoid,
+    Applicative,
+    Alternative,
+    Semigroup,
+    Monad,
+    HTTP,
+    Eff,
+    CONSOLE,
+    EXCEPTION,
+    Aff,
+    AVAR,
+    Proxy,
+  },
+  moreconstructors={
+    Just,
+    Nothing,
+    Left,
+    Right,
+    Proxy,
+  },
+  % Project-specific
+  moretypes={
+    Conn,
+    Middleware,
+    RequestBody,
+    ResponseWriter,
+    Response,
+    GET,
+    POST,
+    Header,
+    ResponseStateTransition,
+    StatusLineOpen,
+    HeadersOpen,
+    BodyOpen,
+    ResponseEnded,
+    EncodeHTML,
+  },
+  moreconstructors={
+    GET,
+    POST,
+  }
+  sensitive=true,
+  morecomment=[l]{--}, % l is for line comment
+  morecomment=[s]{\{-}{-\}}, % s is for start and end delimiter
+  morestring=[b]" % defines that strings are enclosed in double quotes
+}
