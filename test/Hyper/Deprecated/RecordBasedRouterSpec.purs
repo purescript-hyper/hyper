@@ -1,4 +1,4 @@
-module Hyper.Deprecated.ResourceBasedRouerSpec where
+module Hyper.Deprecated.ResourceBasedRouterSpec where
 
 import Prelude
 import Control.Alternative ((<|>))
@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(Just))
 import Hyper.Core (StatusLineOpen, writeStatus, class ResponseWriter, Conn, Middleware, ResponseEnded)
 import Hyper.Method (Method(..))
 import Hyper.Response (class Response, headers, respond)
-import Hyper.Routing.ResourceRouter (defaultRouterFallbacks, runRouter, router, handler, resource)
+import Hyper.Deprecated.RecordBasedRouter (defaultRouterFallbacks, runRouter, router, handler, resource)
 import Hyper.Status (statusCreated, statusMethodNotAllowed, statusOK)
 import Hyper.Test.TestServer (StringBody, testStringBody, testResponseWriter, testStatus, testServer)
 import Node.Buffer (BUFFER)

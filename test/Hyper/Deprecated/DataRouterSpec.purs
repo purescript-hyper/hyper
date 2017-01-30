@@ -1,4 +1,4 @@
-module Hyper.Routing.DataRouterSpec where
+module Hyper.Deprecated.DataRouterSpec where
 
 import Prelude
 import Data.Int as Int
@@ -12,7 +12,7 @@ import Hyper.Core (fallbackTo, class ResponseWriter, ResponseEnded, StatusLineOp
 import Hyper.HTML (asString, h1, li, text, ul)
 import Hyper.Method (Method)
 import Hyper.Response (class Response, respond)
-import Hyper.Routing.DataRouter (linkTo, redirectTo, class Addressable, class Routable, formFor, router, POST, Route(Route), GET)
+import Hyper.Deprecated.DataRouter (linkTo, redirectTo, class Addressable, class Routable, formFor, router, POST, Route(Route), GET)
 import Hyper.Status (statusFound, statusNotFound, statusOK)
 import Hyper.Test.TestServer (testHeaders, testStatus, testStringBody, testResponseWriter, testServer)
 import Node.Buffer (BUFFER)

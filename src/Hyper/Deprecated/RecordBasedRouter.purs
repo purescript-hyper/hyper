@@ -1,4 +1,4 @@
-module Hyper.Routing.RecordBasedRouter
+module Hyper.Deprecated.RecordBasedRouter
        ( Path
        , pathToHtml
        , pathFromString

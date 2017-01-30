@@ -1,4 +1,4 @@
-module Hyper.Routing.DataRouter
+module Hyper.Deprecated.DataRouter
        ( GET
        , POST
        , Path

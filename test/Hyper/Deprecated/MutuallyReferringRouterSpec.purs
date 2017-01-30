@@ -9,7 +9,7 @@ import Hyper.Core (StatusLineOpen, closeHeaders, writeStatus, class ResponseWrit
 import Hyper.HTML (asString, text)
 import Hyper.Method (Method(GET))
 import Hyper.Response (class Response, respond, contentType)
-import Hyper.Routing.ResourceRouter (ResourceRecord, Supported, Unsupported, defaultRouterFallbacks, handler, linkTo, resource, router, runRouter)
+import Hyper.Deprecated.RecordBasedRouter (ResourceRecord, Supported, Unsupported, defaultRouterFallbacks, handler, linkTo, resource, router, runRouter)
 import Hyper.Status (statusOK)
 import Hyper.Test.TestServer (StringBody, testStringBody, TestResponse, testResponseWriter, testHeaders, testServer)
 import Test.Spec (Spec, it, describe)
