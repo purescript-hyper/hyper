@@ -23,10 +23,10 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		-c docs.css \
 		-o docs/index.html \
 		--base-header-level=2 \
-		-V source-code-url:https://github.com/owickstrom/purescript-hyper \
+		-V source-code-url:https://github.com/owickstrom/hyper \
 		-V author-url:https://wickstrom.tech \
 		-V 'license:Mozilla Public License 2.0' \
-		-V license-url:https://raw.githubusercontent.com/owickstrom/purescript-hyper/master/LICENSE \
+		-V license-url:https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE \
 		--template=docs/template.html \
 	$(MD_SOURCES)
 

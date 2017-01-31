@@ -11,11 +11,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/owickstrom/purescript-hyper.git"
+    "url": "git+ssh://git@github.com/owickstrom/hyper.git"
   },
   "author": "oskar.wickstrom@gmail.com",
   "license": "MPL-2.0",
-  "homepage": "https://github.com/owickstrom/purescript-hyper#readme",
+  "homepage": "https://github.com/owickstrom/hyper#readme",
   "dependencies": {
     "media-typer": "^0.3.0",
     "raw-body": "^2.1.7",
