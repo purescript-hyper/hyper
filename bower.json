@@ -7,6 +7,10 @@
     "bower_components",
     "output"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/owickstrom/hyper.git"
+  },
   "dependencies": {
     "purescript-prelude": "^2.0.0",
     "purescript-maps": "^2.0.0",
