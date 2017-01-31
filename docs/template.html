@@ -42,8 +42,12 @@ $if(subtitle)$
 </p>
 $endif$
 $for(author)$
-<cite class="author" itemprop="author">By $author$</cite>
+By
+<cite class="author" itemprop="author">$author$</cite>
 $endfor$
+<p>
+<a href="hyper.pdf">Also available as PDF</a>
+</p>
 $if(date)$
 <h3 class="date">$date$</h3>
 $endif$
@@ -70,7 +74,7 @@ $body$
   is licensed under <a href="$license-url$">$license$</a>.</p>
   <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a>.</p>
   <p>
-  <a href="hyper.pdf">Download as PDF</a>
+  <a href="hyper.pdf">Also available as PDF</a>
   </p>
 </footer>
 <script src="jquery.js"></script>

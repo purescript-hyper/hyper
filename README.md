@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html">Introduction</a>
-| <a href="https://owickstrom.github.io/hyper/">Documentation</a>
+| <a href="https://owickstrom.github.io/hyper/">Documentation</a> (also in <a href="https://owickstrom.github.io/hyper/hyper.pdf">PDF</a>)
 | <a href="examples/">Examples</a>
 </p>
 
