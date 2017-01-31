@@ -1,4 +1,4 @@
-module Hyper.Routing.TypeLevelRouter.Method
+module Hyper.Routing.Method
        ( Options
        , Get
        , Head
@@ -9,7 +9,7 @@ module Hyper.Routing.TypeLevelRouter.Method
        , Connect
        ) where
 
-import Hyper.Routing.TypeLevelRouter (Handler)
+import Hyper.Routing (Handler)
 
 type Options = Handler "OPTIONS"
 
