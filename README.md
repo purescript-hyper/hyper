@@ -24,6 +24,8 @@ Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a
 
 <p align="right">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
+<p><a href="https://github.com/owickstrom/hyper/releases"><img alt="Latest release" src="http://img.shields.io/github/release/owickstrom/hyper.svg" /></a></p>
+
 </p>
 
 <hr>
