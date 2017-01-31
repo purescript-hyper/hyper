@@ -1,18 +1,40 @@
-# Hyper
+<h1>
+  <center>
+  Hyper
+  </center>
+</h1>
 
-*Type-safe, statically checked composition of HTTP servers, using PureScript.*
+<p>
+<center>
+<em>Type-safe, statically checked composition of HTTP servers, using PureScript.</em>
+</center>
+</p>
 
-[![Build Status](https://travis-ci.org/owickstrom/hyper.svg?branch=master)](https://travis-ci.org/owickstrom/hyper)
+<p>
+<center>
+<a href="https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html">Introduction</a>
+| <a href="https://owickstrom.github.io/hyper/">Documentation</a>
+| <a href="examples/">Examples</a>
+</center>
+</p>
 
 <hr>
 
 Hyper is an experimental project, trying to improve correctness in web server
 programming, and in HTTP middleware and request handlers specifically. To learn
-more about Hyper, check out these resources:
+more about Hyper, check out the
+[documentation](https://owickstrom.github.io/hyper/), ["Hyper: Elegant Weapons
+for a More Civilized
+Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html)
+(introductory blog post), or the [examples](examples/).
 
-* [Documentation](https://owickstrom.github.io/hyper/)
-* ["Hyper: Elegant Weapons for a More Civilized Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html) (introductory blog post)
-* [Examples](examples/)
+<p>
+  <center>
+  <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
+  </center>
+</p>
+
+<hr>
 
 ## Build
 
