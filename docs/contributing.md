@@ -3,7 +3,7 @@
 While Hyper is currently an experiment, and in constant flux, you are
 welcome to contribute. Please post ideas and start discussions
 using
-[the issue tracker on GitHub](https://github.com/owickstrom/hyper/issues).
+[the issue tracker on GitHub](https://github.com/owickstrom/purescript-hyper/issues).
 You can also
 contact [Oskar Wickström](https://wickstrom.tech/about.html) directly
 for design discussions. If this project grows, we can setup a mailing

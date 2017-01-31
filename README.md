@@ -23,8 +23,8 @@ Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a
 (introductory blog post), or the [examples](examples/).
 
 <p align="right">
-<a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
-<a href="https://github.com/owickstrom/hyper/releases"><img alt="Latest release" src="http://img.shields.io/github/release/owickstrom/hyper.svg" /></a>
+<a href="https://travis-ci.org/owickstrom/purescript-hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/purescript-hyper.svg?branch=master" /></a>
+<a href="https://github.com/owickstrom/purescript-hyper/releases"><img alt="Latest release" src="http://img.shields.io/github/release/owickstrom/purescript-hyper.svg" /></a>
 
 </p>
 

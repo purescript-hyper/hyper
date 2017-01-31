@@ -9,7 +9,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/owickstrom/hyper.git"
+    "url": "git://github.com/owickstrom/purescript-hyper.git"
   },
   "dependencies": {
     "purescript-prelude": "^2.0.0",
