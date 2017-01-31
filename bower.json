@@ -1,5 +1,6 @@
 {
   "name": "hyper",
+  "license": "MPL-2.0",
   "ignore": [
     "**/.*",
     "node_modules",
