@@ -1,10 +1,13 @@
 # Type-Level Routing
 
-`Hyper.Routing.TypeLevelRouter` provides an API for expressing the web
-application routes and their characterics as types, much like
-[Servant][servant] does. From this type you get static guarantees about having
-handled all cases, linking only to existing routes. You also get a lot of stuff
-for free, such as type-safe parameters for handlers and links.
+`Hyper.Routing` provides an API for expressing web application routing as
+types, much like [Servant][servant] does. By using routing types you get static
+guarantees about having handled all cases. You also get a lot of stuff for
+free, such as type-safe parameters for handlers, and automatically generated
+type-safe URIs to endpoints.
+
+_Future work might include automatic API documentation and sitemaps, automatic
+deriving of PureScript AJAX clients, and more._
 
 ## A Single-Endpoint Example
 

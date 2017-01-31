@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 50be24f
+  Version 9624c9d
 </p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
@@ -133,7 +133,8 @@ By
 parseForm conn = ...</code></pre>
 <p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
 <h2 id="type-level-routing">Type-Level Routing</h2>
-<p><code>Hyper.Routing.TypeLevelRouter</code> provides an API for expressing the web application routes and their characterics as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. From this type you get static guarantees about having handled all cases, linking only to existing routes. You also get a lot of stuff for free, such as type-safe parameters for handlers and links.</p>
+<p><code>Hyper.Routing</code> provides an API for expressing web application routing as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. By using routing types you get static guarantees about having handled all cases. You also get a lot of stuff for free, such as type-safe parameters for handlers, and automatically generated type-safe URIs to endpoints.</p>
+<p><em>Future work might include automatic API documentation and sitemaps, automatic deriving of PureScript AJAX clients, and more.</em></p>
 <h3 id="a-single-endpoint-example">A Single-Endpoint Example</h3>
 <p>Let’s say we want to render a home page as HTML. We start out by declaring the endpoint data type <code>Home</code>, and the structure of our site:</p>
 <pre class="purescript"><code>data Home = Home
