@@ -1,5 +1,5 @@
 {
-  "name": "hyper",
+  "name": "purescript-hyper",
   "license": "MPL-2.0",
   "ignore": [
     "**/.*",

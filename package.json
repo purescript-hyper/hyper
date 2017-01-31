@@ -1,5 +1,5 @@
 {
-  "name": "hyper",
+  "name": "purescript-hyper",
   "description": "Type-safe, statically checked stacking of HTTP middleware, using PureScript.",
   "main": " ",
   "directories": {
