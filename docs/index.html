@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 5504c42
+  Version 50be24f
 </p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
@@ -116,7 +116,7 @@ By
            , contentLength :: Maybe Int | req
            } res c)</code></pre>
 <p>A simple form parser can use <code>readBodyAsString</code> to convert the body a more useful format for the application. The following function checks the <code>Content-Type</code> header in the request, splits the request body, builds up a <code>Form</code> value, and finally using that value for the <code>body</code> field in the resulting <code>Conn</code>. The form body has type <code>Either Error Form</code> to represent invalid forms.</p>
-<pre class="purescript"><code>parseForm ∷ forall m req res c.
+<pre class="purescript"><code>parseForm :: forall m req res c.
             Applicative m =&gt;
             Middleware
             m

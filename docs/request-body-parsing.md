@@ -30,7 +30,7 @@ field in the resulting `Conn`. The form body has type `Either Error
 Form` to represent invalid forms.
 
 ``` purescript
-parseForm ∷ forall m req res c.
+parseForm :: forall m req res c.
             Applicative m =>
             Middleware
             m
