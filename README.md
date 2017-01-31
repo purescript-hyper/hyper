@@ -1,21 +1,15 @@
-<h1>
-  <center>
-  Hyper
-  </center>
-</h1>
+<div align="center">
+<h1>Hyper</h1>
+</div>
 
-<p>
-<center>
+<p align="center">
 <em>Type-safe, statically checked composition of HTTP servers, using PureScript.</em>
-</center>
 </p>
 
-<p>
-<center>
+<p align="center">
 <a href="https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html">Introduction</a>
 | <a href="https://owickstrom.github.io/hyper/">Documentation</a>
 | <a href="examples/">Examples</a>
-</center>
 </p>
 
 <hr>
@@ -28,10 +22,8 @@ for a More Civilized
 Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html)
 (introductory blog post), or the [examples](examples/).
 
-<p>
-  <center>
-  <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
-  </center>
+<p align="right">
+<a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
 </p>
 
 <hr>
