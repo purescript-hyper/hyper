@@ -87,13 +87,14 @@ instance altResourceRouter :: Monad m => Alt (ResourceRouter m c) where
       NotAllowed method -> pure (NotAllowed method)
       NotFound -> g conn
 
-type ResourceRecord m options get head post put delete trace connect c c' =
+type ResourceRecord m options get head post put patch delete trace connect c c' =
   { path :: Path
   , "OPTIONS" :: ResourceMethod options m c c'
   , "GET" :: ResourceMethod get m c c'
   , "HEAD" :: ResourceMethod head m c c'
   , "POST" :: ResourceMethod post m c c'
   , "PUT" :: ResourceMethod put m c c'
+  , "PATCH" :: ResourceMethod patch m c c'
   , "DELETE" :: ResourceMethod delete m c c'
   , "TRACE" :: ResourceMethod trace m c c'
   , "CONNECT" :: ResourceMethod connect m c c'
@@ -107,6 +108,7 @@ resource
      , "HEAD" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "POST" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "PUT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
+     , "PATCH" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "DELETE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "TRACE" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
      , "CONNECT" :: ResourceMethod Unsupported m (Conn req res c) (Conn req' res' c')
@@ -118,13 +120,14 @@ resource =
   , "HEAD": notSupported
   , "POST": notSupported
   , "PUT": notSupported
+  , "PATCH": notSupported
   , "DELETE": notSupported
   , "TRACE": notSupported
   , "CONNECT": notSupported
   }
 
 router
-  :: forall options get head post put delete trace connect m req res c req' res' c'.
+  :: forall options get head post put patch delete trace connect m req res c req' res' c'.
      Applicative m =>
      ResourceRecord
      m
@@ -133,6 +136,7 @@ router
      head
      post
      put
+     patch
      delete
      trace
      connect
@@ -152,6 +156,7 @@ router r =
         HEAD -> methodHandler r."HEAD"
         POST -> methodHandler r."POST"
         PUT -> methodHandler r."PUT"
+        PATCH -> methodHandler r."PATCH"
         DELETE -> methodHandler r."DELETE"
         TRACE -> methodHandler r."TRACE"
         CONNECT -> methodHandler r."CONNECT"

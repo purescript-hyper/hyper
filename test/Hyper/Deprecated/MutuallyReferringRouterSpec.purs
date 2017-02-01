@@ -33,6 +33,7 @@ type TestResource m rw get post =
   Unsupported
   Unsupported
   Unsupported
+  Unsupported
   (Conn { url :: String, method :: Method | req } { writer :: rw StatusLineOpen | res } c)
   (Conn { url :: String, method :: Method | req } { writer :: rw ResponseEnded | res } c)
 

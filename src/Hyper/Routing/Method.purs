@@ -4,6 +4,7 @@ module Hyper.Routing.Method
        , Head
        , Post
        , Put
+       , Patch
        , Delete
        , Trace
        , Connect
@@ -20,6 +21,8 @@ type Head = Handler "HEAD"
 type Post = Handler "POST"
 
 type Put = Handler "PUT"
+
+type Patch = Handler "PATCH"
 
 type Delete = Handler "DELETE"
 
