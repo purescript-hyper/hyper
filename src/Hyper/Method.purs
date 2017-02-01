@@ -3,6 +3,7 @@ module Hyper.Method where
 import Data.Eq (class Eq)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Show (class Show)
+import Data.String as String
 
 data Method
   = OPTIONS
@@ -30,7 +31,7 @@ instance showMethod :: Show Method where
 
 fromString :: String -> Maybe Method
 fromString s =
-  case s of
+  case String.toUpper s of
     "OPTIONS" -> Just OPTIONS
     "GET" -> Just GET
     "HEAD" -> Just HEAD
