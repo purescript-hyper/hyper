@@ -10,6 +10,7 @@ data Method
   | HEAD
   | POST
   | PUT
+  | PATCH
   | DELETE
   | TRACE
   | CONNECT
@@ -22,6 +23,7 @@ instance showMethod :: Show Method where
   show HEAD = "HEAD"
   show POST = "POST"
   show PUT = "PUT"
+  show PATCH = "PATCH"
   show DELETE = "DELETE"
   show TRACE = "TRACE"
   show CONNECT = "CONNECT"
@@ -34,6 +36,7 @@ fromString s =
     "HEAD" -> Just HEAD
     "POST" -> Just POST
     "PUT" -> Just PUT
+    "PATCH" -> Just PATCH
     "DELETE" -> Just DELETE
     "TRACE" -> Just TRACE
     "CONNECT" -> Just CONNECT
