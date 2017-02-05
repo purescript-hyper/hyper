@@ -13,13 +13,14 @@ import Data.Either (Either(..), either)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
+import Data.HTTP.Method (CustomMethod, Method)
+import Data.HTTP.Method as Method
 import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
-import Hyper.Method (Method)
 import Hyper.Response (class Response, contentType, respond)
 import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
 import Hyper.Routing.ContentType (class HasMediaType, class MimeRender, getMediaType, mimeRender)
@@ -27,8 +28,10 @@ import Hyper.Routing.PathPiece (class FromPathPiece, fromPathPiece)
 import Hyper.Status (Status, statusBadRequest, statusMethodNotAllowed, statusNotFound, statusOK)
 import Type.Proxy (Proxy(..))
 
+type Method' = Either Method CustomMethod
+
 type RoutingContext = { path :: Array String
-                      , method :: Method
+                      , method :: Method'
                       }
 
 data RoutingError
@@ -124,13 +127,13 @@ routeEndpoint _ context r methodProxy = do
                           , message: Nothing
                           })
 
-  let expectedMethod = reflectSymbol methodProxy
-  unless (expectedMethod == show context.method) $
+  let expectedMethod = Method.fromString (reflectSymbol methodProxy)
+  unless (expectedMethod == context.method) $
     throwError (HTTPError { status: statusMethodNotAllowed
                           , message: Just ("Method "
                                            <> show context.method
                                            <> " did not match "
-                                           <> expectedMethod
+                                           <> show expectedMethod
                                            <> ".")
                           })
   pure r
@@ -145,11 +148,11 @@ instance routerHandler :: ( Monad m
                        => Router
                           (Handler method ct body)
                           (m body)
-                          ({ request :: { method :: Method, url :: String | req }
+                          ({ request :: { method :: Either Method CustomMethod, url :: String | req }
                            , response :: { writer :: rw StatusLineOpen | res }
                            , components :: c
                            }
-                           -> m { request :: { method :: Method, url :: String | req }
+                           -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
                                 , response :: { writer :: rw ResponseEnded | res }
                                 , components :: c
                                 }) where
@@ -165,19 +168,19 @@ instance routerHandler :: ( Monad m
 instance routerRaw :: (IsSymbol method)
                    => Router
                       (Raw method)
-                      ({ request :: { method :: Method, url :: String | req }
+                      ({ request :: { method :: Either Method CustomMethod, url :: String | req }
                        , response :: { writer :: rw StatusLineOpen | res }
                        , components :: c
                        }
-                       -> m { request :: { method :: Method, url :: String | req }
+                       -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
                             , response :: { writer :: rw ResponseEnded | res }
                             , components :: c
                             })
-                      ({ request :: { method :: Method, url :: String | req }
+                      ({ request :: { method :: Either Method CustomMethod, url :: String | req }
                        , response :: { writer :: rw StatusLineOpen | res }
                        , components :: c
                        }
-                       -> m { request :: { method :: Method, url :: String | req }
+                       -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
                             , response :: { writer :: rw ResponseEnded | res }
                             , components :: c
                             })
@@ -190,8 +193,8 @@ router
      ( Monad m
      , Router s r (Middleware
                    (ExceptT RoutingError m)
-                   (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-                   (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
+                   (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
+                   (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c))
      ) =>
      Proxy s
   -> r
@@ -199,12 +202,12 @@ router
       -> Maybe String
       -> Middleware
          m
-         (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-         (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c))
+         (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
+         (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c))
   -> Middleware
      m
-     (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-     (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
+     (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
+     (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c)
 router _ handler onRoutingError conn =
   -- Run the routing to get a handler.
   route (Proxy :: Proxy s) context handler

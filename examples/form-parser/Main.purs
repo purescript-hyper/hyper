@@ -7,6 +7,7 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (message, EXCEPTION)
 import Data.Either (Either(Right, Left))
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.String (length)
@@ -14,7 +15,6 @@ import Data.Tuple (lookup, Tuple(Tuple))
 import Hyper.Core (writeStatus, closeHeaders, Port(Port))
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.HTML (asString, element, p, text)
-import Hyper.Method (Method(POST, GET))
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Response (respond, contentType)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
@@ -72,12 +72,12 @@ main =
     -- Our (rather primitive) router.
     router conn =
       case conn.request.method of
-        GET ->
+        Left GET ->
           htmlWithStatus
           statusOK
           (renderNameForm Nothing)
           conn
-        POST ->
+        Left POST ->
           handlePost conn.request.body conn
         method ->
           htmlWithStatus

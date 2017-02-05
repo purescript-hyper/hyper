@@ -14,6 +14,8 @@ import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Data.Either (Either(..))
+import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.StrMap (StrMap)
@@ -21,7 +23,6 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Core (writeStatus, StatusLineOpen, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
 import Hyper.HTML (HTML, a, asString, element_, h1, li, p, text, ul)
-import Hyper.Method (Method(GET))
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (class Response, respond, contentType)
 import Hyper.Status (Status, statusNotFound, statusOK)
@@ -140,13 +141,13 @@ app :: forall m e req res rw b c.
        (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw m b, Response b m String) =>
        Middleware
        m
-       (Conn { url :: String, method :: Method, headers :: StrMap String | req }
+       (Conn { url :: String, method :: Either Method CustomMethod, headers :: StrMap String | req }
              { writer :: rw StatusLineOpen | res }
              { authentication :: Unit
              , authorization :: Unit
              | c
              })
-       (Conn { url :: String, method :: Method, headers :: StrMap String | req }
+       (Conn { url :: String, method :: Either Method CustomMethod, headers :: StrMap String | req }
              { writer :: rw ResponseEnded | res }
              { authentication :: Maybe User
              , authorization :: Unit
@@ -168,11 +169,11 @@ app = BasicAuth.withAuthentication userFromBasicAuth >=> router
 
       router conn =
         case Tuple conn.request.method conn.request.url of
-          Tuple GET "/" ->
+          Tuple (Left GET) "/" ->
             htmlWithStatus statusOK homeView conn
-          Tuple GET "/profile" ->
+          Tuple (Left GET) "/profile" ->
             profileHandler conn
-          Tuple GET "/admin" ->
+          Tuple (Left GET) "/admin" ->
               -- To use the admin handler, we must ensure that the user is
               -- authenticated and authorized as `Admin`.
             BasicAuth.authenticated

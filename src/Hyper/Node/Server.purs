@@ -1,9 +1,9 @@
 module Hyper.Node.Server where
 
 import Node.HTTP
+import Data.HTTP.Method as Method
 import Data.Int as Int
 import Data.StrMap as StrMap
-import Hyper.Method as Method
 import Node.Buffer as Buffer
 import Node.Stream as Stream
 import Control.Applicative (class Applicative, pure)
@@ -15,16 +15,17 @@ import Control.Monad.Aff.Class (liftAff, class MonadAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff, class MonadEff)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
+import Data.Either (Either)
 import Data.Function (($), (<<<))
 import Data.Functor (map)
-import Data.Maybe (fromMaybe, Maybe(..))
+import Data.HTTP.Method (CustomMethod, Method)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup ((<>))
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
 import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, BodyOpen(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
-import Hyper.Method (Method)
 import Hyper.Response (class Response)
 import Hyper.Status (Status(..))
 import Node.Buffer (BUFFER, Buffer)
@@ -138,7 +139,7 @@ runServer :: forall e req res c c'.
                       , body :: RequestBody
                       , contentLength :: Maybe Int
                       , headers :: StrMap String
-                      , method :: Method
+                      , method :: Either Method CustomMethod
                       }
                       { writer :: HttpResponse StatusLineOpen }
                       c)
@@ -159,7 +160,7 @@ runServer options onListening onRequestError components middleware = do
           conn = { request: { url: requestURL request
                             , body: RequestBody request
                             , headers: headers
-                            , method: fromMaybe Method.GET (Method.fromString (requestMethod request))
+                            , method: Method.fromString (requestMethod request)
                             , contentLength: parseContentLength headers >>= Int.fromString
                             }
                  , response: { writer: HttpResponse StatusLineOpen response }

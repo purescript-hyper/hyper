@@ -2,12 +2,13 @@ module Hyper.Routing.RouterSpec (spec) where
 
 import Prelude
 import Control.Monad.Except (ExceptT)
+import Data.Either (Either(..))
+import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textPlain)
 import Data.String (joinWith)
 import Data.Tuple (Tuple(..))
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
-import Hyper.Method (Method(..))
 import Hyper.Response (class Response, contentType, headers, respond)
 import Hyper.Routing ((:<|>))
 import Hyper.Routing.Router (RoutingError, router)
@@ -41,8 +42,8 @@ about :: forall m req res c rw rb.
          )
          => Middleware
             (ExceptT RoutingError m)
-            (Conn { method :: Method, url :: String | req } { writer :: rw StatusLineOpen | res } c)
-            (Conn { method :: Method, url :: String | req } { writer :: rw ResponseEnded | res } c)
+            (Conn { method :: Either Method CustomMethod, url :: String | req } { writer :: rw StatusLineOpen | res } c)
+            (Conn { method :: Either Method CustomMethod, url :: String | req } { writer :: rw ResponseEnded | res } c)
 about =
   writeStatus statusOK
   >=> contentType textPlain
@@ -64,7 +65,7 @@ spec =
           >=> respond (maybe "" id msg)
 
         makeRequest method path =
-          { request: { method: method
+          { request: { method: Left method
                     , url: path
                     }
           , response: { writer: testResponseWriter }
