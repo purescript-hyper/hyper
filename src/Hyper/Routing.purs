@@ -50,7 +50,7 @@ data Sub e t
 -- | `"a" :/ "b" :/ ...`.
 type LitSub (v :: Symbol) t = Sub (Lit v) t
 
--- | `AltE`` respresents choice, i.e. that endpoint `a` is tried first, and if
+-- | `AltE` respresents choice, i.e. that endpoint `a` is tried first, and if
 -- | it fails, `b` is tried next. `AltE` is written infix using `:<|>` and is
 -- | used to compose multiple endpoint types into a larger API or site. It is
 -- | used to build up recursive structures, so `AltE a (AltE b c)` can be

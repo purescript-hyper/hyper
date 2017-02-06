@@ -7,6 +7,7 @@ import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textPlain)
 import Data.String (joinWith)
+import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
 import Hyper.Response (class Response, contentType, headers, respond)
@@ -64,20 +65,28 @@ spec =
           >=> headers []
           >=> respond (maybe "" id msg)
 
-        makeRequest method path =
+        makeRequestWithHeaders method path headers =
           { request: { method: Left method
-                    , url: path
-                    }
+                     , url: path
+                     , headers
+                     }
           , response: { writer: testResponseWriter }
           , components: {}
           }
           # (router testSite handlers onRoutingError)
           # testServer
+        makeRequest method path =
+          makeRequestWithHeaders method path StrMap.empty
 
     describe "router" do
       it "matches root" do
         conn <- makeRequest GET "/"
         testStringBody conn `shouldEqual` "<h1>Home</h1>"
+
+      it "considers Accept header for multi-content-type resources" do
+        conn <- makeRequestWithHeaders GET "/" (StrMap.singleton "accept" "application/json")
+        testStatus conn `shouldEqual` Just statusOK
+        testStringBody conn `shouldEqual` "{}"
 
       it "validates based on custom Capture instance" do
         conn <- makeRequest GET "/users/ /profile"

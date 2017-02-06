@@ -10,7 +10,7 @@ import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
 import Control.Monad.Reader (ReaderT, ask)
 import Control.Monad.Reader.Trans (runReaderT)
-import Data.Argonaut (class EncodeJson, Json, jsonEmptyObject, (:=), (~>))
+import Data.Argonaut (class EncodeJson, Json, gEncodeJson, jsonEmptyObject, (:=), (~>))
 import Data.Array (find, (..))
 import Data.Generic (class Generic)
 import Data.Maybe (Maybe(..), maybe)
@@ -21,8 +21,8 @@ import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (contentType, respond)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
 import Hyper.Routing.Links (linksTo)
-import Hyper.Routing.Router (RoutingError(..), router)
 import Hyper.Routing.Method (Get)
+import Hyper.Routing.Router (RoutingError(..), router)
 import Hyper.Status (statusNotFound)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
@@ -36,7 +36,7 @@ newtype Post = Post { id :: PostID
 
 derive instance genericPost :: Generic Post
 
-instance encodePost :: EncodeJson Post where
+instance encodeJsonPost :: EncodeJson Post where
   encodeJson (Post { id, title }) =
     "id" := id
     ~> "title" := title
@@ -45,7 +45,7 @@ instance encodePost :: EncodeJson Post where
 instance encodeHTMLPost :: EncodeHTML Post where
   encodeHTML (Post { id: postId, title}) =
     case linksTo site of
-      allPostsUri :<|> _ :<|> _ ->
+      allPostsUri :<|> _ ->
         element_ "section" [ h1 [] [ text title ]
                            , p [] [ text "Contents..." ]
                            , element_ "nav" [ linkTo allPostsUri [ text "All Posts" ]]
@@ -53,22 +53,23 @@ instance encodeHTMLPost :: EncodeHTML Post where
 
 newtype PostsView = PostsView (Array Post)
 
+derive instance genericPostsView :: Generic PostsView
+
+instance encodeJsonPostsView :: EncodeJson PostsView where
+  encodeJson = gEncodeJson
+
 instance encodeHTMLPostsView :: EncodeHTML PostsView where
   encodeHTML (PostsView posts) =
     case linksTo site of
-      _ :<|> getPostUri :<|> postsJsonUri ->
+      _ :<|> getPostUri ->
         let postLink (Post { id: postId, title }) =
               li [] [linkTo (getPostUri postId) [ text title ]]
         in element_ "section" [ h1 [] [ text "Posts" ]
                               , ul [] (map postLink posts)
-                              , p [] [ text "Get posts as "
-                                     , linkTo postsJsonUri [ text "JSON" ]
-                                     ]
                               ]
 
-type Site = Get HTML PostsView
-            :<|> "posts" :/ Capture "id" PostID :> Get HTML Post
-            :<|> "posts.json" :/ Get Json (Array Post)
+type Site = Get (HTML :<|> Json) PostsView
+            :<|> "posts" :/ Capture "id" PostID :> Get (HTML :<|> Json) Post
 
 site :: Proxy Site
 site = Proxy
@@ -102,7 +103,7 @@ main =
   where
     posts = (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
 
-    siteRouter = router site (postsView :<|> viewPost :<|> allPosts) onRoutingError
+    siteRouter = router site (postsView :<|> viewPost) onRoutingError
 
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)

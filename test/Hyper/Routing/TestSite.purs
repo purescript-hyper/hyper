@@ -12,6 +12,9 @@ import Type.Proxy (Proxy(..))
 
 data Home = Home
 
+instance encodeJsonHome :: EncodeJson Home where
+  encodeJson Home = jsonEmptyObject
+
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home = h1 [] [text "Home"]
 
@@ -39,7 +42,7 @@ instance encodeHTMLWikiPage :: EncodeHTML WikiPage where
   encodeHTML (WikiPage title) = text ("Viewing page: " <> title)
 
 type TestSite =
-  Get HTML Home
+  Get (HTML :<|> Json) Home
   -- nested routes with capture
   :<|> "users" :/ Capture "user-id" UserID :> ("profile" :/ Get Json User
                                                :<|> "friends" :/ Get Json (Array User))

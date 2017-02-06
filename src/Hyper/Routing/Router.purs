@@ -6,6 +6,10 @@ module Hyper.Routing.Router
        ) where
 
 import Prelude
+import Data.HTTP.Method as Method
+import Data.List as List
+import Data.NonEmpty as NonEmpty
+import Data.StrMap as StrMap
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Array (elem, filter, null, uncons)
@@ -14,18 +18,22 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (CustomMethod, Method)
-import Data.HTTP.Method as Method
+import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Maybe (Maybe(..))
+import Data.MediaType (MediaType(..))
+import Data.MediaType.Common (textPlain)
+import Data.Newtype (unwrap)
+import Data.StrMap (StrMap)
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
+import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, end, writeStatus)
 import Hyper.Response (class Response, contentType, respond)
 import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
-import Hyper.Routing.ContentType (class HasMediaType, class MimeRender, getMediaType, mimeRender)
+import Hyper.Routing.ContentType (class AllMimeRender, allMimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, fromPathPiece)
-import Hyper.Status (Status, statusBadRequest, statusMethodNotAllowed, statusNotFound, statusOK)
+import Hyper.Status (Status, statusBadRequest, statusMethodNotAllowed, statusNotAcceptable, statusNotFound, statusOK)
 import Type.Proxy (Proxy(..))
 
 type Method' = Either Method CustomMethod
@@ -138,31 +146,50 @@ routeEndpoint _ context r methodProxy = do
                           })
   pure r
 
+-- Basic implementation of finding a response based on Accept header. A
+-- more robust version would consider qualities and wildcards.
+selectResponseFromAccept :: forall r.
+                            Maybe String
+                         -> NonEmptyList (Tuple MediaType r)
+                         -> Maybe (Tuple MediaType r)
+selectResponseFromAccept acceptHeaderValue responses =
+  case acceptHeaderValue of
+    Nothing -> Just (NonEmpty.head (unwrap responses))
+    Just accepts -> List.find (matching accepts) (toList responses)
+  where
+    matching accepted (Tuple mediaType _) = MediaType accepted == mediaType
+
 instance routerHandler :: ( Monad m
                           , ResponseWriter rw m wb
                           , Response wb m r
                           , IsSymbol method
-                          , MimeRender body ct r
-                          , HasMediaType ct
+                          , AllMimeRender body ct r
                           )
                        => Router
                           (Handler method ct body)
                           (m body)
-                          ({ request :: { method :: Either Method CustomMethod, url :: String | req }
+                          ({ request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
                            , response :: { writer :: rw StatusLineOpen | res }
                            , components :: c
                            }
-                           -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
+                           -> m { request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
                                 , response :: { writer :: rw ResponseEnded | res }
                                 , components :: c
                                 }) where
   route proxy context action = do
     let handler conn = do
           body <- action
-          writeStatus statusOK conn
-            >>= contentType (getMediaType (Proxy :: Proxy ct))
-            >>= closeHeaders
-            >>= respond (mimeRender (Proxy :: Proxy ct) body)
+          case selectResponseFromAccept (StrMap.lookup "accept" conn.request.headers) (allMimeRender (Proxy :: Proxy ct) body) of
+             Just (Tuple ct rendered) -> do
+                writeStatus statusOK conn
+                >>= contentType ct
+                >>= closeHeaders
+                >>= respond rendered
+             Nothing ->
+                writeStatus statusNotAcceptable conn
+                >>= contentType textPlain
+                >>= closeHeaders
+                >>= end
     routeEndpoint proxy context handler (SProxy :: SProxy method)
 
 instance routerRaw :: (IsSymbol method)

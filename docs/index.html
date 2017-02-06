@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 9624c9d
+  Version bcc8b9c
 </p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
@@ -40,6 +40,7 @@ By
 <li><a href="#type-level-routing">Type-Level Routing</a><ul>
 <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
 <li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
+<li><a href="#content-negotiation">Content Negotiation</a></li>
 </ul></li>
 <li><a href="#servers">Servers</a><ul>
 <li><a href="#nodejs">NodeJS</a></li>
@@ -139,8 +140,8 @@ parseForm conn = ...</code></pre>
 <p>Let’s say we want to render a home page as HTML. We start out by declaring the endpoint data type <code>Home</code>, and the structure of our site:</p>
 <pre class="purescript"><code>data Home = Home
 
-type MySite = Get HTML Home</code></pre>
-<p><code>Get HTML Home</code> is a routing type with only one endpoint, rendering a <code>Home</code> value as HTML. So where does the <code>Home</code> value come from? We provide it using a <em>handler</em>. A handler for <code>MySite</code> would be some value of the following type:</p>
+type Site1 = Get HTML Home</code></pre>
+<p><code>Get HTML Home</code> is a routing type with only one endpoint, rendering a <code>Home</code> value as HTML. So where does the <code>Home</code> value come from? We provide it using a <em>handler</em>. A handler for <code>Site1</code> would be some value of the following type:</p>
 <pre class="purescript"><code>forall m. Monad m =&gt; ExceptT RoutingError m Home</code></pre>
 <p>We can construct such a value using <code>pure</code> and a <code>Home</code> value:</p>
 <pre class="purescript"><code>home = pure Home</code></pre>
@@ -148,13 +149,13 @@ type MySite = Get HTML Home</code></pre>
 <pre class="purescript"><code>instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
     p [] [ text &quot;Welcome to my site!&quot; ]</code></pre>
-<p>We are getting ready to create the server. First, we need a value-level representation of the <code>MySite</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
+<p>We are getting ready to create the server. First, we need a value-level representation of the <code>Site1</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
 <blockquote>
 <p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
 </blockquote>
-<p>We create a top-level definition of the type <code>Proxy MySite</code> with the value constructor <code>Proxy</code>.</p>
-<pre class="purescript"><code>mySite :: Proxy MySite
-mySite = Proxy</code></pre>
+<p>We create a top-level definition of the type <code>Proxy Site1</code> with the value constructor <code>Proxy</code>.</p>
+<pre class="purescript"><code>site1 :: Proxy Site1
+site1 = Proxy</code></pre>
 <p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request, to the <code>router</code> function.</p>
 <pre class="purescript"><code>onRoutingError status msg =
   writeStatus status
@@ -162,10 +163,10 @@ mySite = Proxy</code></pre>
   &gt;=&gt; closeHeaders
   &gt;=&gt; respond (maybe &quot;&quot; id msg)
 
-siteRouter = router mySite home onRoutingError</code></pre>
+site1Router = router site1 home onRoutingError</code></pre>
 <p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
 <pre class="purescript"><code>main =
-  runServer defaultOptions onListening onRequestError {} siteRouter
+  runServer defaultOptions onListening onRequestError {} site1Router
   where
     onListening (Port port) =
       log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
@@ -180,13 +181,13 @@ data AllUsers = AllUsers (Array User)
 
 newtype User = User { id :: Int, name :: String }
 
-type MyOtherSite =
+type Site2 =
   Get HTML Home
   :&lt;|&gt; &quot;users&quot; :/ Get HTML AllUsers
   :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get HTML User
 
-otherSite :: Proxy MyOtherSite
-otherSite = Proxy</code></pre>
+site2 :: Proxy Site2
+site2 = Proxy</code></pre>
 <p>Let’s go through the new constructs used:</p>
 <ul>
 <li><code>:&lt;|&gt;</code> is a type operator that separates <em>alternatives</em>. A router for this type will try each route in order until one matches.</li>
@@ -215,7 +216,7 @@ getUser id&#39; =
 <p>As in the single-endpoint example, we want to render as HTML. Let’s create instances for our data types. Notice how we can create links between routes in a type-safe manner.</p>
 <pre class="purescript"><code>instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
-    case linksTo otherSite of
+    case linksTo site2 of
       _ :&lt;|&gt; allUsers&#39; :&lt;|&gt; _ -&gt;
         p [] [ text &quot;Welcome to my site! Go check out my &quot;
              , linkTo allUsers&#39; [ text &quot;Users&quot; ]
@@ -229,7 +230,7 @@ instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
                    ]
     where
       linkToUser (User u) =
-        case linksTo otherSite of
+        case linksTo site2 of
           _ :&lt;|&gt; _ :&lt;|&gt; getUser&#39; -&gt;
             li [] [ linkTo (getUser&#39; u.id) [ text u.name ] ]
 
@@ -248,8 +249,8 @@ getUsers =
   ]</code></pre>
 <p>Almost done! We just need to create the router, and start a server.</p>
 <pre class="purescript"><code>main =
-  let otherSiteRouter =
-        router otherSite (home :&lt;|&gt; allUsers :&lt;|&gt; getUser) onRoutingError
+  let site2Router =
+        router site2 (home :&lt;|&gt; allUsers :&lt;|&gt; getUser) onRoutingError
 
       onRoutingError status msg =
         writeStatus status
@@ -263,8 +264,36 @@ getUsers =
       onRequestError err =
         log (&quot;Request failed: &quot; &lt;&gt; show err)
 
-  in runServer defaultOptions</code></pre>
+  in runServer defaultOptions onListening onRequestError {} site2Router</code></pre>
 <p>Notice how the composition of handler functions, using the value-level operator <code>:&lt;|&gt;</code>, matches the structure of our routing type. If we fail to match the type we get a compile error.</p>
+<h3 id="content-negotiation">Content Negotiation</h3>
+<p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>Json</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
+<pre class="purescript"><code>type Site3 =
+  Get (HTML :&lt;|&gt; HTML) Home
+  :&lt;|&gt; &quot;users&quot; :/ Get (HTML :&lt;|&gt; Json) AllUsers
+  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; JSON) User</code></pre>
+<p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
+<pre class="bash"><code>$ curl -H &#39;Accept: application/json&#39; http://localhost:3000/users
+[
+  {
+    &quot;name&quot;: &quot;John Paul Jones&quot;,
+    &quot;id&quot;: &quot;1&quot;
+  },
+  {
+    &quot;name&quot;: &quot;Tal Wilkenfeld&quot;,
+    &quot;id&quot;: &quot;2&quot;
+  },
+  ...
+]</code></pre>
+<pre class="bash"><code>$ curl -H &#39;Accept: text/html&#39; http://localhost:3000/users
+&lt;div&gt;
+  &lt;h1&gt;Users&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href=&quot;/users/1&quot;&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;/users/2&quot;&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
+    ...
+  &lt;/ul&gt;
+&lt;/div&gt;</code></pre>
 <h2 id="servers">Servers</h2>
 <p>Although Hyper middleware are regular functions, which can applied to Conn values, you often want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
 <h3 id="nodejs">NodeJS</h3>
