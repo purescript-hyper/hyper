@@ -257,8 +257,10 @@ $ curl -H 'Accept: application/json' http://localhost:3000/users
 ]
 ```
 
+There's experimental support for _wildcards_ and _qualities_ as well.
+
 ```bash
-$ curl -H 'Accept: text/html' http://localhost:3000/users
+$ curl -H 'Accept: text/*;q=1.0' http://localhost:3000/users
 <div>
   <h1>Users</h1>
   <ul>

@@ -7,8 +7,6 @@ module Hyper.Routing.Router
 
 import Prelude
 import Data.HTTP.Method as Method
-import Data.List as List
-import Data.NonEmpty as NonEmpty
 import Data.StrMap as StrMap
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT, runExceptT)
@@ -18,16 +16,14 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (CustomMethod, Method)
-import Data.List.NonEmpty (NonEmptyList, toList)
-import Data.Maybe (Maybe(..))
-import Data.MediaType (MediaType(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType.Common (textPlain)
-import Data.Newtype (unwrap)
 import Data.StrMap (StrMap)
 import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Hyper.ContentNegotiation (AcceptHeader, acceptAll, negotiateContent, parseAcceptHeader)
 import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, end, writeStatus)
 import Hyper.Response (class Response, contentType, respond)
 import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
@@ -146,18 +142,11 @@ routeEndpoint _ context r methodProxy = do
                           })
   pure r
 
--- Basic implementation of finding a response based on Accept header. A
--- more robust version would consider qualities and wildcards.
-selectResponseFromAccept :: forall r.
-                            Maybe String
-                         -> NonEmptyList (Tuple MediaType r)
-                         -> Maybe (Tuple MediaType r)
-selectResponseFromAccept acceptHeaderValue responses =
-  case acceptHeaderValue of
-    Nothing -> Just (NonEmpty.head (unwrap responses))
-    Just accepts -> List.find (matching accepts) (toList responses)
-  where
-    matching accepted (Tuple mediaType _) = MediaType accepted == mediaType
+getAccept :: StrMap String -> Either String (Maybe AcceptHeader)
+getAccept m =
+  case StrMap.lookup "accept" m of
+    Just a -> Just <$> parseAcceptHeader a
+    Nothing -> pure Nothing
 
 instance routerHandler :: ( Monad m
                           , ResponseWriter rw m wb
@@ -179,17 +168,24 @@ instance routerHandler :: ( Monad m
   route proxy context action = do
     let handler conn = do
           body <- action
-          case selectResponseFromAccept (StrMap.lookup "accept" conn.request.headers) (allMimeRender (Proxy :: Proxy ct) body) of
-             Just (Tuple ct rendered) -> do
-                writeStatus statusOK conn
-                >>= contentType ct
-                >>= closeHeaders
-                >>= respond rendered
-             Nothing ->
-                writeStatus statusNotAcceptable conn
-                >>= contentType textPlain
-                >>= closeHeaders
-                >>= end
+          case getAccept conn.request.headers of
+            Left err ->
+              writeStatus statusBadRequest conn
+              >>= contentType textPlain
+              >>= closeHeaders
+              >>= end
+            Right parsedAccept ->
+            case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
+               Just (Tuple ct rendered) -> do
+                  writeStatus statusOK conn
+                  >>= contentType ct
+                  >>= closeHeaders
+                  >>= respond rendered
+               Nothing ->
+                  writeStatus statusNotAcceptable conn
+                  >>= contentType textPlain
+                  >>= closeHeaders
+                  >>= end
     routeEndpoint proxy context handler (SProxy :: SProxy method)
 
 instance routerRaw :: (IsSymbol method)

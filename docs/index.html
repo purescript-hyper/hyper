@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version bcc8b9c
+  Version 5b4e875
 </p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
@@ -285,7 +285,8 @@ getUsers =
   },
   ...
 ]</code></pre>
-<pre class="bash"><code>$ curl -H &#39;Accept: text/html&#39; http://localhost:3000/users
+<p>There’s experimental support for <em>wildcards</em> and <em>qualities</em> as well.</p>
+<pre class="bash"><code>$ curl -H &#39;Accept: text/*;q=1.0&#39; http://localhost:3000/users
 &lt;div&gt;
   &lt;h1&gt;Users&lt;/h1&gt;
   &lt;ul&gt;
