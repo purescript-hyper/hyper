@@ -233,7 +233,7 @@ _content negotiation_. Instead of specifying a single type, like `HTML` or
 
 ```purescript
 type Site3 =
-  Get (HTML :<|> HTML) Home
+  Get (HTML :<|> Json) Home
   :<|> "users" :/ Get (HTML :<|> Json) AllUsers
   :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
 ```

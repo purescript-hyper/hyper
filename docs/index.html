@@ -17,7 +17,7 @@
 <header>
 <h1 class="title" itemprop="name">Hyper</h1>
 <p class="version" itemprop="version">
-  Version 5b4e875
+  Version d70f234
 </p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
@@ -269,7 +269,7 @@ getUsers =
 <h3 id="content-negotiation">Content Negotiation</h3>
 <p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>Json</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
 <pre class="purescript"><code>type Site3 =
-  Get (HTML :&lt;|&gt; HTML) Home
+  Get (HTML :&lt;|&gt; Json) Home
   :&lt;|&gt; &quot;users&quot; :/ Get (HTML :&lt;|&gt; Json) AllUsers
   :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; JSON) User</code></pre>
 <p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
