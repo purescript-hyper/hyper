@@ -120,13 +120,16 @@ body > table {
 }
 
 a {
-  color: #3737c1;
+  color: #5600a8;
 }
 a:visited {
-  color: #80808e;
+  color: #606060;
 }
 a:hover {
-  color: #8583d4;
+  color: #7a06ea;
+}
+a:visited:hover {
+  color: #a0a0a0;
 }
 
 blockquote {
