@@ -35,11 +35,15 @@ $include-before$
 $endfor$
 $if(title)$
 <header>
-<h1 class="title" itemprop="name">$title$</h1>
+<h1 class="title" itemprop="name">
+  <a href="$url$" id="logo">
+    <img src="$logo1x$"
+         srcset="$logo2x$ 2x, $logo1x$ 1x"
+         alt="$title$">
+  </a>
+</h1>
 $if(subtitle)$
-<p class="version" itemprop="version">
-  Version $subtitle$
-</p>
+<p class="subtitle">$subtitle$</p>
 $endif$
 $for(author)$
 By
@@ -53,8 +57,6 @@ $if(date)$
 $endif$
 </header>
 $endif$
-<figure id="header-image">
-</figure>
 $if(toc)$
 <h2 id="contents">Contents</h2>
 <nav id="$idprefix$TOC">
@@ -63,6 +65,11 @@ $toc$
 $endif$
 $body$
 <footer>
+  $if(subtitle)$
+  <p class="version" itemprop="version">
+  Version $subtitle$
+  </p>
+  $endif$
   <p>
   The
   $title$

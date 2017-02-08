@@ -18,11 +18,14 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		-S \
 		--toc \
 		--chapters \
-		"--metadata=subtitle:$(VERSION)" \
 		--no-highlight \
 		-c docs.css \
 		-o docs/index.html \
 		--base-header-level=2 \
+		-V version:$(VERSION) \
+		-V url:https://owickstrom.github.io/hyper \
+		-V logo1x:hyper@1x.png \
+		-V logo2x:hyper@2x.png \
 		-V source-code-url:https://github.com/owickstrom/hyper \
 		-V author-url:https://wickstrom.tech \
 		-V 'license:Mozilla Public License 2.0' \
@@ -41,7 +44,7 @@ docs/hyper.pdf: $(MD_SOURCES)
 	--toc --toc-depth=2 \
 	 --number-sections \
 	--latex-engine=xelatex \
-	"--metadata=subtitle:$(VERSION)" \
+	"--metadata=date:$(VERSION)" \
 	-o docs/hyper.pdf \
 	$(MD_SOURCES)
 

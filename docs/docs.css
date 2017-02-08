@@ -167,12 +167,18 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
-.author {
-  font-style: normal;
+#logo {
+  display: block;
+  margin: 4em 0 0;
 }
 
-#header-image {
-  margin: 3em 0;
+.subtitle {
+  font-size: 150%;
+  margin: 1em 0 3em;
+}
+
+.author {
+  font-style: normal;
 }
 
 footer {

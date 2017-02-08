@@ -1,9 +1,13 @@
 <div align="center">
-<h1>Hyper</h1>
+<h1>
+<img src="docs/hyper@1x.png"
+      srcset="docs/hyper@2x.png 2x, docs/hyper@1x.png 1x"
+      alt="Hyper">
+</h1>
 </div>
 
 <p align="center">
-<em>Type-safe, statically checked composition of HTTP servers, using PureScript.</em>
+<em>Type-safe, statically checked composition of HTTP servers</em>
 </p>
 
 <p align="center">

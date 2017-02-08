@@ -15,18 +15,20 @@
 </head>
 <body itemscope itemtype="http://schema.org/TechArticle">
 <header>
-<h1 class="title" itemprop="name">Hyper</h1>
-<p class="version" itemprop="version">
-  Version d70f234
-</p>
+<h1 class="title" itemprop="name">
+  <a href="https://owickstrom.github.io/hyper" id="logo">
+    <img src="hyper@1x.png"
+         srcset="hyper@2x.png 2x, hyper@1x.png 1x"
+         alt="Hyper">
+  </a>
+</h1>
+<p class="subtitle">Type-safe, statically checked composition of HTTP servers</p>
 By
 <cite class="author" itemprop="author">Oskar Wickström</cite>
 <p>
 <a href="hyper.pdf">Also available as PDF</a>
 </p>
 </header>
-<figure id="header-image">
-</figure>
 <h2 id="contents">Contents</h2>
 <nav id="TOC">
 <ul>
@@ -325,7 +327,10 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 <p>While Hyper is currently an experiment, and in constant flux, you are welcome to contribute. Please post ideas and start discussions using <a href="https://github.com/owickstrom/hyper/issues">the issue tracker on GitHub</a>. You can also contact <a href="https://wickstrom.tech/about.html">Oskar Wickström</a> directly for design discussions. If this project grows, we can setup a mailing list, or other some other means of communication.</p>
 <p>Please note that sending pull requests without first discussing the design is probably a waste of time, if not only fixing simple things like typos.</p>
 <footer>
-  <p>
+    <p class="version" itemprop="version">
+  Version Type-safe, statically checked composition of HTTP servers
+  </p>
+    <p>
   The
   Hyper
     <a href="https://github.com/owickstrom/hyper">source code</a>
