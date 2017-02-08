@@ -1,8 +1,8 @@
 <div align="center">
 <h1>
-<img src="docs/hyper@1x.png"
-      srcset="docs/hyper@2x.png 2x, docs/hyper@1x.png 1x"
-      alt="Hyper">
+<img src="docs/hyper@2x.png"
+      alt="Hyper"
+      width="300">
 </h1>
 </div>
 
