@@ -10,6 +10,7 @@ import Data.HTTP.Method as Method
 import Data.StrMap as StrMap
 import Control.IxMonad (ibind)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Array (elem, filter, null, uncons)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
@@ -158,7 +159,7 @@ instance routerHandler :: ( Monad m
                           )
                        => Router
                           (Handler method ct body)
-                          (m body)
+                          (ExceptT RoutingError m body)
                           (Middleware
                            m
                            { request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
@@ -172,27 +173,33 @@ instance routerHandler :: ( Monad m
                            Unit)
   where
   route proxy context action = do
-    let handler = do
-          body <- lift' action
-          conn ← getConn
-          case getAccept conn.request.headers of
-            Left err -> do
-              writeStatus statusBadRequest
-              contentType textPlain
-              closeHeaders
-              end
-            Right parsedAccept -> do
-              case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
-                Just (Tuple ct rendered) -> do
-                  writeStatus statusOK
-                  contentType ct
-                  closeHeaders
-                  respond rendered
-                Nothing -> do
-                  writeStatus statusNotAcceptable
-                  contentType textPlain
-                  closeHeaders
-                  end
+    let handler = lift' (runExceptT action) `ibind`
+                  case _ of
+                    Left err -> do
+                      writeStatus statusBadRequest
+                      contentType textPlain
+                      closeHeaders
+                      end
+                    Right body -> do
+                      conn ← getConn
+                      case getAccept conn.request.headers of
+                        Left err -> do
+                          writeStatus statusBadRequest
+                          contentType textPlain
+                          closeHeaders
+                          end
+                        Right parsedAccept -> do
+                          case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
+                            Just (Tuple ct rendered) -> do
+                              writeStatus statusOK
+                              contentType ct
+                              closeHeaders
+                              respond rendered
+                            Nothing -> do
+                              writeStatus statusNotAcceptable
+                              contentType textPlain
+                              closeHeaders
+                              end
     routeEndpoint proxy context handler (SProxy :: SProxy method)
     where bind = ibind
 
