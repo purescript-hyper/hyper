@@ -49,7 +49,7 @@ type TestSite =
   -- capture all
   :<|> "wiki" :/ CaptureAll "segments" String :> Get HTML WikiPage
   -- raw middleware
-  -- :<|> "about" :/ Raw "GET"
+  :<|> "about" :/ Raw "GET"
 
 testSite :: Proxy TestSite
 testSite = Proxy

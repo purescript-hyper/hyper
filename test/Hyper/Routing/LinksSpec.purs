@@ -14,7 +14,7 @@ spec = do
     describe "linksTo" $
 
       case linksTo testSite of
-        (homeUri :<|> userLinks :<|> wikiUri) -> do
+        (homeUri :<|> userLinks :<|> wikiUri :<|> aboutUri) -> do
 
           it "returns link for Lit" $
             printURI homeUri `shouldEqual` "/"
@@ -28,5 +28,5 @@ spec = do
           it "returns link for CaptureAll" $
             printURI (wikiUri ["foo", "bar", "baz.txt"]) `shouldEqual` "/wiki/foo/bar/baz.txt"
 
-          -- it "returns link for Raw" $
-            -- printURI aboutUri `shouldEqual` "/about"
+          it "returns link for Raw" $
+            printURI aboutUri `shouldEqual` "/about"

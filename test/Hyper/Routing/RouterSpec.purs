@@ -3,8 +3,6 @@ module Hyper.Routing.RouterSpec (spec) where
 import Prelude
 import Data.StrMap as StrMap
 import Control.IxMonad (ibind)
-import Control.Monad.Aff (Aff)
-import Control.Monad.Except (ExceptT)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..), maybe)
@@ -14,14 +12,13 @@ import Data.String (joinWith)
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
 import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
-import Hyper.Middleware (Middleware(..), evalMiddleware)
-import Hyper.Node.Test (TestResponseBody(..))
+import Hyper.Middleware (Middleware, evalMiddleware)
 import Hyper.Response (class Response, contentType, headers, respond)
 import Hyper.Routing ((:<|>))
-import Hyper.Routing.Router (RoutingError, router)
+import Hyper.Routing.Router (router)
 import Hyper.Routing.TestSite (Home(..), User(..), UserID(..), WikiPage(..), testSite)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
-import Hyper.Test.TestServer (StringBody(..), TestResponse(..), TestResponseWriter(..), testHeaders, testServer, testStatus, testStringBody)
+import Hyper.Test.TestServer (TestResponseWriter(..), testHeaders, testServer, testStatus, testStringBody)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
@@ -39,7 +36,7 @@ friends (UserID uid) =
 
 wiki :: forall m. Monad m => Array String -> m WikiPage
 wiki segments = pure (WikiPage (joinWith "/" segments))
-{-
+
 about :: forall m req res c rw rb.
          ( Monad m
          , ResponseWriter rw m rb
@@ -56,16 +53,15 @@ about = do
   closeHeaders
   respond "This is a test."
   where bind = ibind
--}
 
 spec :: forall e. Spec e Unit
 spec =
   describe "Hyper.Routing.Router" do
     let userHandlers userId = profile userId :<|> friends userId
         handlers = home
-                  :<|> userHandlers
-                  :<|> wiki
-                  -- :<|> about
+                   :<|> userHandlers
+                   :<|> wiki
+                   :<|> about
 
         onRoutingError status msg = do
           writeStatus status

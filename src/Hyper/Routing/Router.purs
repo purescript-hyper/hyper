@@ -200,22 +200,28 @@ instance routerHandler :: ( Monad m
 instance routerRaw :: (IsSymbol method)
                    => Router
                       (Raw method)
-                      ({ request :: { method :: Either Method CustomMethod, url :: String | req }
+                      (Middleware
+                       m
+                       { request :: { method :: Either Method CustomMethod, url :: String | req }
                        , response :: { writer :: rw StatusLineOpen | res }
                        , components :: c
                        }
-                       -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
-                            , response :: { writer :: rw ResponseEnded | res }
-                            , components :: c
-                            })
-                      ({ request :: { method :: Either Method CustomMethod, url :: String | req }
+                       { request :: { method :: Either Method CustomMethod, url :: String | req }
+                       , response :: { writer :: rw ResponseEnded | res }
+                       , components :: c
+                       }
+                       Unit)
+                      (Middleware
+                       m
+                       { request :: { method :: Either Method CustomMethod, url :: String | req }
                        , response :: { writer :: rw StatusLineOpen | res }
                        , components :: c
                        }
-                       -> m { request :: { method :: Either Method CustomMethod, url :: String | req }
-                            , response :: { writer :: rw ResponseEnded | res }
-                            , components :: c
-                            })
+                       { request :: { method :: Either Method CustomMethod, url :: String | req }
+                       , response :: { writer :: rw ResponseEnded | res }
+                       , components :: c
+                       }
+                       Unit)
                       where
   route proxy context r =
     routeEndpoint proxy context r (SProxy :: SProxy method)
