@@ -1,12 +1,15 @@
 module Hyper.Response where
 
 import Prelude
+import Control.IxMonad (ibind)
 import Data.Foldable (traverse_)
 import Data.MediaType (MediaType)
 import Data.Newtype (unwrap)
 import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (class ResponseWriter, Conn, BodyOpen, HeadersOpen, Middleware, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
+import Hyper.Conn (Conn)
+import Hyper.Core (class ResponseWriter, BodyOpen, HeadersOpen, ResponseEnded, Header, closeHeaders, end, send, writeHeader)
+import Hyper.Middleware (Middleware)
 
 headers :: forall t m req res rw b c.
            (Traversable t, Monad m, ResponseWriter rw m b) =>
@@ -15,11 +18,12 @@ headers :: forall t m req res rw b c.
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
            (Conn req { writer :: rw BodyOpen | res } c)
-headers hs conn = do
-  traverse_ (writeOne conn) hs
-  closeHeaders conn
+           Unit
+headers hs = do
+  traverse_ writeHeader hs
+  closeHeaders
   where
-    writeOne c header = writeHeader header c
+    bind = ibind
 
 contentType :: forall m req res rw b c.
                (Monad m, ResponseWriter rw m b) =>
@@ -28,18 +32,25 @@ contentType :: forall m req res rw b c.
                m
                (Conn req { writer :: rw HeadersOpen | res } c)
                (Conn req { writer :: rw HeadersOpen | res } c)
+               Unit
 contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
 class Response b m r where
-  toResponse :: r -> m b
+  toResponse :: forall i. r -> Middleware m i i b
 
 respond :: forall m r b req res rw c.
-           (Monad m, Response b m r, ResponseWriter rw m b) =>
+           ( Monad m
+           , Response b m r
+           , ResponseWriter rw m b
+           ) =>
            r
         -> Middleware
            m
            (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
-respond r conn = do
+           Unit
+respond r = do
   body <- toResponse r
-  send body conn >>= end
+  send body
+  end
+  where bind = ibind

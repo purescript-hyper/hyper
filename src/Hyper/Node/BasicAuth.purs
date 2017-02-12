@@ -2,12 +2,10 @@ module Hyper.Node.BasicAuth where
 
 import Data.StrMap as StrMap
 import Node.Buffer as Buffer
-import Control.Applicative (pure)
-import Control.Bind (bind)
+import Control.IxMonad (ibind, ipure)
 import Control.Monad (class Monad, (>>=))
 import Control.Monad.Eff.Class (liftEff, class MonadEff)
-import Data.Function ((#))
-import Data.Functor (map, (<$>))
+import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid ((<>))
 import Data.StrMap (StrMap)
@@ -15,13 +13,24 @@ import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
 import Hyper.Authentication (setAuthentication)
-import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, Conn, Middleware, closeHeaders, writeHeader, writeStatus)
+import Hyper.Conn (Conn)
+import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
+import Hyper.Middleware (Middleware, lift')
+import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Response (class Response, respond)
 import Hyper.Status (statusUnauthorized)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
 
 type Realm = String
+
+decodeBase64 ∷ ∀ m e c.
+  MonadEff (buffer ∷ BUFFER | e) m
+  ⇒ String
+  → Middleware m c c String
+decodeBase64 encoded =
+  liftEff (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
+
 
 withAuthentication
   :: forall m e req res c t.
@@ -31,27 +40,28 @@ withAuthentication
      m
      (Conn { headers :: StrMap String | req } res { authentication :: Unit | c })
      (Conn { headers :: StrMap String | req } res { authentication :: Maybe t | c })
-withAuthentication mapper conn = do
+     Unit
+withAuthentication mapper = do
   auth <- getAuth
-  pure (setAuthentication auth conn)
+  modifyConn (setAuthentication auth)
   where
-    decodeBase64 encoded =
-      liftEff (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
     splitPair s =
       case split (Pattern ":") s of
         [username, password] -> Just (Tuple username password)
         _ -> Nothing
-    getAuth =
-      case StrMap.lookup "authorization" conn.request.headers of
-        Nothing -> pure Nothing
+    getAuth = do
+      headers ← _.request.headers <$> getConn
+      case StrMap.lookup "authorization" headers of
+        Nothing -> ipure Nothing
         Just header -> do
           case split (Pattern " ") header of
             ["Basic", encoded] -> do
               decoded <- splitPair <$> decodeBase64 encoded
               case decoded of
-                Just auth -> mapper auth
-                Nothing -> pure Nothing
-            parts -> pure Nothing
+                Just auth -> lift' (mapper auth)
+                Nothing -> ipure Nothing
+            parts -> ipure Nothing
+    bind = ibind
 
 authenticated
   :: forall m req res c rw b t.
@@ -67,24 +77,29 @@ authenticated
        req
        { writer :: rw ResponseEnded | res }
        { authentication :: t | c })
+      Unit
   -> Middleware
-    m
-    (Conn
+     m
+     (Conn
       req
       { writer :: rw StatusLineOpen | res }
       { authentication :: Maybe t | c })
-    (Conn
+     (Conn
       req
       { writer :: rw ResponseEnded | res }
       { authentication :: Maybe t | c })
-authenticated realm mw conn =
+     Unit
+authenticated realm mw = do
+  conn ← getConn
   case conn.components.authentication of
-    Nothing ->
-      writeStatus statusUnauthorized conn
-      >>= writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
-      >>= closeHeaders
-      >>= respond "Please authenticate."
-    Just auth ->
-      setAuthentication auth conn
-      # mw
-      # map (setAuthentication (Just auth))
+    Nothing -> do
+      writeStatus statusUnauthorized
+      writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
+      closeHeaders
+      respond "Please authenticate."
+    Just auth -> do
+      modifyConn (setAuthentication auth)
+      mw
+      modifyConn (setAuthentication (Just auth))
+  where
+    bind = ibind

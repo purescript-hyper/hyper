@@ -6,8 +6,9 @@ import Control.Monad.Eff.Exception (Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
 import Data.StrMap (singleton)
-import Data.Tuple (Tuple(Tuple))
+import Data.Tuple (Tuple(Tuple), fst)
 import Hyper.Form (Form(Form), parseForm)
+import Hyper.Middleware (runMiddleware)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.Aff (expectError)
@@ -22,23 +23,26 @@ spec :: forall e. Spec e Unit
 spec =
   describe "Hyper.Form" do
     it "can parse the request body as a form" do
-      form <- parseForm
-              { request: { body: "foo=bar"
-                         , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
-                         }
-              , response: {}
-              , components: {}
-              }
-              # map _.request.body
-              >>= liftEither
+      form <-
+        runMiddleware parseForm
+                      { request: { body: "foo=bar"
+                                 , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
+                                 }
+                      , response: {}
+                      , components: {}
+                      }
+                      # map fst
+                      >>= liftEither
+
       form `shouldEqual` (Form [Tuple "foo" "bar"])
 
     it "fails to parse request body as a form when invalid" $ expectError do
-      parseForm { request: { body: "foo=bar=baz"
-                           , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
-                           }
-                , response: {}
-                , components: {}
-                }
-        # map _.request.body
-        >>= liftEither
+      runMiddleware parseForm
+                    { request: { body: "foo=bar=baz"
+                               , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
+                               }
+                    , response: {}
+                    , components: {}
+                    }
+                    # map fst
+                    >>= liftEither

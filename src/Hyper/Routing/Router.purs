@@ -8,10 +8,10 @@ module Hyper.Routing.Router
 import Prelude
 import Data.HTTP.Method as Method
 import Data.StrMap as StrMap
+import Control.IxMonad (ibind)
 import Control.Monad.Error.Class (throwError)
-import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Array (elem, filter, null, uncons)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
@@ -23,8 +23,11 @@ import Data.String (Pattern(..), split)
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Hyper.Conn (Conn)
 import Hyper.ContentNegotiation (AcceptHeader, acceptAll, negotiateContent, parseAcceptHeader)
-import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, end, writeStatus)
+import Hyper.Core (class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, end, writeStatus)
+import Hyper.Middleware (Middleware, lift')
+import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response, contentType, respond)
 import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
 import Hyper.Routing.ContentType (class AllMimeRender, allMimeRender)
@@ -157,36 +160,42 @@ instance routerHandler :: ( Monad m
                        => Router
                           (Handler method ct body)
                           (m body)
-                          ({ request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
+                          (Middleware
+                           m
+                           { request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
                            , response :: { writer :: rw StatusLineOpen | res }
                            , components :: c
                            }
-                           -> m { request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
-                                , response :: { writer :: rw ResponseEnded | res }
-                                , components :: c
-                                }) where
+                           { request :: { method :: Either Method CustomMethod, url :: String, headers :: StrMap String | req }
+                           , response :: { writer :: rw ResponseEnded | res }
+                           , components :: c
+                           }
+                           Unit)
+  where
   route proxy context action = do
-    let handler conn = do
-          body <- action
+    let handler = do
+          body <- lift' action
+          conn ← getConn
           case getAccept conn.request.headers of
-            Left err ->
-              writeStatus statusBadRequest conn
-              >>= contentType textPlain
-              >>= closeHeaders
-              >>= end
-            Right parsedAccept ->
-            case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
-               Just (Tuple ct rendered) -> do
-                  writeStatus statusOK conn
-                  >>= contentType ct
-                  >>= closeHeaders
-                  >>= respond rendered
-               Nothing ->
-                  writeStatus statusNotAcceptable conn
-                  >>= contentType textPlain
-                  >>= closeHeaders
-                  >>= end
+            Left err -> do
+              writeStatus statusBadRequest
+              contentType textPlain
+              closeHeaders
+              end
+            Right parsedAccept -> do
+              case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
+                Just (Tuple ct rendered) -> do
+                  writeStatus statusOK
+                  contentType ct
+                  closeHeaders
+                  respond rendered
+                Nothing -> do
+                  writeStatus statusNotAcceptable
+                  contentType textPlain
+                  closeHeaders
+                  end
     routeEndpoint proxy context handler (SProxy :: SProxy method)
+    where bind = ibind
 
 instance routerRaw :: (IsSymbol method)
                    => Router
@@ -211,13 +220,15 @@ instance routerRaw :: (IsSymbol method)
   route proxy context r =
     routeEndpoint proxy context r (SProxy :: SProxy method)
 
+
 router
   :: forall s r m req res c rw.
      ( Monad m
      , Router s r (Middleware
-                   (ExceptT RoutingError m)
+                   m
                    (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
-                   (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c))
+                   (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c)
+                   Unit)
      ) =>
      Proxy s
   -> r
@@ -226,23 +237,37 @@ router
       -> Middleware
          m
          (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
-         (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c))
+         (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c)
+         Unit)
   -> Middleware
      m
      (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
      (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c)
-router _ handler onRoutingError conn =
+     Unit
+
+router site handler onRoutingError = do
+  handler'
   -- Run the routing to get a handler.
-  route (Proxy :: Proxy s) context handler
+  -- route (Proxy :: Proxy s) ctx handler
   -- Then, if successful, run the handler, possibly also generating an HTTPError.
-  # either catch runHandler
+  -- # either catch runHandler
   where
     splitUrl = filter ((/=) "") <<< split (Pattern "/")
-    context = { path: splitUrl conn.request.url
-              , method: conn.request.method
-              }
+    context conn = { path: splitUrl conn.request.url
+                   , method: conn.request.method
+                   }
     catch (HTTPError { status, message }) =
-      onRoutingError status message conn
+      onRoutingError status message
 
-    runHandler h =
-      runExceptT (h conn) >>= either catch pure
+    handler' ∷ Middleware
+               m
+               (Conn { method :: Method', url :: String | req } { writer :: rw StatusLineOpen | res } c)
+               (Conn { method :: Method', url :: String | req } { writer :: rw ResponseEnded | res } c)
+               Unit
+    handler' = do
+      conn ← getConn
+      case route site (context conn) handler of
+        Left err → catch err
+        Right h → h
+
+    bind = ibind
