@@ -55,8 +55,7 @@ metrics, and much more, in the chain of middleware.
 
 Middleware are composed using `ibind`, the indexed monadic version of `bind`.
 The simplest way of composing middleware is by chaining them with `:*>`, from
-`Control.Monad.IxMonad`. See [purescript-indexed-monad][ixmonad] for more
-information.
+`Control.IxMonad`. See [purescript-indexed-monad][ixmonad] for more information.
 
 ``` purescript
 writeStatus statusOK
