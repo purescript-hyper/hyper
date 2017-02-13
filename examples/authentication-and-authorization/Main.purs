@@ -9,6 +9,7 @@ module Main where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
+import Control.IxMonad (ibind, (:>>=))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
@@ -21,10 +22,13 @@ import Data.MediaType.Common (textHTML)
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
-import Hyper.Core (writeStatus, StatusLineOpen, class ResponseWriter, ResponseEnded, Conn, Middleware, closeHeaders, Port(Port))
+import Hyper.Conn (Conn)
 import Hyper.HTML (HTML, a, asString, element_, h1, li, p, text, ul)
+import Hyper.Middleware (Middleware)
+import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (class Response, respond, contentType)
+import Hyper.Port (Port(..))
+import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
@@ -40,11 +44,13 @@ htmlWithStatus
      m
      (Conn req { writer :: rw StatusLineOpen | res } c)
      (Conn req { writer :: rw ResponseEnded | res } c)
-htmlWithStatus status x =
+     Unit
+htmlWithStatus status x = do
   writeStatus status
-  >=> contentType textHTML
-  >=> closeHeaders
-  >=> respond (asString x)
+  contentType textHTML
+  closeHeaders
+  respond (asString x)
+  where bind = ibind
 
 
 -- Users have user names.
@@ -69,11 +75,12 @@ profileHandler
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
      (Conn req { writer :: rw ResponseEnded | res } { authentication :: Maybe User | c })
-profileHandler conn =
+     Unit
+profileHandler =
+  getConn :>>= \conn →
   htmlWithStatus
   statusOK
   (view conn.components.authentication)
-  conn
   where
     view =
       case _ of
@@ -100,11 +107,12 @@ adminHandler
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
      (Conn req { writer :: rw ResponseEnded | res } { authorization :: Admin, authentication :: User | c })
-adminHandler conn =
+     Unit
+adminHandler =
+  getConn :>>= \conn →
   htmlWithStatus
   statusOK
   (view conn.components.authentication)
-  conn
   where
     view (User name) =
       element_ "section" [ h1 [] [ text "Administration" ]
@@ -153,7 +161,8 @@ app :: forall m e req res rw b c.
              , authorization :: Unit
              | c
              })
-app = BasicAuth.withAuthentication userFromBasicAuth >=> router
+       Unit
+app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
     where
       notFound = htmlWithStatus
                  statusNotFound
@@ -167,21 +176,21 @@ app = BasicAuth.withAuthentication userFromBasicAuth >=> router
                                    ]
                            ]
 
-      router conn =
+      router =
+        getConn :>>= \conn →
         case Tuple conn.request.method conn.request.url of
           Tuple (Left GET) "/" ->
-            htmlWithStatus statusOK homeView conn
+            htmlWithStatus statusOK homeView
           Tuple (Left GET) "/profile" ->
-            profileHandler conn
+            profileHandler
           Tuple (Left GET) "/admin" ->
               -- To use the admin handler, we must ensure that the user is
               -- authenticated and authorized as `Admin`.
             BasicAuth.authenticated
             "Authorization Example"
             (authorized getAdminRole adminHandler)
-            conn
           _ ->
-            notFound conn
+            notFound
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =

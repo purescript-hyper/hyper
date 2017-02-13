@@ -1,6 +1,7 @@
 module Main where
 
 import Prelude
+import Control.IxMonad (ibind)
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
@@ -8,17 +9,15 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
-import Control.Monad.Reader (ReaderT, ask)
-import Control.Monad.Reader.Trans (runReaderT)
 import Data.Argonaut (class EncodeJson, Json, gEncodeJson, jsonEmptyObject, (:=), (~>))
 import Data.Array (find, (..))
 import Data.Generic (class Generic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (Port(Port), closeHeaders, writeStatus)
 import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType, respond)
+import Hyper.Port (Port(..))
+import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
 import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
@@ -74,21 +73,19 @@ type Site = Get (HTML :<|> Json) PostsView
 site :: Proxy Site
 site = Proxy
 
--- Simple handlers that can access available posts in
--- the Reader monad (would likely be a database query in
--- a real app):
+type AppM e a = ExceptT RoutingError (Aff e) a
 
-type AppM e a = ExceptT RoutingError (ReaderT (Array Post) (Aff e)) a
-
+-- This would likely be a database query in
+-- a real app:
 allPosts :: forall e. AppM e (Array Post)
-allPosts = ask
+allPosts = pure (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
 
 postsView :: forall e. AppM e PostsView
-postsView = PostsView <$> ask
+postsView = PostsView <$> allPosts
 
 viewPost :: forall e. PostID -> AppM e Post
 viewPost postId =
-  find (\(Post p) -> p.id == postId) <$> ask >>=
+  find (\(Post p) -> p.id == postId) <$> allPosts >>=
   case _ of
     Just post -> pure post
     -- You can throw 404 Not Found in here as well.
@@ -96,20 +93,16 @@ viewPost postId =
                                      , message: Just "Post not found."
                                      })
 
-
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
-  runServer defaultOptions onListening onRequestError {} (siteRouter >>> flip runReaderT posts)
+  runServer defaultOptions onListening onRequestError {} siteRouter
   where
-    posts = (map (\i -> Post { id: i, title: "Post #" <> show i }) (1..10))
-
-    siteRouter = router site (postsView :<|> viewPost) onRoutingError
-
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
-
-    onRoutingError status msg =
+    siteRouter = router site (postsView :<|> viewPost) onRoutingError
+    onRoutingError status msg = do
       writeStatus status
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond (maybe "" id msg)
+      contentType textHTML
+      closeHeaders
+      respond (maybe "" id msg)
+      where bind = ibind

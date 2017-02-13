@@ -1,13 +1,14 @@
 module Main where
 
 import Prelude
+import Control.IxMonad (ibind)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (fallbackTo, writeStatus, try, Port(Port))
 import Hyper.Node.FileServer (fileServer)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (respond, headers)
+import Hyper.Port (Port(..))
+import Hyper.Response (headers, respond, writeStatus)
 import Hyper.Status (statusNotFound)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(UTF8))
@@ -19,10 +20,10 @@ main =
   let
     onListening (Port port) = log ("Serving files at http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
-    notFound =
+    notFound = do
       writeStatus statusNotFound
-      >=> headers []
-      >=> respond (Tuple "<h1>Not Found</h1>" UTF8)
-    app = try (fileServer "examples/file-server")
-          # fallbackTo notFound
+      headers []
+      respond (Tuple "<h1>Not Found</h1>" UTF8)
+      where bind = ibind
+    app = fileServer "examples/file-server" notFound
   in runServer defaultOptions onListening onRequestError {} app

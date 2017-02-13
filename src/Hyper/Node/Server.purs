@@ -1,6 +1,7 @@
 module Hyper.Node.Server
        ( RequestBody
        , HttpResponse
+       , ResponseBody
        , readBodyAsString
        , defaultOptions
        , runServer
@@ -131,7 +132,7 @@ endResponse ∷ ∀ req res c m e.
 endResponse r =
   liftEff (Stream.end (responseAsStream r) (pure unit))
 
-instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
+instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
   writeStatus status = do
     getWriter :>>=
     case _ of

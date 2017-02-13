@@ -10,7 +10,7 @@ import Data.HTTP.Method as Method
 import Data.StrMap as StrMap
 import Control.IxMonad (ibind)
 import Control.Monad.Error.Class (throwError)
-import Control.Monad.Except (ExceptT(..), runExceptT)
+import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Array (elem, filter, null, uncons)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
@@ -175,8 +175,8 @@ instance routerHandler :: ( Monad m
   route proxy context action = do
     let handler = lift' (runExceptT action) `ibind`
                   case _ of
-                    Left err -> do
-                      writeStatus statusBadRequest
+                    Left (HTTPError { status }) -> do
+                      writeStatus status
                       contentType textPlain
                       closeHeaders
                       end
