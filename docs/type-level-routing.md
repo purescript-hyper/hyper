@@ -268,5 +268,18 @@ $ curl -H 'Accept: text/*;q=1.0' http://localhost:3000/users
 </div>
 ```
 
+## Automatically Derived XHR Clients
+
+As we represent routing as types, we can derive XHR clients from those types.
+In a client-side application, for example one written using [Pux][pux] or
+[Halogen][halogen], you can use the [purescript-hyper-routing-xhr][routing-xhr]
+library to derive such client functions. You get functions with type-safe
+parameters and encoding/decoding, using your routed types, and results in the
+[Aff][aff] monad, which are easily integrated into most frameworks.
+
 [servant]: https://haskell-servant.github.io
 [proxy]: https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy
+[routing-xhr]: https://github.com/owickstrom/purescript-hyper-routing-xhr
+[pux]: https://www.purescript-pux.org
+[halogen]: https://github.com/slamdata/purescript-halogen
+[aff]: https://github.com/slamdata/purescript-aff

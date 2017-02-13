@@ -45,6 +45,7 @@ By
 <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
 <li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
 <li><a href="#content-negotiation">Content Negotiation</a></li>
+<li><a href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
 </ul></li>
 <li><a href="#servers">Servers</a><ul>
 <li><a href="#nodejs">NodeJS</a></li>
@@ -328,6 +329,8 @@ getUsers =
     ...
   &lt;/ul&gt;
 &lt;/div&gt;</code></pre>
+<h3 id="automatically-derived-xhr-clients">Automatically Derived XHR Clients</h3>
+<p>As we represent routing as types, we can derive XHR clients from those types. In a client-side application, for example one written using <a href="https://www.purescript-pux.org">Pux</a> or <a href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can use the <a href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a> library to derive such client functions. You get functions with type-safe parameters and encoding/decoding, using your routed types, and results in the <a href="https://github.com/slamdata/purescript-aff">Aff</a> monad, which are easily integrated into most frameworks.</p>
 <h2 id="servers">Servers</h2>
 <p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
 <h3 id="nodejs">NodeJS</h3>
@@ -359,7 +362,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 <p>Please note that sending pull requests without first discussing the design is probably a waste of time, if not only fixing simple things like typos.</p>
 <footer>
     <p class="version" itemprop="version">
-  Version 0d70a5b.
+  Version 8a372aa.
   </p>
     <p>
   The
