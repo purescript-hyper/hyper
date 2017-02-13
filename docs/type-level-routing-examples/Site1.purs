@@ -3,12 +3,13 @@ module Site1 where
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.IxMonad ((:*>))
 import Data.Maybe (maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (Port(Port), closeHeaders, writeStatus)
 import Hyper.HTML (class EncodeHTML, HTML, p, text)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType, respond)
+import Hyper.Port (Port(Port))
+import Hyper.Response (contentType, respond, closeHeaders, writeStatus)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (router)
 import Node.Buffer (BUFFER)
@@ -41,8 +42,8 @@ main =
 
     onRoutingError status msg =
       writeStatus status
-      >=> contentType textHTML
-      >=> closeHeaders
-      >=> respond (maybe "" id msg)
+      :*> contentType textHTML
+      :*> closeHeaders
+      :*> respond (maybe "" id msg)
 
     siteRouter = router mySite home onRoutingError

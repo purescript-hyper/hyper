@@ -6,9 +6,6 @@ guarantees about having handled all cases. You also get a lot of stuff for
 free, such as type-safe parameters for handlers, and automatically generated
 type-safe URIs to endpoints.
 
-_Future work might include automatic API documentation and sitemaps, automatic
-deriving of PureScript AJAX clients, and more._
-
 ## A Single-Endpoint Example
 
 Let's say we want to render a home page as HTML. We start out by declaring the
@@ -67,9 +64,9 @@ where no route matched the request, to the `router` function.
 ```purescript
 onRoutingError status msg =
   writeStatus status
-  >=> contentType textHTML
-  >=> closeHeaders
-  >=> respond (maybe "" id msg)
+  :*> contentType textHTML
+  :*> closeHeaders
+  :*> respond (maybe "" id msg)
 
 site1Router = router site1 home onRoutingError
 ```
@@ -206,9 +203,9 @@ main =
 
       onRoutingError status msg =
         writeStatus status
-        >=> contentType textHTML
-        >=> closeHeaders
-        >=> respond (maybe "" id msg)
+        :*> contentType textHTML
+        :*> closeHeaders
+        :*> respond (maybe "" id msg)
 
       onListening (Port port) =
         log ("Listening on http://localhost:" <> show port)
@@ -233,9 +230,9 @@ _content negotiation_. Instead of specifying a single type, like `HTML` or
 
 ```purescript
 type Site3 =
-  Get (HTML :<|> Json) Home
+  Get HTML Home
   :<|> "users" :/ Get (HTML :<|> Json) AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
+  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> Json) User```
 ```
 
 By making requests to this site, using `Accept` headers, we can see how the

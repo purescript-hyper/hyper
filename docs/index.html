@@ -73,25 +73,42 @@ By
 <p>The design of Hyper is inspired by a number of projects. The middleware chain lends much from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate. You might also find similarities with <em>connect</em> in NodeJS. On the type system side, Hyper tries to bring in ideas from <em>Haskell</em> and <em>Idris</em>, specifically the use of phantom types and GADTs to lift invariants to the type level and increase safety.</p>
 <h3 id="conn">Conn</h3>
 <p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent, both request and response.</p>
-<pre class="purescript"><code>type Conn req res components = { request :: req
-                               , response :: res
-                               , components :: components
-                               }</code></pre>
+<pre class="purescript"><code>type Conn req res components =
+  { request :: req
+  , response :: res
+  , components :: components
+  }</code></pre>
+<p>The <code>request</code> and <code>response</code> hold the values representing the HTTP request and response, respectively. The purpose of the <code>components</code> field, however, is not that obvious. It is used for things not directly related to the HTTP, but nonetheless related to the act of responding to the HTTP request. A middleware can add information the Conn using components, like providing authentication or authorization values. The types of these components then becomes part of the Conn type, and you get compile-time guarantees when using the provided components.</p>
 <h3 id="middleware">Middleware</h3>
-<p>A <em>middleware</em> is a function transforming a <code>Conn</code> to another <code>Conn</code>, in some monadic type <code>m</code>. The <code>Middleware</code> type synonym encapsulates this concept, but it is still a regular function.</p>
-<pre class="purescript"><code>type Middleware m c c&#39; = c -&gt; m c&#39;</code></pre>
-<p>Being able to parameterize <code>Conn</code> with some type <code>m</code>, you can customize the chain depending on the needs of your middleware and handlers. Applications can use monad transformers to track state, provide configuration, gather metrics, and much more, in the chain of middleware.</p>
+<p>A <em>middleware</em> is an <em>indexed monadic action</em> transforming one <code>Conn</code> to another <code>Conn</code>. It operates in some base monad <code>m</code>, and is indexed by <code>i</code> and <code>o</code>, the <em>input</em> and <em>output</em> Conn types of the middleware action.</p>
+<pre class="purescript"><code>newtype Middleware m i o a = ...</code></pre>
+<p>The input and output type parameters are used to ensure that a Conn is transformed, and that side-effects are performed, correctly, throughout the middleware chain.</p>
+<p>Being able to parameterize <code>Middleware</code> with some type <code>m</code>, you can customize the chain depending on the needs of your middleware and handlers. Applications can use monad transformers to track state, provide configuration, gather metrics, and much more, in the chain of middleware.</p>
+<p>Middleware are composed using <code>ibind</code>, the indexed monadic version of <code>bind</code>. The simplest way of composing middleware is by chaining them with <code>:*&gt;</code>, from <code>Control.Monad.IxMonad</code>. See <a href="https://pursuit.purescript.org/packages/purescript-indexed-monad/0.1.1">purescript-indexed-monad</a> for more information.</p>
+<pre class="purescript"><code>writeStatus statusOK
+:*&gt; closeHeaders
+:*&gt; respond &quot;We&#39;re composing middleware!&quot;</code></pre>
+<p>If you want to feed the return value of one middleware into another, use <code>:&gt;&gt;=</code>, the infix operator alias for <code>mbind</code>.</p>
+<pre class="purescript"><code>getUser :&gt;&gt;= renderUser</code></pre>
+<p>You can also rebind the <em>do block</em> syntax to use <code>ibind</code> instead of regular <code>bind</code>.</p>
+<pre class="purescript"><code>do
+  user &lt;- getUser
+  writeStatus statusOK
+  closeHeaders
+  respond (&quot;User: &quot; &lt;&gt; user.name)
+  where bind = ibind</code></pre>
 <h3 id="response-state-transitions">Response State Transitions</h3>
-<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Functions usually constrain the <code>writer</code> field to be a value implementing the <code>ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
-<p>The state of a response writer is tracked in its type parameter. This state tracking, and the type signatures of functions using the response writer, guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes. Let us have a look at the type signatures of some of response writing functions in <code>Hyper.Response</code>.</p>
-<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection <em>where headers are ready to be written</em>, writes all specified headers, writes the separating CRLF before the HTTP body, and <em>marks the state of the response writer as headers being closed</em>.</p>
+<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Middleware often constrain the <code>writer</code> field to be a value implementing the <code>ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
+<p>The state of a response writer is tracked in its type parameter. This state tracking, and the type-indexed middleware using the response writer, guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes. Let us have a look at the type signatures of some of response writing functions in <code>Hyper.Response</code>.</p>
+<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection where headers are ready to be written (<code>HeadersOpen</code>), writes all specified headers, writes the separating CRLF before the HTTP body, and marks the state of the response writer as being ready to write the body (<code>BodyOpen</code>).</p>
 <pre class="purescript"><code>headers :: forall t m req res rw c.
            (Traversable t, Monad m, ResponseWriter rw m b) =&gt;
            t Header
         -&gt; Middleware
            m
            (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw BodyOpen | res } c)</code></pre>
+           (Conn req { writer :: rw BodyOpen | res } c)
+           Unit</code></pre>
 <p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response m r b</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
 <pre class="purescript"><code>respond :: forall m r b req res rw c.
            (Monad m, Response m r b, ResponseWriter rw m b) =&gt;
@@ -99,10 +116,11 @@ By
         -&gt; Middleware
            m
            (Conn req { writer :: rw BodyOpen | res } c)
-           (Conn req { writer :: rw ResponseEnded | res } c)</code></pre>
-<p>The <code>Response</code> type class describes types that can be written as responses. It takes three type parameters, where <code>r</code> is the original response type, <code>m</code> is usually an Applicative or a Monad in which the transformation can be performed, and <code>b</code> is the target type.</p>
-<pre class="purescript"><code>class Response m r b | r -&gt; b where
-  toResponse :: r -&gt; m b</code></pre>
+           (Conn req { writer :: rw ResponseEnded | res } c)
+           Unit</code></pre>
+<p>The <code>Response</code> type class describes types that can be written as responses. It takes three type parameters, where <code>b</code> is the target type, <code>m</code> is a base monad for the Middleware returned, and <code>r</code> is the original response type,</p>
+<pre class="purescript"><code>class Response b m r where
+  toResponse :: forall i. r -&gt; Middleware m i i b</code></pre>
 <p>This mechanism allows servers to provide specific types for the response body, along with instances for common response types. When using the Node server, which has a response body type wrapping <code>Buffer</code>, you can still respond with a <code>String</code> or <code>HTML</code> value directly.</p>
 <p>Aside from convenience in having a single function for most response types and servers, the polymorphism of <code>respond</code> lets middleware be decoupled from specific servers. It only requires an instance matching the response type used by the middleware and the type required by the server.</p>
 <h2 id="request-body-parsing">Request Body Parsing</h2>
@@ -110,34 +128,45 @@ By
 <pre class="purescript"><code>readBodyAsString
   :: forall e req res c.
      Middleware
-     (Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e))
+     (Aff (http :: HTTP, err  :: EXCEPTION, avar  :: AVAR | e))
      (Conn { body :: RequestBody
            , contentLength :: Maybe Int
            | req
            } res c)
-     (Conn { body :: String
-           , contentLength :: Maybe Int | req
-           } res c)</code></pre>
-<p>A simple form parser can use <code>readBodyAsString</code> to convert the body a more useful format for the application. The following function checks the <code>Content-Type</code> header in the request, splits the request body, builds up a <code>Form</code> value, and finally using that value for the <code>body</code> field in the resulting <code>Conn</code>. The form body has type <code>Either Error Form</code> to represent invalid forms.</p>
+     (Conn {body :: String, contentLength :: Maybe Int | req} res c)
+     Unit</code></pre>
+<p>A simple form parser can use <code>readBodyAsString</code> to convert the body a more useful format for the application. As an example, the following function checks the <code>Content-Type</code> header in the request, splits the request body, builds up a <code>Form</code> value, and returns the value, with type <code>Either Error Form</code> to represent possibly invalid forms.</p>
 <pre class="purescript"><code>parseForm :: forall m req res c.
-            Applicative m =&gt;
-            Middleware
+            (IxMonadMiddleware m, IxMonad m) =&gt;
             m
-            (Conn { body ∷ String
+            (Conn { body :: String
                   , headers :: StrMap String
                   | req
                   } res c)
-            (Conn { body ∷ Either Error Form
+            (Conn { body :: String
                   , headers :: StrMap String
                   | req
                   }
                   res
                   c)
-parseForm conn = ...</code></pre>
+            (Either Error Form)
+parseForm =
+  getConn :&gt;&gt;= \conn -&gt;
+  case lookup &quot;content-type&quot; conn.request.headers &gt;&gt;= parseContentMediaType of
+    Nothing -&gt;
+      ipure (throwError (error &quot;Missing or invalid content-type header.&quot;))
+    Just mediaType | mediaType == applicationFormURLEncoded -&gt;
+      ipure (Form &lt;$&gt; splitPairs conn.request.body)
+    Just mediaType -&gt;
+      ipure (throwError (error (&quot;Cannot parse media of type: &quot; &lt;&gt; show mediaType)))</code></pre>
+<p>The <code>parseForm</code> function can then be used inside a middleware chain.</p>
+<pre class="purescript"><code>parseForm :&gt;&gt;=
+case _ of
+  Left err -&gt; ...
+  Right (Form values) -&gt; ...</code></pre>
 <p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
 <h2 id="type-level-routing">Type-Level Routing</h2>
 <p><code>Hyper.Routing</code> provides an API for expressing web application routing as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. By using routing types you get static guarantees about having handled all cases. You also get a lot of stuff for free, such as type-safe parameters for handlers, and automatically generated type-safe URIs to endpoints.</p>
-<p><em>Future work might include automatic API documentation and sitemaps, automatic deriving of PureScript AJAX clients, and more.</em></p>
 <h3 id="a-single-endpoint-example">A Single-Endpoint Example</h3>
 <p>Let’s say we want to render a home page as HTML. We start out by declaring the endpoint data type <code>Home</code>, and the structure of our site:</p>
 <pre class="purescript"><code>data Home = Home
@@ -161,9 +190,9 @@ site1 = Proxy</code></pre>
 <p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request, to the <code>router</code> function.</p>
 <pre class="purescript"><code>onRoutingError status msg =
   writeStatus status
-  &gt;=&gt; contentType textHTML
-  &gt;=&gt; closeHeaders
-  &gt;=&gt; respond (maybe &quot;&quot; id msg)
+  :*&gt; contentType textHTML
+  :*&gt; closeHeaders
+  :*&gt; respond (maybe &quot;&quot; id msg)
 
 site1Router = router site1 home onRoutingError</code></pre>
 <p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
@@ -256,9 +285,9 @@ getUsers =
 
       onRoutingError status msg =
         writeStatus status
-        &gt;=&gt; contentType textHTML
-        &gt;=&gt; closeHeaders
-        &gt;=&gt; respond (maybe &quot;&quot; id msg)
+        :*&gt; contentType textHTML
+        :*&gt; closeHeaders
+        :*&gt; respond (maybe &quot;&quot; id msg)
 
       onListening (Port port) =
         log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
@@ -271,9 +300,9 @@ getUsers =
 <h3 id="content-negotiation">Content Negotiation</h3>
 <p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>Json</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
 <pre class="purescript"><code>type Site3 =
-  Get (HTML :&lt;|&gt; Json) Home
+  Get HTML Home
   :&lt;|&gt; &quot;users&quot; :/ Get (HTML :&lt;|&gt; Json) AllUsers
-  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; JSON) User</code></pre>
+  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; Json) User```</code></pre>
 <p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
 <pre class="bash"><code>$ curl -H &#39;Accept: application/json&#39; http://localhost:3000/users
 [
@@ -298,7 +327,7 @@ getUsers =
   &lt;/ul&gt;
 &lt;/div&gt;</code></pre>
 <h2 id="servers">Servers</h2>
-<p>Although Hyper middleware are regular functions, which can applied to Conn values, you often want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
+<p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
 <h3 id="nodejs">NodeJS</h3>
 <p>The server in <code>Hyper.Node.Server</code> wraps the <code>http</code> module in NodeJS, and serves middleware using the <code>Aff</code> monad. Here is how you can start a Node server:</p>
 <pre class="purescript"><code>let
@@ -308,18 +337,18 @@ getUsers =
     log (&quot;Request failed: &quot; &lt;&gt; show err)
   app =
     writeStatus (Tuple 200 &quot;OK&quot;)
-    &gt;=&gt; closeHeaders
-    &gt;=&gt; respond &quot;Hello there!&quot;
+    :*&gt; closeHeaders
+    :*&gt; respond &quot;Hello there!&quot;
 in runServer defaultOptions onListening onRequestError {} app</code></pre>
 <p>As seen above, <code>runServer</code> takes a record of options, two callbacks, an initial <em>components</em> record, and your application middleware.</p>
 <h3 id="testing">Testing</h3>
-<p>When running tests you might not want to start a full HTTP server and sends requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
+<p>When running tests you might not want to start a full HTTP server and send requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
 <pre class="purescript"><code>it &quot;responds with a friendly message&quot; do
   conn &lt;- { request: {}
           , response: { writer: testResponseWriter }
           , components: {}
           }
-          # app
+          # evalMiddleware app
           # testServer
   testStatus conn `shouldEqual` Just statusOK
   testStringBody conn `shouldEqual` &quot;Hello there!&quot;</code></pre>

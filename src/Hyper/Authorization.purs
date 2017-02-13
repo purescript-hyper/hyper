@@ -1,13 +1,13 @@
 module Hyper.Authorization where
 
-import Control.Bind ((>>=))
+import Control.IxMonad (ibind)
 import Control.Monad (class Monad)
-import Data.Function ((#))
-import Data.Functor (map)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Unit (unit, Unit)
-import Hyper.Core (writeStatus, class ResponseWriter, Middleware, ResponseEnded, StatusLineOpen, Conn)
-import Hyper.Response (class Response, respond, headers)
+import Hyper.Conn (Conn)
+import Hyper.Middleware (Middleware, lift')
+import Hyper.Middleware.Class (getConn, modifyConn)
+import Hyper.Response (class Response, respond, headers, writeStatus, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (statusForbidden)
 
 withAuthorization :: forall a b req res c.
@@ -26,21 +26,22 @@ authorized
       m
       (Conn req { writer :: rw StatusLineOpen | res } { authorization :: a | c })
       (Conn req { writer :: rw ResponseEnded | res } { authorization :: a | c }))
+      Unit
   -> Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Unit | c })
      (Conn req { writer :: rw ResponseEnded | res } { authorization :: Unit | c })
-authorized authorizer mw conn =
-  authorizer conn >>= continue
-  where
-    continue =
-      case _ of
-        Just a ->
-          conn
-          # withAuthorization a
-          # mw
-          # map (withAuthorization unit)
-        Nothing ->
-          writeStatus statusForbidden conn
-          >>= headers []
-          >>= respond "You are not authorized."
+     Unit
+authorized authorizer mw = do
+  conn ← getConn
+  auth ← lift' (authorizer conn)
+  case auth of
+    Just a -> do
+      modifyConn (withAuthorization a)
+      mw
+      modifyConn (withAuthorization unit)
+    Nothing -> do
+      writeStatus statusForbidden
+      headers []
+      respond "You are not authorized."
+  where bind = ibind

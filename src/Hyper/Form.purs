@@ -4,6 +4,7 @@ module Hyper.Form (
   ) where
 
 import Prelude
+import Control.IxMonad (class IxMonad, ipure, (:>>=))
 import Control.Monad.Eff.Exception (error, Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
@@ -18,7 +19,8 @@ import Data.String (split, joinWith, Pattern(Pattern))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
-import Hyper.Core (Middleware, Conn)
+import Hyper.Conn (Conn)
+import Hyper.Middleware.Class (class IxMonadMiddleware, getConn)
 
 newtype Form = Form (Array (Tuple String String))
 
@@ -49,27 +51,25 @@ splitPairs = split (Pattern "&")
              >>> sequence
 
 parseForm ∷ forall m req res c.
-            Applicative m =>
-            Middleware
+            (IxMonadMiddleware m, IxMonad m) =>
             m
             (Conn { body ∷ String
                   , headers :: StrMap String
                   | req
                   } res c)
-            (Conn { body ∷ Either Error Form
+            (Conn { body ∷ String
                   , headers :: StrMap String
                   | req
                   }
                   res
                   c)
-parseForm conn =
-  pure (conn { request = (conn.request { body = form }) })
-  where
-    form =
-      case lookup "content-type" conn.request.headers >>= parseContentMediaType of
-        Nothing ->
-          throwError (error "Missing or invalid content-type header.")
-        Just mediaType | mediaType == applicationFormURLEncoded ->
-          Form <$> splitPairs conn.request.body
-        Just mediaType ->
-          throwError (error ("Cannot parse media of type: " <> show mediaType))
+            (Either Error Form)
+parseForm =
+  getConn :>>= \conn ->
+  case lookup "content-type" conn.request.headers >>= parseContentMediaType of
+    Nothing ->
+      ipure (throwError (error "Missing or invalid content-type header."))
+    Just mediaType | mediaType == applicationFormURLEncoded ->
+      ipure (Form <$> splitPairs conn.request.body)
+    Just mediaType ->
+      ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))

@@ -2,16 +2,17 @@ module Hyper.Node.FileServerSpec where
 
 import Prelude
 import Node.Buffer as Buffer
+import Control.IxMonad (ibind)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff.Class (liftEff)
 import Data.Maybe (Maybe(Just))
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Core (try, fallbackTo, writeStatus)
+import Hyper.Middleware (evalMiddleware)
 import Hyper.Node.FileServer (fileServer)
 import Hyper.Node.Test (TestResponseBody(TestResponseBody))
-import Hyper.Response (class Response, headers, respond)
+import Hyper.Response (class Response, headers, respond, writeStatus)
 import Hyper.Status (statusNotFound, statusOK)
-import Hyper.Test.TestServer (testBody, TestResponse, testStatus, testServer, testHeaders, testResponseWriter)
+import Hyper.Test.TestServer (testBody, TestResponse, testStatus, testServer, testHeaders, TestResponseWriter(..))
 import Node.Buffer (Buffer, BUFFER)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS (FS)
@@ -26,19 +27,20 @@ serveFilesAndGet
   -> m (TestResponse TestResponseBody)
 serveFilesAndGet path =
   { request: { url: path }
-  , response: { writer: testResponseWriter }
+  , response: { writer: TestResponseWriter }
   , components: {}
   }
-  # app
+  # evalMiddleware app
   # testServer
   where
-    app = fallbackTo notFound (try (fileServer "test/Hyper/Node/FileServerSpec"))
+    app = fileServer "test/Hyper/Node/FileServerSpec" on404
 
-    notFound conn = do
+    on404 = do
       body <- liftEff (Buffer.fromString "Not Found" UTF8)
-      writeStatus statusNotFound conn
-        >>= headers []
-        >>= respond body
+      writeStatus statusNotFound
+      headers []
+      respond body
+      where bind = ibind
 
 spec :: forall e. Spec (fs :: FS, buffer :: BUFFER | e) Unit
 spec =

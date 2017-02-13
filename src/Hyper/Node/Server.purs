@@ -1,4 +1,11 @@
-module Hyper.Node.Server where
+module Hyper.Node.Server
+       ( RequestBody
+       , HttpResponse
+       , ResponseBody
+       , readBodyAsString
+       , defaultOptions
+       , runServer
+       )where
 
 import Node.HTTP
 import Data.HTTP.Method as Method
@@ -6,18 +13,19 @@ import Data.Int as Int
 import Data.StrMap as StrMap
 import Node.Buffer as Buffer
 import Node.Stream as Stream
-import Control.Applicative (class Applicative, pure)
+import Control.Applicative (pure)
 import Control.Bind (bind)
-import Control.Monad (void, (>>=))
+import Control.IxMonad (ibind, (:>>=), (:*>))
+import Control.Monad (class Monad, void, (>>=))
 import Control.Monad.Aff (launchAff, Aff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
-import Control.Monad.Aff.Class (liftAff, class MonadAff)
+import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff, class MonadEff)
+import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
 import Data.Either (Either)
 import Data.Function (($), (<<<))
-import Data.Functor (map)
+import Data.Functor (map, (<$>))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -25,8 +33,11 @@ import Data.Semigroup ((<>))
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Data.Unit (Unit, unit)
-import Hyper.Core (StatusLineOpen(StatusLineOpen), class ResponseWriter, Conn, BodyOpen(..), HeadersOpen(..), Middleware, Port(..), ResponseEnded(..))
-import Hyper.Response (class Response)
+import Hyper.Conn (Conn)
+import Hyper.Middleware (Middleware, evalMiddleware, lift')
+import Hyper.Middleware.Class (getConn, modifyConn, putConn)
+import Hyper.Port (Port(..))
+import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (BUFFER, Buffer)
 import Node.Encoding (Encoding(..))
@@ -43,13 +54,13 @@ derive instance newtypeResponseBody :: Newtype ResponseBody _
 
 instance stringResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response ResponseBody m String where
   toResponse body =
-    map ResponseBody (liftAff (liftEff (Buffer.fromString body UTF8)))
+    liftEff (map ResponseBody (Buffer.fromString body UTF8))
 
 instance stringAndEncodingResponseBody :: (MonadAff (buffer :: BUFFER | e) m) => Response ResponseBody m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
-    map ResponseBody (liftAff (liftEff (Buffer.fromString body encoding)))
+    liftEff (map ResponseBody (Buffer.fromString body encoding))
 
-instance bufferResponseBody :: Applicative m => Response ResponseBody m Buffer where
+instance bufferResponseBody :: Monad m => Response ResponseBody m Buffer where
   toResponse = pure <<< ResponseBody
 
 readBody :: forall e. RequestBody -> Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e) String
@@ -71,51 +82,90 @@ readBodyAsString ∷ ∀ e req res c.
                          | req
                          } res c)
                    (Conn {body ∷ String, contentLength :: Maybe Int | req} res c)
-readBodyAsString conn = do
-  s <- readBody conn.request.body
-  pure (conn { request = (conn.request { body = s }) })
+                   Unit
+readBodyAsString = do
+  conn ← getConn
+  s <- lift' (readBody conn.request.body)
+  putConn (conn { request { body = s } })
+  where bind = ibind
 
-data HttpResponse state = HttpResponse state Response
+data HttpResponse state = HttpResponse Response
 
+getWriter ∷ ∀ req res c m rw.
+            Monad m ⇒
+            Middleware
+            m
+            (Conn req { writer ∷ rw | res } c)
+            (Conn req { writer ∷ rw | res } c)
+            rw
+getWriter = _.response.writer <$> getConn
 
-withState ∷ ∀ req res c a b.
-            b
-          → Conn req { writer ∷ HttpResponse a | res } c
-          → Conn req { writer ∷ HttpResponse b | res } c
-withState s conn =
-  case conn.response.writer of
-       HttpResponse _ r → conn { response = (conn.response { writer = HttpResponse s r }) }
+setStatus ∷ ∀ req res c m e.
+            MonadEff (http ∷ HTTP | e) m
+          ⇒ Status
+          → Response
+          → Middleware m (Conn req res c) (Conn req res c) Unit
+setStatus (Status { code, reasonPhrase }) r = liftEff do
+  setStatusCode r code
+  setStatusMessage r reasonPhrase
 
+writeHeader' ∷ ∀ req res c m e.
+               MonadEff (http ∷ HTTP | e) m
+             ⇒ (Tuple String String)
+             → Response
+             → Middleware m (Conn req res c) (Conn req res c) Unit
+writeHeader' (Tuple name value) r =
+  liftEff $ setHeader r name value
 
-instance responseWriterHttpResponse :: MonadEff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
-  writeStatus (Status { code, reasonPhrase }) conn =
-    case conn.response.writer of
-      HttpResponse _ r → do
-        liftEff do
-          setStatusCode r code
-          setStatusMessage r reasonPhrase
-        pure (withState HeadersOpen conn)
+writeResponse ∷ ∀ req res c m e.
+                MonadEff (http ∷ HTTP | e) m
+             ⇒ Response
+             → Buffer
+             → Middleware m (Conn req res c) (Conn req res c) Unit
+writeResponse r b =
+  void (liftEff (Stream.write (responseAsStream r) b (pure unit)))
 
-  writeHeader (Tuple name value) conn =
-    case conn.response.writer of
-      HttpResponse _ r → do
-        liftEff (setHeader r name value)
-        pure conn
+endResponse ∷ ∀ req res c m e.
+              MonadEff (http ∷ HTTP | e) m
+            ⇒ Response
+            → Middleware m (Conn req res c) (Conn req res c) Unit
+endResponse r =
+  liftEff (Stream.end (responseAsStream r) (pure unit))
 
-  closeHeaders = pure <<< withState BodyOpen
+instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
+  writeStatus status =
+    getWriter :>>=
+    case _ of
+      HttpResponse r → do
+        setStatus status r
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
-  send (ResponseBody b) conn =
-    case conn.response.writer of
-      HttpResponse _ r → do
-        liftEff (Stream.write (responseAsStream r) b (pure unit))
-        pure conn
+  writeHeader header =
+    getWriter :>>=
+    case _ of
+      HttpResponse r →
+        writeHeader' header r
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
-  end conn = do
-    case conn.response.writer of
-      HttpResponse _ r → do
-        liftEff (Stream.end (responseAsStream r) (pure unit))
-        pure (withState ResponseEnded conn)
+  closeHeaders =
+    getWriter :>>=
+    case _ of
+      HttpResponse r →
+        modifyConn (_ { response { writer = HttpResponse r }})
 
+  send (ResponseBody b) =
+    getWriter :>>=
+    case _ of
+      HttpResponse r → do
+        writeResponse r b
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
+
+  end =
+    getWriter :>>=
+    case _ of
+      HttpResponse r → do
+        endResponse r
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
 type ServerOptions = { hostname ∷ String
                      , port ∷ Port
@@ -144,6 +194,7 @@ runServer :: forall e req res c c'.
                       { writer :: HttpResponse StatusLineOpen }
                       c)
                 (Conn req { writer :: HttpResponse ResponseEnded | res } c')
+                Unit
              -> Eff (http :: HTTP | e) Unit
 runServer options onListening onRequestError components middleware = do
   server <- createServer onRequest
@@ -163,7 +214,7 @@ runServer options onListening onRequestError components middleware = do
                             , method: Method.fromString (requestMethod request)
                             , contentLength: parseContentLength headers >>= Int.fromString
                             }
-                 , response: { writer: HttpResponse StatusLineOpen response }
+                 , response: { writer: HttpResponse response }
                  , components: components
                  }
-      in catchException onRequestError (void (launchAff (middleware conn)))
+      in catchException onRequestError (void (launchAff (evalMiddleware middleware conn)))

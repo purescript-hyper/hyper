@@ -1,7 +1,8 @@
 module Hyper.Test.TestServer where
 
 import Control.Alt ((<|>))
-import Control.Applicative (class Applicative, pure, (*>))
+import Control.Applicative (pure)
+import Control.IxMonad ((:*>))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
@@ -12,8 +13,11 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
-import Hyper.Core (class ResponseWriter, BodyOpen(BodyOpen), Conn, Header, HeadersOpen(HeadersOpen), ResponseEnded(ResponseEnded), StatusLineOpen(StatusLineOpen))
-import Hyper.Response (class Response)
+import Hyper.Conn (Conn)
+import Hyper.Header (Header)
+import Hyper.Middleware (lift')
+import Hyper.Middleware.Class (modifyConn)
+import Hyper.Response (class Response, class ResponseWriter)
 import Hyper.Status (Status)
 
 data TestResponse b = TestResponse (Maybe Status) (Array Header) (Array b)
@@ -40,18 +44,14 @@ instance monoidTestResponse :: Monoid (TestResponse b) where
 testServer :: forall m a b. Monad m ⇒ WriterT (TestResponse b) m a → m (TestResponse b)
 testServer = execWriterT <<< void
 
-data TestResponseWriter state = TestResponseWriter state
+data TestResponseWriter state = TestResponseWriter
 
-testResponseWriter :: TestResponseWriter StatusLineOpen
-testResponseWriter = TestResponseWriter StatusLineOpen
-
-withState ∷ ∀ req res c a b.
-            b
-          → Conn req { writer ∷ TestResponseWriter a | res } c
+resetWriter ∷ ∀ req res c a b.
+            Conn req { writer ∷ TestResponseWriter a | res } c
           → Conn req { writer ∷ TestResponseWriter b | res } c
-withState s conn =
+resetWriter conn =
   case conn.response.writer of
-       TestResponseWriter _ → conn { response = (conn.response { writer = TestResponseWriter s }) }
+       TestResponseWriter → conn { response { writer = TestResponseWriter } }
 
 instance responseWriterTestResponseWriter :: ( Monad m
                                              , MonadTell (TestResponse b) m
@@ -60,24 +60,25 @@ instance responseWriterTestResponseWriter :: ( Monad m
                                              TestResponseWriter
                                              m
                                              b where
-  writeStatus status conn =
-    tell (TestResponse (Just status) [] []) *> pure (withState HeadersOpen conn)
+  writeStatus status = do
+    lift' (tell (TestResponse (Just status) [] []))
+    :*> modifyConn resetWriter
 
-  writeHeader header conn =
-    tell (TestResponse Nothing [header] mempty) *> pure conn
+  writeHeader header =
+    lift' (tell (TestResponse Nothing [header] mempty))
 
-  closeHeaders = pure <<< withState BodyOpen
+  closeHeaders = modifyConn resetWriter
 
-  send chunk conn =
-    tell (TestResponse Nothing [] [chunk]) *> pure conn
+  send chunk =
+    lift' (tell (TestResponse Nothing [] [chunk]))
 
-  end = pure <<< withState ResponseEnded
+  end = modifyConn resetWriter
 
 newtype StringBody = StringBody String
 
 derive instance newtypeStringBody :: Newtype StringBody _
 
-instance responseStringBody :: Applicative m => Response StringBody m String where
+instance responseStringBody :: Monad m => Response StringBody m String where
   toResponse = pure <<< StringBody
 
 instance semigroupStringBody :: Semigroup StringBody where

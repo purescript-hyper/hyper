@@ -1,82 +1,87 @@
 module Hyper.Routing.RouterSpec (spec) where
 
 import Prelude
-import Control.Monad.Except (ExceptT)
+import Data.StrMap as StrMap
+import Control.IxMonad (ibind)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textPlain)
+import Data.StrMap (StrMap)
 import Data.String (joinWith)
-import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
-import Hyper.Core (class ResponseWriter, Conn, Middleware, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
-import Hyper.Response (class Response, contentType, headers, respond)
+import Hyper.Conn (Conn)
+import Hyper.Middleware (Middleware, evalMiddleware)
+import Hyper.Response (class Response, contentType, headers, respond, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeStatus)
 import Hyper.Routing ((:<|>))
-import Hyper.Routing.Router (RoutingError, router)
+import Hyper.Routing.Router (router)
 import Hyper.Routing.TestSite (Home(..), User(..), UserID(..), WikiPage(..), testSite)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
-import Hyper.Test.TestServer (testHeaders, testResponseWriter, testServer, testStatus, testStringBody)
+import Hyper.Test.TestServer (TestResponseWriter(..), testHeaders, testServer, testStatus, testStringBody)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
-type Handler m a = ExceptT RoutingError m a
-
-home :: forall m. Monad m => Handler m Home
+home :: forall m. Monad m => m Home
 home = pure Home
 
-profile :: forall m. Monad m => UserID -> Handler m User
+profile :: forall m. Monad m => UserID -> m User
 profile userId = pure (User userId)
 
-friends :: forall m. Monad m => UserID -> Handler m (Array User)
+friends :: forall m. Monad m => UserID -> m (Array User)
 friends (UserID uid) =
   pure [ User (UserID "foo")
        , User (UserID "bar")
        ]
 
-wiki :: forall m. Monad m => Array String -> Handler m WikiPage
+wiki :: forall m. Monad m => Array String -> m WikiPage
 wiki segments = pure (WikiPage (joinWith "/" segments))
 
 about :: forall m req res c rw rb.
          ( Monad m
-         , ResponseWriter rw (ExceptT RoutingError m) rb
-         , Response rb (ExceptT RoutingError m) String
+         , ResponseWriter rw m rb
+         , Response rb m String
          )
          => Middleware
-            (ExceptT RoutingError m)
+            m
             (Conn { method :: Either Method CustomMethod, url :: String | req } { writer :: rw StatusLineOpen | res } c)
             (Conn { method :: Either Method CustomMethod, url :: String | req } { writer :: rw ResponseEnded | res } c)
-about =
+            Unit
+about = do
   writeStatus statusOK
-  >=> contentType textPlain
-  >=> closeHeaders
-  >=> respond "This is a test."
+  contentType textPlain
+  closeHeaders
+  respond "This is a test."
+  where bind = ibind
 
 spec :: forall e. Spec e Unit
 spec =
   describe "Hyper.Routing.Router" do
     let userHandlers userId = profile userId :<|> friends userId
         handlers = home
-                  :<|> userHandlers
-                  :<|> wiki
-                  :<|> about
+                   :<|> userHandlers
+                   :<|> wiki
+                   :<|> about
 
-        onRoutingError status msg =
+        onRoutingError status msg = do
           writeStatus status
-          >=> headers []
-          >=> respond (maybe "" id msg)
+          headers []
+          respond (maybe "" id msg)
+          where bind = ibind
 
         makeRequestWithHeaders method path headers =
-          { request: { method: Left method
-                     , url: path
-                     , headers
+          let conn = { request: { method: Left method
+                                , url: path
+                                , headers: headers
+                                }
+                     , response: { writer: TestResponseWriter }
+                     , components: {}
                      }
-          , response: { writer: testResponseWriter }
-          , components: {}
-          }
-          # (router testSite handlers onRoutingError)
-          # testServer
+              app = router testSite handlers onRoutingError
+          in evalMiddleware app conn
+             # testServer
+
         makeRequest method path =
-          makeRequestWithHeaders method path StrMap.empty
+          makeRequestWithHeaders method path (StrMap.empty :: StrMap String)
 
     describe "router" do
       it "matches root" do

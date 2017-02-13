@@ -1,6 +1,7 @@
 module Hyper.Node.Test where
 
-import Control.Applicative (pure, class Applicative)
+import Control.Applicative (pure)
+import Control.Monad (class Monad)
 import Data.Array (singleton)
 import Data.Function ((<<<))
 import Data.Monoid (class Monoid)
@@ -10,7 +11,7 @@ import Node.Buffer (Buffer)
 
 newtype TestResponseBody = TestResponseBody (Array Buffer)
 
-instance bufferTestResponseBody :: Applicative m => Response TestResponseBody m Buffer where
+instance bufferTestResponseBody :: Monad m => Response TestResponseBody m Buffer where
   toResponse = pure <<< TestResponseBody <<< singleton
 
 instance semigroupBufferResponse :: Semigroup TestResponseBody where
