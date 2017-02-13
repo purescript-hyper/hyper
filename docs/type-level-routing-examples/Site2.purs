@@ -5,13 +5,14 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
+import Control.IxMonad ((:*>))
 import Data.Array (find)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.Core (Port(Port), closeHeaders, writeStatus)
 import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (contentType, respond)
+import Hyper.Port (Port(..))
+import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
 import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
@@ -93,9 +94,9 @@ main =
 
       onRoutingError status msg =
         writeStatus status
-        >=> contentType textHTML
-        >=> closeHeaders
-        >=> respond (maybe "" id msg)
+        :*> contentType textHTML
+        :*> closeHeaders
+        :*> respond (maybe "" id msg)
 
       onListening (Port port) =
         log ("Listening on http://localhost:" <> show port)

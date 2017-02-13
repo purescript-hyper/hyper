@@ -4,7 +4,7 @@ module Hyper.Form (
   ) where
 
 import Prelude
-import Control.IxMonad (class IxMonad, ibind, ipure)
+import Control.IxMonad (class IxMonad, ipure, (:>>=))
 import Control.Monad.Eff.Exception (error, Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
@@ -64,8 +64,8 @@ parseForm ∷ forall m req res c.
                   res
                   c)
             (Either Error Form)
-parseForm = do
-  conn ← getConn
+parseForm =
+  getConn :>>= \conn ->
   case lookup "content-type" conn.request.headers >>= parseContentMediaType of
     Nothing ->
       ipure (throwError (error "Missing or invalid content-type header."))
@@ -73,4 +73,3 @@ parseForm = do
       ipure (Form <$> splitPairs conn.request.body)
     Just mediaType ->
       ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))
-  where bind = ibind

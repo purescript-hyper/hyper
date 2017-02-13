@@ -12,39 +12,54 @@ accomplish this asynchronously in the case of the Node server.
 readBodyAsString
   :: forall e req res c.
      Middleware
-     (Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e))
+     (Aff (http :: HTTP, err  :: EXCEPTION, avar  :: AVAR | e))
      (Conn { body :: RequestBody
            , contentLength :: Maybe Int
            | req
            } res c)
-     (Conn { body :: String
-           , contentLength :: Maybe Int | req
-           } res c)
+     (Conn {body :: String, contentLength :: Maybe Int | req} res c)
+     Unit
 ```
 
 A simple form parser can use `readBodyAsString` to convert the body a
-more useful format for the application. The following function checks
-the `Content-Type` header in the request, splits the request body,
-builds up a `Form` value, and finally using that value for the `body`
-field in the resulting `Conn`. The form body has type `Either Error
-Form` to represent invalid forms.
+more useful format for the application. As an example, the following function
+checks the `Content-Type` header in the request, splits the request body, builds
+up a `Form` value, and returns the value, with type `Either Error Form` to
+represent possibly invalid forms.
 
 ``` purescript
 parseForm :: forall m req res c.
-            Applicative m =>
-            Middleware
+            (IxMonadMiddleware m, IxMonad m) =>
             m
-            (Conn { body ∷ String
+            (Conn { body :: String
                   , headers :: StrMap String
                   | req
                   } res c)
-            (Conn { body ∷ Either Error Form
+            (Conn { body :: String
                   , headers :: StrMap String
                   | req
                   }
                   res
                   c)
-parseForm conn = ...
+            (Either Error Form)
+parseForm =
+  getConn :>>= \conn ->
+  case lookup "content-type" conn.request.headers >>= parseContentMediaType of
+    Nothing ->
+      ipure (throwError (error "Missing or invalid content-type header."))
+    Just mediaType | mediaType == applicationFormURLEncoded ->
+      ipure (Form <$> splitPairs conn.request.body)
+    Just mediaType ->
+      ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))
+```
+
+The `parseForm` function can then be used inside a middleware chain.
+
+```purescript
+parseForm :>>=
+case _ of
+  Left err -> ...
+  Right (Form values) -> ...
 ```
 
 More efficient parsers, directly operating on the `RequestBody`,

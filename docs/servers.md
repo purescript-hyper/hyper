@@ -1,8 +1,8 @@
 # Servers
 
-Although Hyper middleware are regular functions, which can applied to Conn
-values, you often want a *server* to run your middleware. Hyper tries to be as
-open as possible when it comes to servers -- your application, and the
+Although Hyper middleware can applied directly to Conn values using
+`runMiddleware`, you likely want a *server* to run your middleware. Hyper tries
+to be as open as possible when it comes to servers -- your application, and the
 middleware it depends on, should not be tied to a specific server. This allows
 for greater reuse and the ability to test entire applications without running
 the "real" server.
@@ -20,8 +20,8 @@ let
     log ("Request failed: " <> show err)
   app =
     writeStatus (Tuple 200 "OK")
-    >=> closeHeaders
-    >=> respond "Hello there!"
+    :*> closeHeaders
+    :*> respond "Hello there!"
 in runServer defaultOptions onListening onRequestError {} app
 ```
 
@@ -30,7 +30,7 @@ initial *components* record, and your application middleware.
 
 ## Testing
 
-When running tests you might not want to start a full HTTP server and sends
+When running tests you might not want to start a full HTTP server and send
 requests using an HTTP client. Instead you can use the server in
 `Hyper.Test.TestServer`. It runs your middleware directly on `Conn` values, and
 collects the response using a Writer monad. You get back a `TestResponse` from
@@ -42,7 +42,7 @@ it "responds with a friendly message" do
           , response: { writer: testResponseWriter }
           , components: {}
           }
-          # app
+          # evalMiddleware app
           # testServer
   testStatus conn `shouldEqual` Just statusOK
   testStringBody conn `shouldEqual` "Hello there!"

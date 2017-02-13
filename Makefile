@@ -33,7 +33,7 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		--template=docs/template.html \
 	$(MD_SOURCES)
 
-docs/hyper.pdf: $(MD_SOURCES)
+docs/hyper.pdf: $(MD_SOURCES) $(shell find docs -name '*.tex')
 	pandoc $(SHARED_PANDOC_OPTIONS) \
 	-t latex \
 	--listings \
