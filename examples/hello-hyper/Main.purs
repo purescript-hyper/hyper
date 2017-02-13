@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Hyper.Node.Server (defaultOptions, runServer)
@@ -18,7 +18,6 @@ main =
     onRequestError err = log ("Request failed: " <> show err)
     app = do
       writeStatus statusOK
-      closeHeaders
-      respond "Hello, Hyper!"
-      where bind = ibind
+      :*> closeHeaders
+      :*> respond "Hello, Hyper!"
   in runServer defaultOptions onListening onRequestError {} app

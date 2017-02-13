@@ -2,7 +2,7 @@ module Hyper.Test.TestServer where
 
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
-import Control.IxMonad (ibind)
+import Control.IxMonad ((:*>))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
@@ -62,8 +62,7 @@ instance responseWriterTestResponseWriter :: ( Monad m
                                              b where
   writeStatus status = do
     lift' (tell (TestResponse (Just status) [] []))
-    modifyConn resetWriter
-    where bind = ibind
+    :*> modifyConn resetWriter
 
   writeHeader header =
     lift' (tell (TestResponse Nothing [header] mempty))

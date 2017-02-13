@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.IxMonad ((:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
@@ -102,7 +102,6 @@ main =
     siteRouter = router site (postsView :<|> viewPost) onRoutingError
     onRoutingError status msg = do
       writeStatus status
-      contentType textHTML
-      closeHeaders
-      respond (maybe "" id msg)
-      where bind = ibind
+      :*> contentType textHTML
+      :*> closeHeaders
+      :*> respond (maybe "" id msg)

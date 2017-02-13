@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
-import Control.IxMonad (ibind)
+import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
@@ -33,19 +33,17 @@ main =
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
     onRequestError err = log ("Request failed: " <> show err)
 
-    myProfilePage = do
-      conn ← getConn
+    myProfilePage =
+      getConn :>>= \conn ->
       case conn.components.authentication of
         User name → do
           writeStatus statusOK
-          contentType textHTML
-          closeHeaders
-          respond (asString (p [] [text ("You are authenticated as " <> name <> ".")]))
-      where bind = ibind
+          :*> contentType textHTML
+          :*> closeHeaders
+          :*> respond (asString (p [] [text ("You are authenticated as " <> name <> ".")]))
 
     app = do
       BasicAuth.withAuthentication userFromBasicAuth
-      BasicAuth.authenticated "Authentication Example" myProfilePage
-      where bind = ibind
+      :*> BasicAuth.authenticated "Authentication Example" myProfilePage
     components = { authentication: unit }
   in runServer defaultOptions onListening onRequestError components app

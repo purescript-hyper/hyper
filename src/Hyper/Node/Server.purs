@@ -15,7 +15,7 @@ import Node.Buffer as Buffer
 import Node.Stream as Stream
 import Control.Applicative (pure)
 import Control.Bind (bind)
-import Control.IxMonad (ibind, (:>>=))
+import Control.IxMonad (ibind, (:>>=), (:*>))
 import Control.Monad (class Monad, void, (>>=))
 import Control.Monad.Aff (launchAff, Aff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
@@ -133,44 +133,39 @@ endResponse r =
   liftEff (Stream.end (responseAsStream r) (pure unit))
 
 instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m => ResponseWriter HttpResponse m ResponseBody where
-  writeStatus status = do
+  writeStatus status =
     getWriter :>>=
     case _ of
       HttpResponse r → do
         setStatus status r
-        modifyConn (_ { response { writer = HttpResponse r }})
-    where bind = ibind
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
-  writeHeader header = do
+  writeHeader header =
     getWriter :>>=
     case _ of
-      HttpResponse r → do
+      HttpResponse r →
         writeHeader' header r
-        modifyConn (_ { response { writer = HttpResponse r }})
-    where bind = ibind
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
   closeHeaders =
     getWriter :>>=
     case _ of
       HttpResponse r →
         modifyConn (_ { response { writer = HttpResponse r }})
-    where bind = ibind
 
   send (ResponseBody b) =
     getWriter :>>=
     case _ of
       HttpResponse r → do
         writeResponse r b
-        modifyConn (_ { response { writer = HttpResponse r }})
-    where bind = ibind
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
   end =
     getWriter :>>=
     case _ of
       HttpResponse r → do
         endResponse r
-        modifyConn (_ { response { writer = HttpResponse r }})
-    where bind = ibind
+        :*> modifyConn (_ { response { writer = HttpResponse r }})
 
 type ServerOptions = { hostname ∷ String
                      , port ∷ Port

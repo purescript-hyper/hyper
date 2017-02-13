@@ -9,7 +9,7 @@ module Main where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
-import Control.IxMonad (ibind, (:>>=))
+import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
@@ -45,12 +45,11 @@ htmlWithStatus
      (Conn req { writer :: rw StatusLineOpen | res } c)
      (Conn req { writer :: rw ResponseEnded | res } c)
      Unit
-htmlWithStatus status x = do
+htmlWithStatus status x =
   writeStatus status
-  contentType textHTML
-  closeHeaders
-  respond (asString x)
-  where bind = ibind
+  :*> contentType textHTML
+  :*> closeHeaders
+  :*> respond (asString x)
 
 
 -- Users have user names.

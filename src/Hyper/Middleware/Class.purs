@@ -1,6 +1,6 @@
 module Hyper.Middleware.Class where
 
-import Control.IxMonad (class IxMonad, ibind)
+import Control.IxMonad (class IxMonad, (:>>=))
 import Data.Unit (Unit)
 
 class IxMonadMiddleware m where
@@ -10,7 +10,4 @@ class IxMonadMiddleware m where
 modifyConn ∷ ∀ m i o.
              (IxMonad m, IxMonadMiddleware m)
              ⇒ (i → o) → m i o Unit
-modifyConn f = do
-  c ← getConn
-  putConn (f c)
-  where bind = ibind
+modifyConn f = getConn :>>= \c -> putConn (f c)

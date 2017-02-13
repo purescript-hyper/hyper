@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Control.IxMonad (ibind, (:>>=))
+import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
@@ -44,21 +44,21 @@ main =
             Just s -> [ p [ Tuple "style" "color: red;" ] [ text s ] ]
             Nothing -> []
 
-    htmlWithStatus status x = do
+    htmlWithStatus status x =
       writeStatus status
-      contentType textHTML
-      closeHeaders
-      respond (asString x)
-      where bind = ibind
+      :*> contentType textHTML
+      :*> closeHeaders
+      :*> respond (asString x)
 
-    handlePost = do
-      body ← parseForm
-      case body of
+
+    handlePost =
+      parseForm :>>=
+      case _ of
         Left err -> do
           liftEff (log (message err))
-          htmlWithStatus
-            statusBadRequest
-            (p [] [text "Bad request, invalid form."])
+          :*> htmlWithStatus
+              statusBadRequest
+              (p [] [text "Bad request, invalid form."])
         Right (Form values) ->
           case lookup "firstName" values of
             Just name | length name > 0 ->
@@ -69,7 +69,6 @@ main =
               htmlWithStatus
               statusBadRequest
               (renderNameForm (Just "Name is missing."))
-      where bind = ibind
 
     -- Our (rather primitive) router.
     router =
@@ -88,8 +87,7 @@ main =
 
     -- A chain of middleware for parsing the form, and then our response
     -- handler.
-    app = readBodyAsString
-          :>>= const router
+    app = readBodyAsString :*> router
 
     -- Some nice console printing when the server starts, and if a request
     -- fails (in this case when the request body is unreadable for some reason).
