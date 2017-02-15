@@ -12,7 +12,7 @@
     "url": "git://github.com/owickstrom/hyper.git"
   },
   "dependencies": {
-    "purescript-prelude": "^2.0.0",
+    "purescript-prelude": "^2.4.0",
     "purescript-maps": "^2.0.0",
     "purescript-eff": "^2.0.0",
     "purescript-generics": "^3.1.0",
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0",
-    "purescript-spec": "^0.12.1",
+    "purescript-spec": "^0.12.4",
     "purescript-spec-discovery": "^0.4.0"
   }
 }
