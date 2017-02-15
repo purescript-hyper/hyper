@@ -50,4 +50,5 @@ docs/hyper.pdf: $(MD_SOURCES) $(shell find docs -name '*.tex')
 
 .PHONY: examples
 examples:
+	pulp build -I docs/type-level-routing-examples
 	find examples/* -type d -exec rm -rf output/Main \; -exec pulp build -I {} \;
