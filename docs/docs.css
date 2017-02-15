@@ -45,7 +45,7 @@ code {
   font-family: 'Source Code Pro', 'Menlo', 'Consolas', 'Ubuntu Mono', Courier, monospace;
   font-size: 15px;
   line-height: inherit;
-  color: #111;
+  color: inherit;
 }
 
 pre {
@@ -174,11 +174,19 @@ body > table {
 }
 
 @media screen and (max-width: 700px) {
+  body {
+    font-size: 14px;
+  }
+  pre,
+  code {
+    font-size: 13px;
+  }
   #TOC {
     display: none;
   }
   #main {
     margin-left: 0;
+    padding: 10px;
   }
 }
 
