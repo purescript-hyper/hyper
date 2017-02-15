@@ -145,9 +145,6 @@ body > table {
   padding: 0 2em 0 2em;
 }
 
-#TOC > ul li {
-}
-
 #TOC ul a {
   color: inherit;
 }
@@ -162,7 +159,6 @@ body > table {
   font-weight: bold;
   text-decoration: none;
   letter-spacing: .02em;
-  margin-bottom: 1em;
 }
 
 #TOC ul ul {

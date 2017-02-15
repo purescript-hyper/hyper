@@ -1,4 +1,13 @@
-# Request Body Parsing
+# Basics
+
+This chapter walks you through some of the basic, and more lower-level,
+features of Hyper. We look at how we can use the Conn and Middleware types to
+gain type safety "in the small", and how to implement common things needed in
+web servers.
+
+_This chapter is very much work in progress!_
+
+## Request Body Parsing
 
 The request body is, when using the Node server, initially a
 `RequestBody` in the connection. The user explicitly chooses to read

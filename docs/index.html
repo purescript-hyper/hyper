@@ -32,7 +32,9 @@
   <a href="hyper.pdf">Also available as PDF</a>
   </p>
   </header>
-<h2 id="goals">Goals</h2>
+<h2 id="introduction">Introduction</h2>
+<p>Welcome to the Hyper documentation! Hyper is an experimental middleware architecture for HTTP servers written in PureScript. It is also a breeding ground for higher-level web server constructs, which tends to fall under the “framework” category. I hope you find something useful or inspiring in this project.</p>
+<h3 id="goals">Goals</h3>
 <p>Composing middleware in NodeJS is a risky business. They mutate the HTTP request and response objects freely, and are often dependent on each others’ side-effects. There are no guarantees that you have stacked the middleware functions in a sensible order, and it is often the case, in my experience, that misconfigured middleware takes a lot of time and effort to debug.</p>
 <p>The goal of <em>Hyper</em> is to make use of row polymorphism and other tasty type system features in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that common mistakes cannot be made. A few examples could be:</p>
 <ul>
@@ -104,7 +106,10 @@
   toResponse :: forall i. r -&gt; Middleware m i i b</code></pre>
 <p>This mechanism allows servers to provide specific types for the response body, along with instances for common response types. When using the Node server, which has a response body type wrapping <code>Buffer</code>, you can still respond with a <code>String</code> or <code>HTML</code> value directly.</p>
 <p>Aside from convenience in having a single function for most response types and servers, the polymorphism of <code>respond</code> lets middleware be decoupled from specific servers. It only requires an instance matching the response type used by the middleware and the type required by the server.</p>
-<h2 id="request-body-parsing">Request Body Parsing</h2>
+<h2 id="basics">Basics</h2>
+<p>This chapter walks you through some of the basic, and more lower-level, features of Hyper. We look at how we can use the Conn and Middleware types to gain type safety “in the small”, and how to implement common things needed in web servers.</p>
+<p><em>This chapter is very much work in progress!</em></p>
+<h3 id="request-body-parsing">Request Body Parsing</h3>
 <p>The request body is, when using the Node server, initially a <code>RequestBody</code> in the connection. The user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action. The following type signature resides in <code>Hyper.Node.Server</code>, and shows how a request body can be read into a <code>String</code>. The <code>Aff</code> monad, and the <code>AVAR</code> effect, is used to accomplish this asynchronously in the case of the Node server.</p>
 <pre class="purescript"><code>readBodyAsString
   :: forall e req res c.
@@ -348,13 +353,17 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
     </a>
   </header>
   <ul>
+  <li><a href="#introduction">Introduction</a><ul>
   <li><a href="#goals">Goals</a></li>
+  </ul></li>
   <li><a href="#design">Design</a><ul>
   <li><a href="#conn">Conn</a></li>
   <li><a href="#middleware">Middleware</a></li>
   <li><a href="#response-state-transitions">Response State Transitions</a></li>
   </ul></li>
+  <li><a href="#basics">Basics</a><ul>
   <li><a href="#request-body-parsing">Request Body Parsing</a></li>
+  </ul></li>
   <li><a href="#type-level-routing">Type-Level Routing</a><ul>
   <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
   <li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
@@ -370,7 +379,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 </nav>
 <footer>
     <p class="version" itemprop="version">
-  Version d0e9a94.
+  Version af84d30.
   </p>
     <p>
   The

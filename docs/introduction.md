@@ -1,4 +1,12 @@
-# Goals
+# Introduction
+
+Welcome to the Hyper documentation! Hyper is an experimental middleware
+architecture for HTTP servers written in PureScript.  It is also a breeding
+ground for higher-level web server constructs, which tends to fall under the
+"framework" category. I hope you find something useful or inspiring in this
+project.
+
+## Goals
 
 Composing middleware in NodeJS is a risky business. They mutate the HTTP request
 and response objects freely, and are often dependent on each others'
