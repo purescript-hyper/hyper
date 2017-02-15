@@ -1,7 +1,7 @@
 module Hyper.Response where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.IxMonad ((:>>=), (:*>))
 import Data.Foldable (traverse_)
 import Data.MediaType (MediaType)
 import Data.Newtype (unwrap)
@@ -56,11 +56,9 @@ headers :: forall t m req res rw b c.
            (Conn req { writer :: rw HeadersOpen | res } c)
            (Conn req { writer :: rw BodyOpen | res } c)
            Unit
-headers hs = do
+headers hs =
   traverse_ writeHeader hs
-  closeHeaders
-  where
-    bind = ibind
+  :*> closeHeaders
 
 contentType :: forall m req res rw b c.
                (Monad m, ResponseWriter rw m b) =>
@@ -86,8 +84,4 @@ respond :: forall m r b req res rw c.
            (Conn req { writer :: rw BodyOpen | res } c)
            (Conn req { writer :: rw ResponseEnded | res } c)
            Unit
-respond r = do
-  body <- toResponse r
-  send body
-  end
-  where bind = ibind
+respond r = (toResponse r :>>= send) :*> end
