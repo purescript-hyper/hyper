@@ -2,9 +2,12 @@
 
 Welcome to the Hyper documentation! Hyper is an experimental middleware
 architecture for HTTP servers written in PureScript.  It is also a breeding
-ground for higher-level web server constructs, which tends to fall under the
-"framework" category. I hope you find something useful or inspiring in this
-project.
+ground for higher-level web server constructs, which tend to fall under the
+"framework" category. Right now most things live in the main repository of
+Hyper, but they will most likely break free soon.
+
+I hope you find something useful and inspiring in Hyper. If you want to get
+involved, see [Contributing](#contributing) at the end of this document.
 
 ## Goals
 
