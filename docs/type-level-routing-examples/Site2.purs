@@ -33,8 +33,8 @@ type Site2 =
   :<|> "users" :/ Get HTML AllUsers
   :<|> "users" :/ Capture "user-id" Int :> Get HTML User
 
-otherSite :: Proxy Site2
-otherSite = Proxy
+site2 :: Proxy Site2
+site2 = Proxy
 
 home :: forall m. Monad m => ExceptT RoutingError m Home
 home = pure Home
@@ -56,7 +56,7 @@ getUser id' =
 
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
-    case linksTo otherSite of
+    case linksTo site2 of
       _ :<|> allUsers' :<|> _ ->
         p [] [ text "Welcome to my site! Go check out my "
              , linkTo allUsers' [ text "Users" ]
@@ -70,7 +70,7 @@ instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
                    ]
     where
       linkToUser (User u) =
-        case linksTo otherSite of
+        case linksTo site2 of
           _ :<|> _ :<|> getUser' ->
             li [] [ linkTo (getUser' u.id) [ text u.name ] ]
 
@@ -90,7 +90,7 @@ getUsers =
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
 main =
   let otherSiteRouter =
-        router otherSite (home :<|> allUsers :<|> getUser) onRoutingError
+        router site2 (home :<|> allUsers :<|> getUser) onRoutingError
 
       onRoutingError status msg =
         writeStatus status
