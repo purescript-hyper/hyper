@@ -2,8 +2,6 @@ html, body {
   height: 100%;
 }
 body {
-
-  max-width: 700px;
   margin: 0 auto;
   padding: 10px;
 
@@ -11,7 +9,7 @@ body {
   font-size: 16px;
   font-family: 'Source Sans Pro', 'Helvetica', 'Arial', sans-serif;
 
-  color: #111;
+  color: #222;
   -webkit-text-size-adjust: 100%;
   -webkit-font-feature-settings: "kern" 1;
   -moz-font-feature-settings: "kern" 1;
@@ -117,6 +115,75 @@ body > table {
   position: relative;
   width: 100%;
   padding: 2em;
+}
+
+#TOC {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  overflow-y: auto;
+  background: #f7f7f7;
+  border-right: 1px solid #ddd;
+  font-size: 14px;
+  color: #444;
+}
+
+#TOC header {
+  border-bottom: 1px solid #ddd;
+}
+
+#TOC header img {
+  max-width: 150px;
+  margin: 1em auto;
+}
+
+#TOC > ul {
+  list-style-type: none;
+  margin-top: 2em;
+  padding: 0 2em 0 2em;
+}
+
+#TOC > ul li {
+}
+
+#TOC ul a {
+  color: inherit;
+}
+
+#TOC ul a:hover {
+  color: #888;
+}
+
+#TOC > ul > li > a {
+  display: block;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-decoration: none;
+  letter-spacing: .02em;
+  margin-bottom: 1em;
+}
+
+#TOC ul ul {
+  list-style-type: none;
+  padding: 0 1em;
+  margin-bottom: 1em;
+}
+
+#main {
+  margin-left: 280px;
+  padding: 20px;
+  max-width: 700px;
+}
+
+@media screen and (max-width: 700px) {
+  #TOC {
+    display: none;
+  }
+  #main {
+    margin-left: 0;
+  }
 }
 
 a {

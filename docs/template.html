@@ -36,36 +36,44 @@ $for(include-before)$
 $include-before$
 $endfor$
 $if(title)$
+$endif$
+<div id="main">
 <header>
-<h1 class="title" itemprop="name">
-  <a href="$url$" id="logo">
-    <img src="$logo1x$"
-         srcset="$logo2x$ 2x, $logo1x$ 1x"
-         alt="$title$">
-  </a>
-</h1>
-$if(subtitle)$
-<p class="subtitle">$subtitle$</p>
-$endif$
-$for(author)$
-By
-<cite class="author" itemprop="author">$author$</cite>
-$endfor$
-<p>
-<a href="hyper.pdf">Also available as PDF</a>
-</p>
-$if(date)$
-<h3 class="date">$date$</h3>
-$endif$
+  <h1 class="title" itemprop="name">
+    <a href="$url$" id="logo">
+      <img src="$logo1x$"
+          srcset="$logo2x$ 2x, $logo1x$ 1x"
+          alt="$title$">
+    </a>
+  </h1>
+  $if(subtitle)$
+  <p class="subtitle">$subtitle$</p>
+  $endif$
+  $for(author)$
+  By
+  <cite class="author" itemprop="author">$author$</cite>
+  $endfor$
+  <p>
+  <a href="hyper.pdf">Also available as PDF</a>
+  </p>
+  $if(date)$
+  <h3 class="date">$date$</h3>
+  $endif$
 </header>
-$endif$
+$body$
+</div>
 $if(toc)$
-<h2 id="contents">Contents</h2>
 <nav id="$idprefix$TOC">
-$toc$
+  <header>
+    <a href="$url$">
+      <img src="$logo1x$"
+          srcset="$logo2x$ 2x, $logo1x$ 1x"
+          alt="$title$">
+    </a>
+  </header>
+  $toc$
 </nav>
 $endif$
-$body$
 <footer>
   $if(subtitle)$
   <p class="version" itemprop="version">

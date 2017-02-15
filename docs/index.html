@@ -16,44 +16,22 @@
   <link rel="stylesheet" href="docs.css">
 </head>
 <body itemscope itemtype="http://schema.org/TechArticle">
+<div id="main">
 <header>
-<h1 class="title" itemprop="name">
-  <a href="https://owickstrom.github.io/hyper" id="logo">
-    <img src="hyper@1x.png"
-         srcset="hyper@2x.png 2x, hyper@1x.png 1x"
-         alt="Hyper">
-  </a>
-</h1>
-<p class="subtitle">Type-safe, statically checked composition of HTTP servers</p>
-By
-<cite class="author" itemprop="author">Oskar Wickström</cite>
-<p>
-<a href="hyper.pdf">Also available as PDF</a>
-</p>
-</header>
-<h2 id="contents">Contents</h2>
-<nav id="TOC">
-<ul>
-<li><a href="#goals">Goals</a></li>
-<li><a href="#design">Design</a><ul>
-<li><a href="#conn">Conn</a></li>
-<li><a href="#middleware">Middleware</a></li>
-<li><a href="#response-state-transitions">Response State Transitions</a></li>
-</ul></li>
-<li><a href="#request-body-parsing">Request Body Parsing</a></li>
-<li><a href="#type-level-routing">Type-Level Routing</a><ul>
-<li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
-<li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
-<li><a href="#content-negotiation">Content Negotiation</a></li>
-<li><a href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
-</ul></li>
-<li><a href="#servers">Servers</a><ul>
-<li><a href="#nodejs">NodeJS</a></li>
-<li><a href="#testing">Testing</a></li>
-</ul></li>
-<li><a href="#contributing">Contributing</a></li>
-</ul>
-</nav>
+  <h1 class="title" itemprop="name">
+    <a href="https://owickstrom.github.io/hyper" id="logo">
+      <img src="hyper@1x.png"
+          srcset="hyper@2x.png 2x, hyper@1x.png 1x"
+          alt="Hyper">
+    </a>
+  </h1>
+    <p class="subtitle">Type-safe, statically checked composition of HTTP servers</p>
+      By
+  <cite class="author" itemprop="author">Oskar Wickström</cite>
+    <p>
+  <a href="hyper.pdf">Also available as PDF</a>
+  </p>
+  </header>
 <h2 id="goals">Goals</h2>
 <p>Composing middleware in NodeJS is a risky business. They mutate the HTTP request and response objects freely, and are often dependent on each others’ side-effects. There are no guarantees that you have stacked the middleware functions in a sensible order, and it is often the case, in my experience, that misconfigured middleware takes a lot of time and effort to debug.</p>
 <p>The goal of <em>Hyper</em> is to make use of row polymorphism and other tasty type system features in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that common mistakes cannot be made. A few examples could be:</p>
@@ -360,9 +338,39 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 <h2 id="contributing">Contributing</h2>
 <p>While Hyper is currently an experiment, and in constant flux, you are welcome to contribute. Please post ideas and start discussions using <a href="https://github.com/owickstrom/hyper/issues">the issue tracker on GitHub</a>. You can also contact <a href="https://wickstrom.tech/about.html">Oskar Wickström</a> directly for design discussions. If this project grows, we can setup a mailing list, or other some other means of communication.</p>
 <p>Please note that sending pull requests without first discussing the design is probably a waste of time, if not only fixing simple things like typos.</p>
+</div>
+<nav id="TOC">
+  <header>
+    <a href="https://owickstrom.github.io/hyper">
+      <img src="hyper@1x.png"
+          srcset="hyper@2x.png 2x, hyper@1x.png 1x"
+          alt="Hyper">
+    </a>
+  </header>
+  <ul>
+  <li><a href="#goals">Goals</a></li>
+  <li><a href="#design">Design</a><ul>
+  <li><a href="#conn">Conn</a></li>
+  <li><a href="#middleware">Middleware</a></li>
+  <li><a href="#response-state-transitions">Response State Transitions</a></li>
+  </ul></li>
+  <li><a href="#request-body-parsing">Request Body Parsing</a></li>
+  <li><a href="#type-level-routing">Type-Level Routing</a><ul>
+  <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
+  <li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
+  <li><a href="#content-negotiation">Content Negotiation</a></li>
+  <li><a href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
+  </ul></li>
+  <li><a href="#servers">Servers</a><ul>
+  <li><a href="#nodejs">NodeJS</a></li>
+  <li><a href="#testing">Testing</a></li>
+  </ul></li>
+  <li><a href="#contributing">Contributing</a></li>
+  </ul>
+</nav>
 <footer>
     <p class="version" itemprop="version">
-  Version 3bd5348.
+  Version d0e9a94.
   </p>
     <p>
   The
