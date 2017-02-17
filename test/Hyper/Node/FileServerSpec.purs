@@ -10,10 +10,10 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Middleware (evalMiddleware)
 import Hyper.Node.FileServer (fileServer)
 import Hyper.Node.Test (TestResponseBody(TestResponseBody))
-import Hyper.Response (class Response, headers, respond, writeStatus)
+import Hyper.Response (headers, respond, writeStatus)
 import Hyper.Status (statusNotFound, statusOK)
 import Hyper.Test.TestServer (testBody, TestResponse, testStatus, testServer, testHeaders, TestResponseWriter(..))
-import Node.Buffer (Buffer, BUFFER)
+import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS (FS)
 import Test.Spec (it, Spec, describe)
@@ -22,7 +22,7 @@ import Test.Spec.Assertions.String (shouldContain)
 
 serveFilesAndGet
   :: forall m e.
-     (MonadAff (fs :: FS, buffer :: BUFFER | e) m, Response TestResponseBody m Buffer) =>
+     (MonadAff (fs :: FS, buffer :: BUFFER | e) m) =>
      String
   -> m (TestResponse TestResponseBody)
 serveFilesAndGet path =

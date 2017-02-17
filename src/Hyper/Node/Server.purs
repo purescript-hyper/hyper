@@ -18,9 +18,9 @@ import Control.Applicative (pure)
 import Control.Bind (bind)
 import Control.IxMonad (ibind, ipure, (:*>), (:>>=))
 import Control.Monad (class Monad, void, (>>=))
-import Control.Monad.Aff (launchAff, Aff)
+import Control.Monad.Aff (Aff, launchAff, makeAff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
-import Control.Monad.Aff.Class (class MonadAff)
+import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
@@ -40,7 +40,7 @@ import Hyper.Middleware.Class (getConn, modifyConn, putConn)
 import Hyper.Port (Port(..))
 import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
-import Node.Buffer (BUFFER, Buffer)
+import Node.Buffer (Buffer)
 import Node.Encoding (Encoding(..))
 import Node.Stream (Writable)
 
@@ -52,25 +52,28 @@ derive instance newtypeRequestBody :: Newtype RequestBody _
 
 -- A limited version of Writable () e, with which you can only write, not end,
 -- the Stream.
-newtype NodeResponseWriter e
-  = NodeResponseWriter (Writable () e -> Eff e Unit)
+newtype NodeResponseWriter m e
+  = NodeResponseWriter (Writable () e -> m Unit)
 
-writeString :: forall e. Encoding -> String -> NodeResponseWriter e
-writeString enc str = NodeResponseWriter (\w -> void (Stream.writeString w enc str (pure unit)))
+writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponseWriter m e
+writeString enc str = NodeResponseWriter $ \w ->
+  liftAff (makeAff (\fail succeed -> void $ Stream.writeString w enc str (succeed unit)))
 
-write :: forall e. Buffer -> NodeResponseWriter (buffer :: BUFFER | e)
-write buffer = NodeResponseWriter (\w -> void (Stream.write w buffer (pure unit)))
+write :: forall m e. MonadAff e m => Buffer -> NodeResponseWriter m e
+write buffer = NodeResponseWriter $ \w ->
+  liftAff (makeAff (\fail succeed -> void $ Stream.write w buffer (succeed unit)))
 
-instance stringNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter e) m String where
+instance stringNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter m e) m String where
   toResponse = ipure <<< writeString UTF8
 
-instance stringAndEncodingNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter e) m (Tuple String Encoding) where
+instance stringAndEncodingNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter m e) m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
     ipure (writeString encoding body)
 
-instance bufferNodeResponseWriter :: Monad m => Response (NodeResponseWriter e) m Buffer where
+instance bufferNodeResponseWriter :: (MonadAff e m)
+                                  => Response (NodeResponseWriter m e) m Buffer where
   toResponse buf =
-    ipure (NodeResponseWriter (\stream -> void (Stream.write stream buf (pure unit))))
+    ipure (write buf)
 
 readBody :: forall e. RequestBody -> Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e) String
 readBody body = do
@@ -127,12 +130,12 @@ writeHeader' (Tuple name value) r =
   liftEff $ setHeader r name value
 
 writeResponse ∷ ∀ req res c m e.
-                MonadEff (http ∷ HTTP | e) m
+                MonadAff (http ∷ HTTP | e) m
              ⇒ Response
-             → (Writable () (http :: HTTP | e) -> Eff (http :: HTTP | e) Unit)
+             → NodeResponseWriter m (http :: HTTP | e)
              → Middleware m (Conn req res c) (Conn req res c) Unit
-writeResponse r f =
-  void (liftEff (f (responseAsStream r)))
+writeResponse r (NodeResponseWriter f) =
+  lift' (f (responseAsStream r))
 
 endResponse ∷ ∀ req res c m e.
               MonadEff (http ∷ HTTP | e) m
@@ -142,7 +145,7 @@ endResponse r =
   liftEff (Stream.end (responseAsStream r) (pure unit))
 
 instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
-                                    => ResponseWriter HttpResponse m (NodeResponseWriter (http :: HTTP | e)) where
+                                    => ResponseWriter HttpResponse m (NodeResponseWriter m (http :: HTTP | e)) where
   writeStatus status =
     getWriter :>>=
     case _ of
@@ -163,7 +166,7 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
       HttpResponse r →
         modifyConn (_ { response { writer = HttpResponse r }})
 
-  send (NodeResponseWriter f) =
+  send f =
     getWriter :>>=
     case _ of
       HttpResponse r → do

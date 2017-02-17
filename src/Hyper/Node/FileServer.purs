@@ -10,16 +10,16 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
-import Hyper.Response (class Response, respond, headers, class ResponseWriter, writeStatus, ResponseEnded, StatusLineOpen)
+import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
-import Node.Buffer (Buffer, BUFFER)
+import Node.Buffer (BUFFER, Buffer)
 import Node.FS (FS)
 import Node.FS.Aff (readFile, stat, exists)
 import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
 
 serveFile
-  :: forall m e rw b req res c.
+  :: forall m e rw req res c b.
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
      , Response b m Buffer
@@ -38,12 +38,14 @@ serveFile path = do
   headers [ Tuple "Content-Type" "*/*; charset=utf-8"
           , Tuple "Content-Length" (show contentLength)
           ]
-  respond buf
+  response <- toResponse buf
+  send response
+  end
   where bind = ibind
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m e rw b req res c.
+  :: forall m e rw req res c b.
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
      , Response b m Buffer
