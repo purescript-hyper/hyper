@@ -38,8 +38,11 @@ instruct the endpoint how to render.
 ```purescript
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
-    p [] [ text "Welcome to my site!" ]
+    p (text "Welcome to my site!")
 ```
+
+The `HTML` type is a phantom type, only used as a marker type, and the actual
+markup is written in the `MarkupM` DSL from [purescript-smolder][smolder].
 
 We are getting ready to create the server. First, we need a value-level
 representation of the `Site1` type, to be able to pass it to the `router`
@@ -152,25 +155,25 @@ instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
     case linksTo site2 of
       _ :<|> allUsers' :<|> _ ->
-        p [] [ text "Welcome to my site! Go check out my "
-             , linkTo allUsers' [ text "Users" ]
-             , text "."
-             ]
+        p do
+          text "Welcome to my site! Go check out my "
+          linkTo allUsers' (text "Users")
+          text "."
 
 instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
   encodeHTML (AllUsers users) =
-    element_ "div" [ h1 [] [ text "Users" ]
-                   , ul [] (map linkToUser users)
-                   ]
+    div do
+      h1 (text "Users")
+      ul (traverse_ linkToUser users)
     where
       linkToUser (User u) =
         case linksTo site2 of
           _ :<|> _ :<|> getUser' ->
-            li [] [ linkTo (getUser' u.id) [ text u.name ] ]
+            li (linkTo (getUser' u.id) (text u.name))
 
 instance encodeHTMLUser :: EncodeHTML User where
   encodeHTML (User { name }) =
-    h1 [] [ text name ]
+    h1 (text name)
 ```
 
 The pattern match on the value returned by `linksTo` must match the structure
@@ -225,14 +228,14 @@ type we get a compile error.
 By specifying alternative content types for an endpoint, Hyper can choose a
 response and content type based on the request `Accept` header. This is called
 _content negotiation_. Instead of specifying a single type, like `HTML` or
-`Json`, we provide alternatives using `:<|>`. All content types must have
+`JSON`, we provide alternatives using `:<|>`. All content types must have
 `MimeRender` instances for the response body type.
 
 ```purescript
 type Site3 =
   Get HTML Home
-  :<|> "users" :/ Get (HTML :<|> Json) AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> Json) User```
+  :<|> "users" :/ Get (HTML :<|> JSON) AllUsers
+  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User```
 ```
 
 By making requests to this site, using `Accept` headers, we can see how the
@@ -278,6 +281,7 @@ parameters and encoding/decoding, using your routed types, and results in the
 [Aff][aff] monad, which are easily integrated into most frameworks.
 
 [servant]: https://haskell-servant.github.io
+[smolder]: https://github.com/mobil/purescript-smolder
 [proxy]: https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy
 [routing-xhr]: https://github.com/owickstrom/purescript-hyper-routing-xhr
 [pux]: https://www.purescript-pux.org

@@ -1,19 +1,21 @@
 module Site1 where
 
 import Prelude
+import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.IxMonad ((:*>))
 import Data.Maybe (maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.HTML (class EncodeHTML, HTML, p, text)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Port (Port(Port))
 import Hyper.Response (contentType, respond, closeHeaders, writeStatus)
+import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (router)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
+import Text.Smolder.HTML (p)
+import Text.Smolder.Markup (text)
 import Type.Proxy (Proxy(..))
 
 data Home = Home
@@ -25,7 +27,7 @@ home = pure Home
 
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
-    p [] [ text "Welcome to my site!" ]
+    p (text "Welcome to my site!")
 
 mySite :: Proxy Site1
 mySite = Proxy

@@ -108,7 +108,7 @@ spec =
 
       it "matches CaptureAll route" do
         conn <- makeRequest GET "/wiki/foo/bar/baz.txt"
-        testStringBody conn `shouldEqual` "Viewing page: foo/bar/baz.txt"
+        testStringBody conn `shouldEqual` "Viewing page: foo&#x2F;bar&#x2F;baz.txt"
 
       it "matches Raw route" do
         conn <- makeRequest GET "/about"

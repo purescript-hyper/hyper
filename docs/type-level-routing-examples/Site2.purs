@@ -1,26 +1,29 @@
 module Site2 where
 
-import Prelude
+import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
-import Control.IxMonad ((:*>))
 import Data.Array (find)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
+import Data.Traversable (traverse_)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
+import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
 import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (RoutingError(..), router)
 import Hyper.Status (statusNotFound)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
+import Text.Smolder.HTML (div, h1, li, p, ul)
+import Text.Smolder.Markup (text)
 import Type.Proxy (Proxy(..))
+import Prelude hiding (div)
 
 data Home = Home
 
@@ -58,25 +61,25 @@ instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
     case linksTo site2 of
       _ :<|> allUsers' :<|> _ ->
-        p [] [ text "Welcome to my site! Go check out my "
-             , linkTo allUsers' [ text "Users" ]
-             , text "."
-             ]
+        p do
+          text "Welcome to my site! Go check out my "
+          linkTo allUsers' (text "Users")
+          text "."
 
 instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
   encodeHTML (AllUsers users) =
-    element_ "div" [ h1 [] [ text "Users" ]
-                   , ul [] (map linkToUser users)
-                   ]
+    div do
+      h1 (text "Users")
+      ul (traverse_ linkToUser users)
     where
       linkToUser (User u) =
         case linksTo site2 of
           _ :<|> _ :<|> getUser' ->
-            li [] [ linkTo (getUser' u.id) [ text u.name ] ]
+            li (linkTo (getUser' u.id) (text u.name))
 
 instance encodeHTMLUser :: EncodeHTML User where
   encodeHTML (User { name }) =
-    h1 [] [ text name ]
+    h1 (text name)
 
 getUsers :: forall m. Applicative m => m (Array User)
 getUsers =

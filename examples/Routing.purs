@@ -9,21 +9,25 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
-import Data.Argonaut (class EncodeJson, Json, gEncodeJson, jsonEmptyObject, (:=), (~>))
+import Data.Argonaut (class EncodeJson, gEncodeJson, jsonEmptyObject, (:=), (~>))
 import Data.Array (find, (..))
+import Data.Foldable (traverse_)
 import Data.Generic (class Generic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
-import Hyper.HTML (class EncodeHTML, HTML, element_, h1, li, linkTo, p, text, ul)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
+import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
+import Hyper.Routing.ContentType.JSON (JSON)
 import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (RoutingError(..), router)
 import Hyper.Status (statusNotFound)
 import Node.HTTP (HTTP)
+import Text.Smolder.HTML (h1, li, nav, p, section, ul)
+import Text.Smolder.Markup (text)
 import Type.Proxy (Proxy(..))
 
 type PostID = Int
@@ -44,10 +48,10 @@ instance encodeHTMLPost :: EncodeHTML Post where
   encodeHTML (Post { id: postId, title}) =
     case linksTo site of
       allPostsUri :<|> _ ->
-        element_ "section" [ h1 [] [ text title ]
-                           , p [] [ text "Contents..." ]
-                           , element_ "nav" [ linkTo allPostsUri [ text "All Posts" ]]
-                           ]
+        section do
+          h1 (text title)
+          p (text "Contents...")
+          nav (linkTo allPostsUri (text "All Posts"))
 
 newtype PostsView = PostsView (Array Post)
 
@@ -61,13 +65,13 @@ instance encodeHTMLPostsView :: EncodeHTML PostsView where
     case linksTo site of
       _ :<|> getPostUri ->
         let postLink (Post { id: postId, title }) =
-              li [] [linkTo (getPostUri postId) [ text title ]]
-        in element_ "section" [ h1 [] [ text "Posts" ]
-                              , ul [] (map postLink posts)
-                              ]
+              li (linkTo (getPostUri postId) (text title))
+        in section do
+            h1 (text "Posts")
+            ul (traverse_ postLink posts)
 
-type Site = Get (HTML :<|> Json) PostsView
-            :<|> "posts" :/ Capture "id" PostID :> Get (HTML :<|> Json) Post
+type Site = Get (HTML :<|> JSON) PostsView
+            :<|> "posts" :/ Capture "id" PostID :> Get (HTML :<|> JSON) Post
 
 site :: Proxy Site
 site = Proxy

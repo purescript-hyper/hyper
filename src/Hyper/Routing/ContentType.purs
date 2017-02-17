@@ -1,15 +1,9 @@
 module Hyper.Routing.ContentType where
 
 import Prelude
-import Data.Argonaut (Json)
-import Data.Argonaut.Core (stringify)
-import Data.Argonaut.Encode (class EncodeJson, encodeJson)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.MediaType (MediaType)
-import Data.MediaType.Common (applicationJSON, textHTML)
 import Data.Tuple (Tuple(..))
-import Hyper.HTML (class EncodeHTML, HTML, encodeHTML)
-import Hyper.HTML (asString) as HTML
 import Hyper.Routing (type (:<|>))
 import Type.Proxy (Proxy(..))
 
@@ -46,28 +40,3 @@ instance allMimeRenderCons :: ( MimeRender a ct1 b
     where
       p1 = Proxy :: Proxy ct1
       p2 = Proxy :: Proxy ct2
-
-
--- Instances for specific types
-
-
-instance hasMediaTypeJson :: HasMediaType Json where
-  getMediaType _ = applicationJSON
-
-instance mimeRenderJson :: EncodeJson a => MimeRender a Json String where
-  mimeRender _ = stringify <<< encodeJson
-
-instance allMimeRenderJson :: EncodeJson a => AllMimeRender a Json String where
-  allMimeRender p x = pure (Tuple (getMediaType p) (mimeRender p x))
-
-instance hasMediaTypeHTML :: HasMediaType HTML where
-  getMediaType _ = textHTML
-
-instance mimeRenderHTML :: MimeRender HTML HTML String where
-  mimeRender p = HTML.asString
-
-instance mimeRenderHTMLEncodeHTML :: EncodeHTML a => MimeRender a HTML String where
-  mimeRender _ = HTML.asString <<< encodeHTML
-
-instance allMimeRenderHTML :: EncodeHTML a => AllMimeRender a HTML String where
-  allMimeRender p x = pure (Tuple (getMediaType p) (mimeRender p x))

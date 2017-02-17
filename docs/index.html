@@ -166,7 +166,8 @@ type Site1 = Get HTML Home</code></pre>
 <p>Nice! But what comes out on the other end? We need something that renders the <code>Home</code> value as HTML. By providing an instance of <code>EncodeHTML</code> for <code>Home</code>, we instruct the endpoint how to render.</p>
 <pre class="purescript"><code>instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
-    p [] [ text &quot;Welcome to my site!&quot; ]</code></pre>
+    p (text &quot;Welcome to my site!&quot;)</code></pre>
+<p>The <code>HTML</code> type is a phantom type, only used as a marker type, and the actual markup is written in the <code>MarkupM</code> DSL from <a href="https://github.com/mobil/purescript-smolder">purescript-smolder</a>.</p>
 <p>We are getting ready to create the server. First, we need a value-level representation of the <code>Site1</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
 <blockquote>
 <p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
@@ -236,25 +237,25 @@ getUser id&#39; =
   encodeHTML Home =
     case linksTo site2 of
       _ :&lt;|&gt; allUsers&#39; :&lt;|&gt; _ -&gt;
-        p [] [ text &quot;Welcome to my site! Go check out my &quot;
-             , linkTo allUsers&#39; [ text &quot;Users&quot; ]
-             , text &quot;.&quot;
-             ]
+        p do
+          text &quot;Welcome to my site! Go check out my &quot;
+          linkTo allUsers&#39; (text &quot;Users&quot;)
+          text &quot;.&quot;
 
 instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
   encodeHTML (AllUsers users) =
-    element_ &quot;div&quot; [ h1 [] [ text &quot;Users&quot; ]
-                   , ul [] (map linkToUser users)
-                   ]
+    div do
+      h1 (text &quot;Users&quot;)
+      ul (traverse_ linkToUser users)
     where
       linkToUser (User u) =
         case linksTo site2 of
           _ :&lt;|&gt; _ :&lt;|&gt; getUser&#39; -&gt;
-            li [] [ linkTo (getUser&#39; u.id) [ text u.name ] ]
+            li (linkTo (getUser&#39; u.id) (text u.name))
 
 instance encodeHTMLUser :: EncodeHTML User where
   encodeHTML (User { name }) =
-    h1 [] [ text name ]</code></pre>
+    h1 (text name)</code></pre>
 <p>The pattern match on the value returned by <code>linksTo</code> must match the structure of the routing type. We use <code>:&lt;|&gt;</code> to pattern match on links. Each matched link will have a type based on the corresponding endpoint. <code>getUser</code> in the previous code has type <code>Int -&gt; URI</code>, while <code>allUsers</code> has no captures and thus has type <code>URI</code>.</p>
 <p>We are still missing <code>getUsers</code>, our source of User values. In a real application it would probably be a database query, but for this example we simply hard-code some famous users of proper instruments.</p>
 <pre class="purescript"><code>getUsers :: forall m. Applicative m =&gt; m (Array User)
@@ -285,11 +286,11 @@ getUsers =
   in runServer defaultOptions onListening onRequestError {} site2Router</code></pre>
 <p>Notice how the composition of handler functions, using the value-level operator <code>:&lt;|&gt;</code>, matches the structure of our routing type. If we fail to match the type we get a compile error.</p>
 <h3 id="content-negotiation">Content Negotiation</h3>
-<p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>Json</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
+<p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>JSON</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
 <pre class="purescript"><code>type Site3 =
   Get HTML Home
-  :&lt;|&gt; &quot;users&quot; :/ Get (HTML :&lt;|&gt; Json) AllUsers
-  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; Json) User```</code></pre>
+  :&lt;|&gt; &quot;users&quot; :/ Get (HTML :&lt;|&gt; JSON) AllUsers
+  :&lt;|&gt; &quot;users&quot; :/ Capture &quot;user-id&quot; Int :&gt; Get (HTML :&lt;|&gt; JSON) User```</code></pre>
 <p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
 <pre class="bash"><code>$ curl -H &#39;Accept: application/json&#39; http://localhost:3000/users
 [
@@ -380,7 +381,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 </nav>
 <footer>
     <p class="version" itemprop="version">
-  Version 60cbbf6.
+  Version 1f928f8.
   </p>
     <p>
   The

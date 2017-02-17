@@ -9,7 +9,6 @@ import Control.Monad.Eff.Console (log, CONSOLE)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.HTML (asString, p, text)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (runServer, defaultOptions)
 import Hyper.Port (Port(..))
@@ -17,6 +16,9 @@ import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
+import Text.Smolder.HTML (p)
+import Text.Smolder.Markup (text)
+import Text.Smolder.Renderer.String (render)
 
 data User = User String
 
@@ -40,7 +42,7 @@ main =
           writeStatus statusOK
           :*> contentType textHTML
           :*> closeHeaders
-          :*> respond (asString (p [] [text ("You are authenticated as " <> name <> ".")]))
+          :*> respond (render (p (text ("You are authenticated as " <> name <> "."))))
 
     app = do
       BasicAuth.withAuthentication userFromBasicAuth

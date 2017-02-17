@@ -9,6 +9,7 @@ module Examples.AuthenticationAndAuthorization where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
+import Text.Smolder.HTML.Attributes as A
 import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Class (class MonadAff)
@@ -23,7 +24,6 @@ import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Conn (Conn)
-import Hyper.HTML (HTML, a, asString, element_, h1, li, p, text, ul)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptions, runServer)
@@ -32,6 +32,9 @@ import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, Stat
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
+import Text.Smolder.HTML (a, h1, li, p, section, ul)
+import Text.Smolder.Markup (Markup, text, (!))
+import Text.Smolder.Renderer.String (render)
 
 
 -- Helper for responding with HTML.
@@ -39,7 +42,7 @@ htmlWithStatus
   :: forall m req res rw b c.
      (Monad m, ResponseWriter rw m b, Response b m String) =>
      Status
-  -> HTML
+  -> Markup Unit
   -> Middleware
      m
      (Conn req { writer :: rw StatusLineOpen | res } c)
@@ -49,7 +52,7 @@ htmlWithStatus status x =
   writeStatus status
   :*> contentType textHTML
   :*> closeHeaders
-  :*> respond (asString x)
+  :*> respond (render x)
 
 
 -- Users have user names.
@@ -84,11 +87,11 @@ profileHandler =
     view =
       case _ of
         Just (User name) ->
-          element_ "section" [ h1 [] [ text "Profile" ]
-                             , p [] [ text ("Logged in as " <> name <> ".") ]
-                             ]
+          section do
+            h1 (text "Profile")
+            p (text ("Logged in as " <> name <> "."))
         Nothing ->
-          p [] [text "You are not logged in."]
+          p (text "You are not logged in.")
 
 
 -- A handler that requires a user authorized as `Admin`. Note that
@@ -114,9 +117,9 @@ adminHandler =
   (view conn.components.authentication)
   where
     view (User name) =
-      element_ "section" [ h1 [] [ text "Administration" ]
-                         , p [] [ text ("Here be dragons, " <> name <> ".") ]
-                         ]
+      section do
+        h1 (text "Administration")
+        p (text ("Here be dragons, " <> name <> "."))
 
 
 -- This could be a function checking the username/password in a database
@@ -167,13 +170,12 @@ app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
                  statusNotFound
                  (text "Not Found")
 
-
       homeView =
-        element_ "section" [ h1 [] [text "Home"]
-                           , ul [] [ li [] [ a [ Tuple "href" "/profile" ] [ text "Profile" ] ]
-                                   , li [] [ a [ Tuple "href" "/admin" ] [ text "Administration" ] ]
-                                   ]
-                           ]
+        section do
+          h1 (text "Home")
+          ul do
+            li (a ! A.href "/profile" $ text "Profile")
+            li (a ! A.href "/admin" $ text "Administration")
 
       router =
         getConn :>>= \conn →
