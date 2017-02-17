@@ -52,7 +52,7 @@ derive instance newtypeRequestBody :: Newtype RequestBody _
 
 -- A limited version of Writable () e, with which you can only write, not end,
 -- the Stream.
-data NodeResponseWriter e
+newtype NodeResponseWriter e
   = NodeResponseWriter (Writable () e -> Eff e Unit)
 
 writeString :: forall e. Encoding -> String -> NodeResponseWriter e
