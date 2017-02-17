@@ -1,4 +1,4 @@
-module Main where
+module Examples.Routing where
 
 import Prelude
 import Control.IxMonad ((:*>))
@@ -23,7 +23,6 @@ import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (RoutingError(..), router)
 import Hyper.Status (statusNotFound)
-import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Type.Proxy (Proxy(..))
 
@@ -93,7 +92,7 @@ viewPost postId =
                                      , message: Just "Post not found."
                                      })
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
 main =
   runServer defaultOptions onListening onRequestError {} siteRouter
   where

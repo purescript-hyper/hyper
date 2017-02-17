@@ -1,4 +1,4 @@
-module Main where
+module Examples.FileServer where
 
 import Prelude
 import Control.IxMonad ((:*>))
@@ -24,5 +24,5 @@ main =
       writeStatus statusNotFound
       :*> headers []
       :*> respond (Tuple "<h1>Not Found</h1>" UTF8)
-    app = fileServer "examples/file-server" notFound
+    app = fileServer "examples/FileServer" notFound
   in runServer defaultOptions onListening onRequestError {} app

@@ -1,4 +1,4 @@
-module Main where
+module Examples.HelloHyper where
 
 import Prelude
 import Control.IxMonad ((:*>))
@@ -8,10 +8,9 @@ import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusOK)
-import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
-main :: forall e. Eff (console :: CONSOLE, http :: HTTP, buffer :: BUFFER | e) Unit
+main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
 main =
   let
     onListening (Port port) = log ("Listening on http://localhost:" <> show port)
