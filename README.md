@@ -52,8 +52,11 @@ pulp test
 ### Running Examples
 
 ```bash
-npm install # for examples using the node server
-pulp run -I examples/<example-name>
+# for examples using the node server:
+npm install
+pulp run -I examples --main Examples.<example-name>
+# for instance to run HelloHyper:
+pulp run -I examples --main Examples.HelloHyper
 ```
 
 ### Building all Examples

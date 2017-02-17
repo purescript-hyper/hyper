@@ -1,4 +1,4 @@
-module Main where
+module Examples.FormParser where
 
 import Prelude
 import Control.IxMonad ((:>>=), (:*>))
@@ -20,10 +20,9 @@ import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
 import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
-import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
 main =
   let
     -- A view function that renders the name form.

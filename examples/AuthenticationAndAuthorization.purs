@@ -5,7 +5,7 @@
 --
 -- It _does not_ feature type-safe routing, to keep the example
 -- focused on auth.
-module Main where
+module Examples.AuthenticationAndAuthorization where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth

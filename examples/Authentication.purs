@@ -1,4 +1,4 @@
-module Main where
+module Examples.Authentication where
 
 import Prelude
 import Hyper.Node.BasicAuth as BasicAuth
