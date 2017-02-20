@@ -19,6 +19,7 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		--toc \
 		--chapters \
 		--no-highlight \
+		--filter pandoc-include-code \
 		-c docs.css \
 		-o docs/index.html \
 		--base-header-level=2 \
@@ -37,6 +38,7 @@ docs/hyper.pdf: $(MD_SOURCES) $(shell find docs -name '*.tex')
 	pandoc $(SHARED_PANDOC_OPTIONS) \
 	-t latex \
 	--listings \
+	--filter pandoc-include-code \
 	-H docs/purescript-language.tex \
 	-H docs/listings.tex \
 	-V links-as-notes=true \

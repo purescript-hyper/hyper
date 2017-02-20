@@ -18,20 +18,29 @@ import Text.Smolder.HTML (p)
 import Text.Smolder.Markup (text)
 import Type.Proxy (Proxy(..))
 
+-- start snippet routing-type
 data Home = Home
 
 type Site1 = Get HTML Home
+-- end snippet routing-type
 
+-- start snippet handler
 home :: forall m. Applicative m => m Home
 home = pure Home
+-- end snippet handler
 
+-- start snippet encoding
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
     p (text "Welcome to my site!")
+-- end snippet encoding
 
-mySite :: Proxy Site1
-mySite = Proxy
+-- start snippet proxy
+site1 :: Proxy Site1
+site1 = Proxy
+-- end snippet proxy
 
+-- start snippet main
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
 main =
   runServer defaultOptions onListening onRequestError {} siteRouter
@@ -41,11 +50,14 @@ main =
 
     onRequestError err =
       log ("Request failed: " <> show err)
+-- end snippet main
 
+-- start snippet router
     onRoutingError status msg =
       writeStatus status
       :*> contentType textHTML
       :*> closeHeaders
       :*> respond (maybe "" id msg)
 
-    siteRouter = router mySite home onRoutingError
+    siteRouter = router site1 home onRoutingError
+-- end snippet router

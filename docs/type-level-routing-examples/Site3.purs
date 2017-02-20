@@ -43,10 +43,12 @@ data AllUsers = AllUsers (Array User)
 instance encodeJsonAllUsers :: EncodeJson AllUsers where
   encodeJson (AllUsers users) = fromArray (map encodeJson users)
 
+-- start snippet routing-type
 type Site3 =
   Get HTML Home
   :<|> "users" :/ Get (HTML :<|> JSON) AllUsers
   :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
+-- end snippet routing-type
 
 site3 :: Proxy Site3
 site3 = Proxy

@@ -25,6 +25,7 @@ import Text.Smolder.Markup (text)
 import Type.Proxy (Proxy(..))
 import Prelude hiding (div)
 
+-- start snippet resources-and-type
 data Home = Home
 
 data AllUsers = AllUsers (Array User)
@@ -38,7 +39,9 @@ type Site2 =
 
 site2 :: Proxy Site2
 site2 = Proxy
+-- end snippet resources-and-type
 
+-- start snippet handlers
 home :: forall m. Monad m => ExceptT RoutingError m Home
 home = pure Home
 
@@ -56,7 +59,9 @@ getUser id' =
                             })
   where
     userWithId (User u) = u.id == id'
+-- end snippet handlers
 
+-- start snippet encoding
 instance encodeHTMLHome :: EncodeHTML Home where
   encodeHTML Home =
     case linksTo site2 of
@@ -80,7 +85,9 @@ instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
 instance encodeHTMLUser :: EncodeHTML User where
   encodeHTML (User { name }) =
     h1 (text name)
+-- end snippet encoding
 
+-- start snippet get-users
 getUsers :: forall m. Applicative m => m (Array User)
 getUsers =
   pure
@@ -89,7 +96,9 @@ getUsers =
   , User { id: 3, name: "John Patitucci" }
   , User { id: 4, name: "Jaco Pastorious" }
   ]
+-- end snippet get-users
 
+-- start snippet main
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
 main =
   let otherSiteRouter =
@@ -108,3 +117,4 @@ main =
         log ("Request failed: " <> show err)
 
   in runServer defaultOptions onListening onRequestError {} otherSiteRouter
+-- end snippet main

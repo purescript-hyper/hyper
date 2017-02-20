@@ -11,10 +11,8 @@ type-safe URIs to endpoints.
 Let's say we want to render a home page as HTML. We start out by declaring the
 endpoint data type `Home`, and the structure of our site:
 
-```purescript
-data Home = Home
 
-type Site1 = Get HTML Home
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=routing-type}
 ```
 
 `Get HTML Home` is a routing type with only one endpoint, rendering a `Home`
@@ -27,18 +25,14 @@ forall m. Monad m => ExceptT RoutingError m Home
 
 We can construct such a value using `pure` and a `Home` value:
 
-```purescript
-home = pure Home
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=handler}
 ```
 
 Nice! But what comes out on the other end? We need something that renders the
 `Home` value as HTML. By providing an instance of `EncodeHTML` for `Home`, we
 instruct the endpoint how to render.
 
-```purescript
-instance encodeHTMLHome :: EncodeHTML Home where
-  encodeHTML Home =
-    p (text "Welcome to my site!")
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=encoding}
 ```
 
 The `HTML` type is a phantom type, only used as a marker type, and the actual
@@ -56,36 +50,19 @@ follows:
 We create a top-level definition of the type `Proxy Site1` with the value
 constructor `Proxy`.
 
-```purescript
-site1 :: Proxy Site1
-site1 = Proxy
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=proxy}
 ```
 
 We pass the proxy, our handler, and the `onRoutingError` function for cases
 where no route matched the request, to the `router` function.
 
-```purescript
-onRoutingError status msg =
-  writeStatus status
-  :*> contentType textHTML
-  :*> closeHeaders
-  :*> respond (maybe "" id msg)
-
-site1Router = router site1 home onRoutingError
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=router}
 ```
 
 The value returned by `router` is regular middleware, ready to be passed to a
 server.
 
-```purescript
-main =
-  runServer defaultOptions onListening onRequestError {} site1Router
-  where
-    onListening (Port port) =
-      log ("Listening on http://localhost:" <> show port)
-
-    onRequestError err =
-      log ("Request failed: " <> show err)
+```{.purescript include=docs/type-level-routing-examples/Site1.purs snippet=main}
 ```
 
 ## Routing Multiple Endpoints
@@ -94,20 +71,7 @@ Real-world servers often need more than one endpoint. Let's define a router for
 an application that shows a home page with links, a page listing users, and a
 page rendering a specific user.
 
-```purescript
-data Home = Home
-
-data AllUsers = AllUsers (Array User)
-
-newtype User = User { id :: Int, name :: String }
-
-type Site2 =
-  Get HTML Home
-  :<|> "users" :/ Get HTML AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get HTML User
-
-site2 :: Proxy Site2
-site2 = Proxy
+```{.purescript include=docs/type-level-routing-examples/Site2.purs snippet=resources-and-type}
 ```
 
 Let's go through the new constructs used:
@@ -126,54 +90,14 @@ We define handlers for our routes as regular functions on the specified data
 types, returning `ExceptT RoutingError m a` values, where `m` is the monad of
 our middleware, and `a` is the type to render for the endpoint.
 
-```purescript
-home :: forall m. Monad m => ExceptT RoutingError m Home
-home = pure Home
-
-allUsers :: forall m. Monad m => ExceptT RoutingError m AllUsers
-allUsers = AllUsers <$> getUsers
-
-getUser :: forall m. Monad m => Int -> ExceptT RoutingError m User
-getUser id' =
-  find userWithId <$> getUsers >>=
-  case _ of
-    Just user -> pure user
-    Nothing ->
-      throwError (HTTPError { status: statusNotFound
-                            , message: Just "User not found."
-                            })
-  where
-    userWithId (User u) = u.id == id'
+```{.purescript include=docs/type-level-routing-examples/Site2.purs snippet=handlers}
 ```
 
 As in the single-endpoint example, we want to render as HTML. Let's create
 instances for our data types. Notice how we can create links between routes
 in a type-safe manner.
 
-```purescript
-instance encodeHTMLHome :: EncodeHTML Home where
-  encodeHTML Home =
-    case linksTo site2 of
-      _ :<|> allUsers' :<|> _ ->
-        p do
-          text "Welcome to my site! Go check out my "
-          linkTo allUsers' (text "Users")
-          text "."
-
-instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
-  encodeHTML (AllUsers users) =
-    div do
-      h1 (text "Users")
-      ul (traverse_ linkToUser users)
-    where
-      linkToUser (User u) =
-        case linksTo site2 of
-          _ :<|> _ :<|> getUser' ->
-            li (linkTo (getUser' u.id) (text u.name))
-
-instance encodeHTMLUser :: EncodeHTML User where
-  encodeHTML (User { name }) =
-    h1 (text name)
+```{.purescript include=docs/type-level-routing-examples/Site2.purs snippet=encoding}
 ```
 
 The pattern match on the value returned by `linksTo` must match the structure
@@ -186,37 +110,12 @@ We are still missing `getUsers`, our source of User values. In a real
 application it would probably be a database query, but for this example we
 simply hard-code some famous users of proper instruments.
 
-```purescript
-getUsers :: forall m. Applicative m => m (Array User)
-getUsers =
-  pure
-  [ User { id: 1, name: "John Paul Jones" }
-  , User { id: 2, name: "Tal Wilkenfeld" }
-  , User { id: 3, name: "John Patitucci" }
-  , User { id: 4, name: "Jaco Pastorious" }
-  ]
+```{.purescript include=docs/type-level-routing-examples/Site2.purs snippet=get-users}
 ```
 
 Almost done! We just need to create the router, and start a server.
 
-```purescript
-main =
-  let site2Router =
-        router site2 (home :<|> allUsers :<|> getUser) onRoutingError
-
-      onRoutingError status msg =
-        writeStatus status
-        :*> contentType textHTML
-        :*> closeHeaders
-        :*> respond (maybe "" id msg)
-
-      onListening (Port port) =
-        log ("Listening on http://localhost:" <> show port)
-
-      onRequestError err =
-        log ("Request failed: " <> show err)
-
-  in runServer defaultOptions onListening onRequestError {} site2Router
+```{.purescript include=docs/type-level-routing-examples/Site2.purs snippet=main}
 ```
 
 Notice how the composition of handler functions, using the value-level operator
@@ -231,11 +130,7 @@ _content negotiation_. Instead of specifying a single type, like `HTML` or
 `JSON`, we provide alternatives using `:<|>`. All content types must have
 `MimeRender` instances for the response body type.
 
-```purescript
-type Site3 =
-  Get HTML Home
-  :<|> "users" :/ Get (HTML :<|> JSON) AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User```
+```{.purescript include=docs/type-level-routing-examples/Site3.purs snippet=routing-type}
 ```
 
 By making requests to this site, using `Accept` headers, we can see how the
