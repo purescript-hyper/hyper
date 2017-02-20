@@ -176,7 +176,7 @@ parameters and encoding/decoding, using your routed types, and results in the
 [Aff][aff] monad, which are easily integrated into most frameworks.
 
 [servant]: https://haskell-servant.github.io
-[smolder]: https://github.com/mobil/purescript-smolder
+[smolder]: https://github.com/bodil/purescript-smolder
 [proxy]: https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy
 [routing-xhr]: https://github.com/owickstrom/purescript-hyper-routing-xhr
 [pux]: https://www.purescript-pux.org

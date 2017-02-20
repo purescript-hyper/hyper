@@ -171,7 +171,7 @@ home = pure Home
   encodeHTML Home =
     p (text "Welcome to my site!")
 </code></pre>
-<p>The <code>HTML</code> type is a phantom type, only used as a marker type, and the actual markup is written in the <code>MarkupM</code> DSL from <a href="https://github.com/mobil/purescript-smolder">purescript-smolder</a>.</p>
+<p>The <code>HTML</code> type is a phantom type, only used as a marker type, and the actual markup is written in the <code>MarkupM</code> DSL from <a href="https://github.com/bodil/purescript-smolder">purescript-smolder</a>.</p>
 <p>We are getting ready to create the server. First, we need a value-level representation of the <code>Site1</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
 <blockquote>
 <p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
@@ -396,7 +396,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 </nav>
 <footer>
     <p class="version" itemprop="version">
-  Version 6cb1362.
+  Version 2fd7fda.
   </p>
     <p>
   The
