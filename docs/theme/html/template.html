@@ -14,12 +14,21 @@ $if(keywords)$
   <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$">
 $endif$
   <meta name="description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
-<title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
-<link rel="icon" type="image/png" href="theme/favicon.png">
-<link rel="icon" type="image/svg+xml" href="theme/favicon.svg">
-<link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
-<link rel="stylesheet" href="theme/html/github.css">
-<link rel="stylesheet" href="theme/html/docs.css">
+
+  <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
+  <link rel="icon" type="image/png" href="theme/favicon.png">
+  <link rel="icon" type="image/svg+xml" href="theme/favicon.svg">
+  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
+  <link rel="stylesheet" href="theme/html/github.css">
+  <link rel="stylesheet" href="theme/html/docs.css">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:creator" content="owickstrom">
+  <meta name="twitter:title" content="$pagetitle$">
+  <meta name="twitter:url" content="$url$">
+  <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta name="twitter:image:src" content="$url$/$logo2x$">
+
 $if(math)$
   $math$
 $endif$
@@ -30,83 +39,86 @@ $for(header-includes)$
   $header-includes$
 $endfor$
 </head>
+
 <body itemscope itemtype="http://schema.org/TechArticle">
-$for(include-before)$
-$include-before$
-$endfor$
-<div id="main">
-<header>
-  <h1 class="title" itemprop="name">
-    <a href="$url$" id="logo">
-      <img src="$logo1x$"
-          srcset="$logo2x$ 2x, $logo1x$ 1x"
-          alt="$title$">
-    </a>
-  </h1>
-  $if(subtitle)$
-  <p class="subtitle">$subtitle$</p>
-  $endif$
-  $for(author)$
-  By
-  <cite class="author" itemprop="author">$author$</cite>
+
+  $for(include-before)$
+  $include-before$
   $endfor$
-  <p>
-  <a href="hyper.pdf">Also available as PDF</a>
-  </p>
-  $if(date)$
-  <h3 class="date">$date$</h3>
-  $endif$
-</header>
-$body$
-</div>
-$if(toc)$
-<nav id="$idprefix$TOC">
+  <div id="main">
   <header>
-    <a href="$url$">
-      <img src="$logo1x$"
-          srcset="$logo2x$ 2x, $logo1x$ 1x"
-          alt="$title$">
-    </a>
+    <h1 class="title" itemprop="name">
+      <a href="$url$" id="logo">
+        <img src="$logo1x$"
+            srcset="$logo2x$ 2x, $logo1x$ 1x"
+            alt="$title$">
+      </a>
+    </h1>
+    $if(subtitle)$
+    <p class="subtitle">$subtitle$</p>
+    $endif$
+    $for(author)$
+    By
+    <cite class="author" itemprop="author">$author$</cite>
+    $endfor$
+    <p>
+    <a href="hyper.pdf">Also available as PDF</a>
+    </p>
+    $if(date)$
+    <h3 class="date">$date$</h3>
+    $endif$
   </header>
-  $toc$
-</nav>
-$endif$
-<footer>
-  $if(subtitle)$
-  <p class="version" itemprop="version">
-  Version $version$.
-  </p>
+  $body$
+  </div>
+  $if(toc)$
+  <nav id="$idprefix$TOC">
+    <header>
+      <a href="$url$">
+        <img src="$logo1x$"
+            srcset="$logo2x$ 2x, $logo1x$ 1x"
+            alt="$title$">
+      </a>
+    </header>
+    $toc$
+  </nav>
   $endif$
-  <p>
-  The
-  $title$
-  $if(source-code-url)$
-  <a href="$source-code-url$">source code</a>
-  $else$
-  source code
-  $endif$
-  is licensed under <a href="$license-url$">$license$</a>.</p>
-  <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a>.</p>
-  <p>
-  <a href="hyper.pdf">Also available as PDF</a>
-  </p>
-</footer>
-<script src="theme/html/jquery.js"></script>
-<script src="theme/html/highlight.min.js"></script>
-<script src="theme/html/haskell.min.js"></script>
-<script src="theme/html/highlight.js"></script>
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  <footer>
+    $if(subtitle)$
+    <p class="version" itemprop="version">
+    Version $version$.
+    </p>
+    $endif$
+    <p>
+    The
+    $title$
+    $if(source-code-url)$
+    <a href="$source-code-url$">source code</a>
+    $else$
+    source code
+    $endif$
+    is licensed under <a href="$license-url$">$license$</a>.</p>
+    <p>Copyright &copy; 2016 <a href="$author-url$">$author$</a>.</p>
+    <p>
+    <a href="hyper.pdf">Also available as PDF</a>
+    </p>
+  </footer>
+  <script src="theme/html/jquery.js"></script>
+  <script src="theme/html/highlight.min.js"></script>
+  <script src="theme/html/haskell.min.js"></script>
+  <script src="theme/html/highlight.js"></script>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-  ga('create', 'UA-42197774-3', 'auto');
-  ga('send', 'pageview');
+    ga('create', 'UA-42197774-3', 'auto');
+    ga('send', 'pageview');
 
-</script>
-$for(include-after)$
-$include-after$
-$endfor$
+  </script>
+  $for(include-after)$
+  $include-after$
+  $endfor$
 </body>
+
 </html>
