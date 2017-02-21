@@ -11,7 +11,10 @@ MD_SOURCES=docs/src/index.md \
 SHARED_THEME_FILES=$(shell find docs/theme -d 1)
 
 .PHONY: docs
-docs: docs/index.html docs/hyper.pdf
+docs: docs/index.html docs/hyper.pdf docs/sitemap.xml
+
+docs/sitemap.xml: docs/theme/html/sitemap.xml.tmpl docs/index.html docs/hyper.pdf
+	cat docs/theme/html/sitemap.xml.tmpl | sed "s/YYYY-MM-DD/$(shell date '+%Y-%m-%d')/" > docs/sitemap.xml
 
 docs/index.html: $(MD_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/html)
 	pandoc $(SHARED_PANDOC_OPTIONS) \
