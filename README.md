@@ -1,6 +1,6 @@
 <div align="center">
 <h1>
-<img src="docs/hyper@2x.png"
+<img src="docs/theme/hyper@2x.png"
       alt="Hyper"
       width="300">
 </h1>
