@@ -24,10 +24,10 @@ docs/index.html: $(MD_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/htm
 		-o docs/index.html \
 		--base-header-level=2 \
 		-V version:$(VERSION) \
-		-V url:https://owickstrom.github.io/hyper \
+		-V url:http://hyper.wickstrom.tech \
 		-V logo1x:theme/hyper@1x.png \
 		-V logo2x:theme/hyper@2x.png \
-		-V source-code-url:https://github.com/owickstrom/hyper \
+		-V source-code-url:http://github.com/owickstrom/hyper \
 		-V author-url:https://wickstrom.tech \
 		-V 'license:Mozilla Public License 2.0' \
 		-V license-url:https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE \

@@ -21,7 +21,7 @@
 Hyper is an experimental project, trying to improve correctness in web server
 programming, and in HTTP middleware and request handlers specifically. To learn
 more about Hyper, check out the
-[documentation](https://owickstrom.github.io/hyper/), ["Hyper: Elegant Weapons
+[documentation](http://hyper.wickstrom.tech), ["Hyper: Elegant Weapons
 for a More Civilized
 Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html)
 (introductory blog post), or the [examples](examples/).
