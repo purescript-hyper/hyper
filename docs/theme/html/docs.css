@@ -167,7 +167,7 @@ body > table {
   margin-bottom: 1em;
 }
 
-#main {
+#main, footer {
   margin-left: 280px;
   padding: 20px;
   max-width: 700px;
@@ -184,6 +184,7 @@ body > table {
   #TOC {
     display: none;
   }
+  footer,
   #main {
     margin-left: 0;
     padding: 10px;
@@ -256,7 +257,6 @@ h2 {
 }
 
 footer {
-  padding: 1em;
   text-align: center;
   color: #888;
   font-size: 13px;
