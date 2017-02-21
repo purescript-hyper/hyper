@@ -13,7 +13,7 @@ $endif$
 $if(keywords)$
   <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$">
 $endif$
-  <meta name="description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta name="description" content="$description$">
 
   <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
   <link rel="icon" type="image/png" href="theme/favicon.png">
@@ -26,8 +26,20 @@ $endif$
   <meta name="twitter:creator" content="owickstrom">
   <meta name="twitter:title" content="$pagetitle$">
   <meta name="twitter:url" content="$url$">
-  <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta name="twitter:description" content="$description$">
   <meta name="twitter:image:src" content="$url$/$logo2x$">
+
+  <meta property="og:type" content="article" />
+$for(author-meta)$
+  <meta property="og:article:author" content="$author-meta$" />
+$endfor$
+  <meta property="og:article:section" content="Technology" />
+  <meta property="og:article:keyword" content="$keywords$" />
+  <meta property="og:title" content="$pagetitle$" />
+  <meta property="og:description" content="$description$">
+  <meta property="og:type" content="video.movie" />
+  <meta property="og:url" content="$url$" />
+  <meta property="og:image" content="$url$/$logo2x$" />
 
 $if(math)$
   $math$

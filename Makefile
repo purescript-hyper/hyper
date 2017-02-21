@@ -30,6 +30,7 @@ docs/index.html: $(MD_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/htm
 		-V url:http://hyper.wickstrom.tech \
 		-V logo1x:theme/hyper@1x.png \
 		-V logo2x:theme/hyper@2x.png \
+		-V 'description:Hyper is an experimental middleware architecture for HTTP servers written in PureScript.' \
 		-V source-code-url:http://github.com/owickstrom/hyper \
 		-V author-url:https://wickstrom.tech \
 		-V 'license:Mozilla Public License 2.0' \
