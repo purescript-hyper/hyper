@@ -66,6 +66,19 @@ npm install # for examples using the node server
 make examples
 ```
 
+### Building Documentation
+
+Prerequisites:
+
+* [A TeX Distribution](https://www.latex-project.org/get/)
+* [Pandoc 1.19+](http://pandoc.org/)
+* [pandoc-include-code](https://github.com/owickstrom/pandoc-include-code)
+
+Then run:
+
+```bash
+make docs
+```
 
 ## CodeScene Status
 

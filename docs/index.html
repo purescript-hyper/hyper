@@ -307,28 +307,28 @@ main =
   :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
 </code></pre>
 <p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
-<pre class="bash"><code>$ curl -H &#39;Accept: application/json&#39; http://localhost:3000/users
-[
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="ex">curl</span> -H <span class="st">&#39;Accept: application/json&#39;</span> http://localhost:3000/users
+<span class="bu">[</span>
   {
-    &quot;name&quot;: &quot;John Paul Jones&quot;,
-    &quot;id&quot;: &quot;1&quot;
+    <span class="st">&quot;name&quot;</span>: <span class="st">&quot;John Paul Jones&quot;</span>,
+    <span class="st">&quot;id&quot;</span>: <span class="st">&quot;1&quot;</span>
   },
   {
-    &quot;name&quot;: &quot;Tal Wilkenfeld&quot;,
-    &quot;id&quot;: &quot;2&quot;
+    <span class="st">&quot;name&quot;</span>: <span class="st">&quot;Tal Wilkenfeld&quot;</span>,
+    <span class="st">&quot;id&quot;</span>: <span class="st">&quot;2&quot;</span>
   },
   ...
-]</code></pre>
+<span class="bu">]</span></code></pre></div>
 <p>There’s experimental support for <em>wildcards</em> and <em>qualities</em> as well.</p>
-<pre class="bash"><code>$ curl -H &#39;Accept: text/*;q=1.0&#39; http://localhost:3000/users
-&lt;div&gt;
-  &lt;h1&gt;Users&lt;/h1&gt;
-  &lt;ul&gt;
-    &lt;li&gt;&lt;a href=&quot;/users/1&quot;&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
-    &lt;li&gt;&lt;a href=&quot;/users/2&quot;&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
-    ...
-  &lt;/ul&gt;
-&lt;/div&gt;</code></pre>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="ex">curl</span> -H <span class="st">&#39;Accept: text/*;q=1.0&#39;</span> http://localhost:3000/users
+<span class="op">&lt;</span><span class="ex">div</span><span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="ex">h1</span><span class="op">&gt;</span>Users<span class="op">&lt;</span>/h1<span class="op">&gt;</span>
+  <span class="op">&lt;</span><span class="ex">ul</span><span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="ex">li</span><span class="op">&gt;&lt;</span>a href=<span class="st">&quot;/users/1&quot;</span><span class="op">&gt;</span>John Paul Jones<span class="op">&lt;</span>/a<span class="op">&gt;&lt;</span>/li<span class="op">&gt;</span>
+    <span class="op">&lt;</span><span class="ex">li</span><span class="op">&gt;&lt;</span>a href=<span class="st">&quot;/users/2&quot;</span><span class="op">&gt;</span>Tal Wilkenfeld<span class="op">&lt;</span>/a<span class="op">&gt;&lt;</span>/li<span class="op">&gt;</span>
+    <span class="ex">...</span>
+  <span class="op">&lt;</span>/<span class="ex">ul</span><span class="op">&gt;</span>
+<span class="op">&lt;</span>/<span class="ex">div</span><span class="op">&gt;</span></code></pre></div>
 <h3 id="automatically-derived-xhr-clients">Automatically Derived XHR Clients</h3>
 <p>As we represent routing as types, we can derive XHR clients from those types. In a client-side application, for example one written using <a href="https://www.purescript-pux.org">Pux</a> or <a href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can use the <a href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a> library to derive such client functions. You get functions with type-safe parameters and encoding/decoding, using your routed types, and results in the <a href="https://github.com/slamdata/purescript-aff">Aff</a> monad, which are easily integrated into most frameworks.</p>
 <h2 id="servers">Servers</h2>
@@ -396,7 +396,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
 </nav>
 <footer>
     <p class="version" itemprop="version">
-  Version 2fd7fda.
+  Version 2fffa62.
   </p>
     <p>
   The

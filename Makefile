@@ -17,8 +17,7 @@ docs/index.html: $(MD_SOURCES) docs/template.html docs/docs.css docs/highlight.j
 		--standalone \
 		-S \
 		--toc \
-		--chapters \
-		--no-highlight \
+		--top-level-division=chapter \
 		--filter pandoc-include-code \
 		-c docs.css \
 		-o docs/index.html \
