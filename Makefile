@@ -5,7 +5,8 @@ MD_SOURCES=docs/src/index.md \
 					 docs/src/design.md \
 					 docs/src/basics.md \
 					 docs/src/type-level-routing.md \
-					 docs/src/servers.md \
+					 docs/src/nodejs.md \
+					 docs/src/testing.md \
 					 docs/src/contributing.md
 
 SHARED_THEME_FILES=$(shell find docs/theme -d 1)

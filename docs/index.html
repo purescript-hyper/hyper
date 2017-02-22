@@ -130,6 +130,8 @@
   toResponse :: forall i. r -&gt; Middleware m i i b</code></pre>
 <p>This mechanism allows servers to provide specific types for the response body, along with instances for common response types. When using the Node server, which has a response body type wrapping <code>Buffer</code>, you can still respond with a <code>String</code> or <code>HTML</code> value directly.</p>
 <p>Aside from convenience in having a single function for most response types and servers, the polymorphism of <code>respond</code> lets middleware be decoupled from specific servers. It only requires an instance matching the response type used by the middleware and the type required by the server.</p>
+<h3 id="servers">Servers</h3>
+<p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server. Currently Hyper bundles a <a href="#nodejs">NodeJS server</a>, as well as a <a href="#testing">test server</a>.</p>
 <h2 id="basics">Basics</h2>
 <p>This chapter walks you through some of the basic, and more lower-level, features of Hyper. We look at how we can use the Conn and Middleware types to gain type safety “in the small”, and how to implement common things needed in web servers.</p>
 <p><em>This chapter is very much work in progress!</em></p>
@@ -343,18 +345,41 @@ main =
 &lt;/div&gt;</code></pre>
 <h3 id="automatically-derived-xhr-clients">Automatically Derived XHR Clients</h3>
 <p>As we represent routing as types, we can derive XHR clients from those types. In a client-side application, for example one written using <a href="https://www.purescript-pux.org">Pux</a> or <a href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can use the <a href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a> library to derive such client functions. You get functions with type-safe parameters and encoding/decoding, using your routed types, and results in the <a href="https://github.com/slamdata/purescript-aff">Aff</a> monad, which are easily integrated into most frameworks.</p>
-<h2 id="servers">Servers</h2>
-<p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server.</p>
-<h3 id="nodejs">NodeJS</h3>
+<h2 id="nodejs">NodeJS</h2>
 <p>The server in <code>Hyper.Node.Server</code> wraps the <code>http</code> module in NodeJS, and serves middleware using the <code>Aff</code> monad. Here is how you can start a Node server:</p>
 <pre class="purescript"><code>let
   app =
     writeStatus (Tuple 200 &quot;OK&quot;)
     :*&gt; closeHeaders
     :*&gt; respond &quot;Hello there!&quot;
-in runServer defaultOptionsWithLogging {} app</code></pre>
-<p>As seen above, <code>runServer</code> takes a record of options, two callbacks, an initial <em>components</em> record, and your application middleware.</p>
-<h3 id="testing">Testing</h3>
+in runServer defaultOptions {} app</code></pre>
+<p>As seen above, <code>runServer</code> takes a record of options, an initial <em>components</em> record, and your application middleware. If you want to do logging on server startup, and on any request handling errors, use <code>defaultOptionsWithLogging</code>.</p>
+<h3 id="monad-transformers">Monad Transformers</h3>
+<p>You might want to use a monad transformer stack in your application, for instance as a way to pass configuration, or to accumulate some state in the chain of middleware. The underlying monad of <code>Middleware</code> is parameterized for this exact purpose. When running the NodeJS server with monad transformers, you need to pass a function in the options record, in the <code>runM</code> field.</p>
+<p>The following code runs a middleware using the <code>ReaderT</code> monad transformer. Note that the <code>runAppM</code> function might need to be defined at the top-level to please the type checker.</p>
+<pre class=purescript><code>type MyConfig = { thingToSay ∷ String }
+
+runAppM
+  ∷ ∀ e a.
+    ReaderT MyConfig (Aff e) a
+  → Aff e a
+runAppM = flip runReaderT { thingToSay: "Hello, ReaderT!" }
+
+main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
+main =
+  let app = do
+        config ← lift' ask
+        writeStatus statusOK
+        closeHeaders
+        respond config.thingToSay
+        where bind = ibind
+
+      options = defaultOptionsWithLogging { runM = runAppM }
+
+  in runServer options {} app
+</code></pre>
+<p>In a real-world application the configuration type <code>MyConfig</code> could hold a database connection pool, or settings read from the environment, for example.</p>
+<h2 id="testing">Testing</h2>
 <p>When running tests you might not want to start a full HTTP server and send requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
 <pre class="purescript"><code>it &quot;responds with a friendly message&quot; do
   conn &lt;- { request: {}
@@ -385,6 +410,7 @@ in runServer defaultOptionsWithLogging {} app</code></pre>
     <li><a href="#conn">Conn</a></li>
     <li><a href="#middleware">Middleware</a></li>
     <li><a href="#response-state-transitions">Response State Transitions</a></li>
+    <li><a href="#servers">Servers</a></li>
     </ul></li>
     <li><a href="#basics">Basics</a><ul>
     <li><a href="#request-body-parsing">Request Body Parsing</a></li>
@@ -395,16 +421,16 @@ in runServer defaultOptionsWithLogging {} app</code></pre>
     <li><a href="#content-negotiation">Content Negotiation</a></li>
     <li><a href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
     </ul></li>
-    <li><a href="#servers">Servers</a><ul>
-    <li><a href="#nodejs">NodeJS</a></li>
-    <li><a href="#testing">Testing</a></li>
+    <li><a href="#nodejs">NodeJS</a><ul>
+    <li><a href="#monad-transformers">Monad Transformers</a></li>
     </ul></li>
+    <li><a href="#testing">Testing</a></li>
     <li><a href="#contributing">Contributing</a></li>
     </ul>
   </nav>
     <footer>
         <p class="version" itemprop="version">
-    Version 07ac6b3.
+    Version c339e8e.
     </p>
         <p>
     The
