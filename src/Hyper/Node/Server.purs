@@ -6,15 +6,15 @@ module Hyper.Node.Server
        , write
        , readBodyAsString
        , defaultOptions
+       , defaultOptionsWithLogging
        , runServer
        )where
 
 import Prelude
-import Node.HTTP (HTTP)
-import Node.HTTP as HTTP
 import Data.HTTP.Method as Method
 import Data.Int as Int
 import Data.StrMap as StrMap
+import Node.HTTP as HTTP
 import Node.Stream as Stream
 import Control.IxMonad (ibind, ipure, (:*>), (:>>=))
 import Control.Monad.Aff (Aff, launchAff, makeAff)
@@ -22,6 +22,7 @@ import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeV
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
 import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method)
@@ -37,6 +38,7 @@ import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, Stat
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
 import Node.Encoding (Encoding(..))
+import Node.HTTP (HTTP)
 import Node.Stream (Writable)
 
 
@@ -175,6 +177,7 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
         endResponse r
         :*> modifyConn (_ { response { writer = HttpResponse r }})
 
+
 type ServerOptions m e =
   { hostname ∷ String
   , port ∷ Port
@@ -185,12 +188,25 @@ type ServerOptions m e =
 
 
 defaultOptions ∷ ∀ e. ServerOptions (Aff (http ∷ HTTP | e)) e
-defaultOptions = { hostname: "0.0.0.0"
-                 , port: Port 3000
-                 , onListening: const (pure unit)
-                 , onRequestError: const (pure unit)
-                 , runM: id
+defaultOptions =
+  { hostname: "0.0.0.0"
+  , port: Port 3000
+  , onListening: const (pure unit)
+  , onRequestError: const (pure unit)
+  , runM: id
+  }
+
+
+defaultOptionsWithLogging ∷ ∀ e. ServerOptions (Aff (console ∷ CONSOLE, http ∷ HTTP | e)) (console ∷ CONSOLE | e)
+defaultOptionsWithLogging =
+  defaultOptions { onListening = onListening
+                 , onRequestError = onRequestError
                  }
+  where
+    onListening (Port port) =
+      log ("Listening on http://localhost:" <> show port)
+    onRequestError err =
+      log ("Request failed: " <> show err)
 
 
 runServer
