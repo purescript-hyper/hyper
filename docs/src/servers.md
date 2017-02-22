@@ -14,15 +14,11 @@ middleware using the `Aff` monad. Here is how you can start a Node server:
 
 ``` purescript
 let
-  onListening (Port port) =
-    log ("Listening on http://localhost:" <> show port)
-  onRequestError err =
-    log ("Request failed: " <> show err)
   app =
     writeStatus (Tuple 200 "OK")
     :*> closeHeaders
     :*> respond "Hello there!"
-in runServer defaultOptions onListening onRequestError {} app
+in runServer defaultOptionsWithLogging {} app
 ```
 
 As seen above, `runServer` takes a record of options, two callbacks, an

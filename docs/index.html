@@ -215,13 +215,8 @@ site1 = Proxy
 <p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
 <pre class=purescript><code>main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
 main =
-  runServer defaultOptions onListening onRequestError {} siteRouter
+  runServer defaultOptions {} siteRouter
   where
-    onListening (Port port) =
-      log ("Listening on http://localhost:" <> show port)
-
-    onRequestError err =
-      log ("Request failed: " <> show err)
 </code></pre>
 <h3 id="routing-multiple-endpoints">Routing Multiple Endpoints</h3>
 <p>Real-world servers often need more than one endpoint. Let’s define a router for an application that shows a home page with links, a page listing users, and a page rendering a specific user.</p>
@@ -313,13 +308,7 @@ main =
         :*> closeHeaders
         :*> respond (maybe "" id msg)
 
-      onListening (Port port) =
-        log ("Listening on http://localhost:" <> show port)
-
-      onRequestError err =
-        log ("Request failed: " <> show err)
-
-  in runServer defaultOptions onListening onRequestError {} otherSiteRouter
+  in runServer defaultOptions {} otherSiteRouter
 </code></pre>
 <p>Notice how the composition of handler functions, using the value-level operator <code>:&lt;|&gt;</code>, matches the structure of our routing type. If we fail to match the type we get a compile error.</p>
 <h3 id="content-negotiation">Content Negotiation</h3>
@@ -359,15 +348,11 @@ main =
 <h3 id="nodejs">NodeJS</h3>
 <p>The server in <code>Hyper.Node.Server</code> wraps the <code>http</code> module in NodeJS, and serves middleware using the <code>Aff</code> monad. Here is how you can start a Node server:</p>
 <pre class="purescript"><code>let
-  onListening (Port port) =
-    log (&quot;Listening on http://localhost:&quot; &lt;&gt; show port)
-  onRequestError err =
-    log (&quot;Request failed: &quot; &lt;&gt; show err)
   app =
     writeStatus (Tuple 200 &quot;OK&quot;)
     :*&gt; closeHeaders
     :*&gt; respond &quot;Hello there!&quot;
-in runServer defaultOptions onListening onRequestError {} app</code></pre>
+in runServer defaultOptionsWithLogging {} app</code></pre>
 <p>As seen above, <code>runServer</code> takes a record of options, two callbacks, an initial <em>components</em> record, and your application middleware.</p>
 <h3 id="testing">Testing</h3>
 <p>When running tests you might not want to start a full HTTP server and send requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
@@ -419,7 +404,7 @@ in runServer defaultOptions onListening onRequestError {} app</code></pre>
   </nav>
     <footer>
         <p class="version" itemprop="version">
-    Version 112fbbd.
+    Version 07ac6b3.
     </p>
         <p>
     The
