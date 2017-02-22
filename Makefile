@@ -24,6 +24,7 @@ docs/index.html: $(MD_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/htm
 		--toc \
 		--top-level-division=chapter \
 		--filter pandoc-include-code \
+		--no-highlight \
 		-o docs/index.html \
 		--base-header-level=2 \
 		-V version:$(VERSION) \
