@@ -14,7 +14,7 @@ import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (log, CONSOLE)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.Either (Either(..))
 import Data.HTTP.Method (CustomMethod, Method(..))
@@ -27,7 +27,6 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Port (Port(..))
 import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
@@ -196,9 +195,7 @@ app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
     components = { authentication: unit
                  , authorization: unit
                  }
-  in runServer defaultOptions onListening onRequestError components app
+  in runServer defaultOptions components app

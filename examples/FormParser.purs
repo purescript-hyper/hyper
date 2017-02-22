@@ -17,7 +17,6 @@ import Data.Tuple (lookup)
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
-import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
 import Node.HTTP (HTTP)
@@ -89,10 +88,5 @@ main =
     -- handler.
     app = readBodyAsString :*> router
 
-    -- Some nice console printing when the server starts, and if a request
-    -- fails (in this case when the request body is unreadable for some reason).
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
-
   -- Let's run it.
-  in runServer defaultOptions onListening onRequestError {} app
+  in runServer defaultOptions {} app

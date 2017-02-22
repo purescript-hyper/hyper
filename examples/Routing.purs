@@ -5,7 +5,7 @@ import Control.IxMonad ((:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (log, CONSOLE)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
@@ -16,7 +16,6 @@ import Data.Generic (class Generic)
 import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
@@ -98,10 +97,8 @@ viewPost postId =
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
 main =
-  runServer defaultOptions onListening onRequestError {} siteRouter
+  runServer defaultOptions {} siteRouter
   where
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
     siteRouter = router site (postsView :<|> viewPost) onRoutingError
     onRoutingError status msg = do
       writeStatus status

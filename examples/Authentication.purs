@@ -5,13 +5,12 @@ import Hyper.Node.BasicAuth as BasicAuth
 import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (log, CONSOLE)
+import Control.Monad.Eff.Console (CONSOLE)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (runServer, defaultOptions)
-import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (BUFFER)
@@ -32,9 +31,6 @@ userFromBasicAuth =
 main :: forall e. Eff (console :: CONSOLE, http ∷ HTTP, buffer :: BUFFER | e) Unit
 main =
   let
-    onListening (Port port) = log ("Listening on http://localhost:" <> show port)
-    onRequestError err = log ("Request failed: " <> show err)
-
     myProfilePage =
       getConn :>>= \conn ->
       case conn.components.authentication of
@@ -48,4 +44,4 @@ main =
       BasicAuth.withAuthentication userFromBasicAuth
       :*> BasicAuth.authenticated "Authentication Example" myProfilePage
     components = { authentication: unit }
-  in runServer defaultOptions onListening onRequestError components app
+  in runServer defaultOptions components app

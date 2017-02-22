@@ -2,7 +2,7 @@ module Site2 where
 
 import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (log, CONSOLE)
+import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT)
 import Data.Array (find)
@@ -10,7 +10,6 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
 import Data.Traversable (traverse_)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Port (Port(..))
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
@@ -110,11 +109,5 @@ main =
         :*> closeHeaders
         :*> respond (maybe "" id msg)
 
-      onListening (Port port) =
-        log ("Listening on http://localhost:" <> show port)
-
-      onRequestError err =
-        log ("Request failed: " <> show err)
-
-  in runServer defaultOptions onListening onRequestError {} otherSiteRouter
+  in runServer defaultOptions {} otherSiteRouter
 -- end snippet main

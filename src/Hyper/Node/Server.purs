@@ -9,15 +9,14 @@ module Hyper.Node.Server
        , runServer
        )where
 
-import Node.HTTP
+import Prelude
+import Node.HTTP (HTTP)
+import Node.HTTP as HTTP
 import Data.HTTP.Method as Method
 import Data.Int as Int
 import Data.StrMap as StrMap
 import Node.Stream as Stream
-import Control.Applicative (pure)
-import Control.Bind (bind)
 import Control.IxMonad (ibind, ipure, (:*>), (:>>=))
-import Control.Monad (class Monad, void, (>>=))
 import Control.Monad.Aff (Aff, launchAff, makeAff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
@@ -25,15 +24,11 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
 import Data.Either (Either)
-import Data.Function (($), (<<<))
-import Data.Functor ((<$>))
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
-import Data.Semigroup ((<>))
 import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
-import Data.Unit (Unit, unit)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn, putConn)
@@ -45,7 +40,7 @@ import Node.Encoding (Encoding(..))
 import Node.Stream (Writable)
 
 
-newtype RequestBody = RequestBody Request
+newtype RequestBody = RequestBody HTTP.Request
 
 derive instance newtypeRequestBody :: Newtype RequestBody _
 
@@ -77,7 +72,7 @@ instance bufferNodeResponseWriter :: (MonadAff e m)
 
 readBody :: forall e. RequestBody -> Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e) String
 readBody body = do
-  let stream = requestAsStream (unwrap body)
+  let stream = HTTP.requestAsStream (unwrap body)
   completeBody <- makeVar
   chunks <- makeVar' ""
   liftEff do
@@ -101,7 +96,7 @@ readBodyAsString = do
   putConn (conn { request { body = s } })
   where bind = ibind
 
-data HttpResponse state = HttpResponse Response
+data HttpResponse state = HttpResponse HTTP.Response
 
 getWriter ∷ ∀ req res c m rw.
             Monad m ⇒
@@ -115,34 +110,34 @@ getWriter = _.response.writer <$> getConn
 setStatus ∷ ∀ req res c m e.
             MonadEff (http ∷ HTTP | e) m
           ⇒ Status
-          → Response
+          → HTTP.Response
           → Middleware m (Conn req res c) (Conn req res c) Unit
 setStatus (Status { code, reasonPhrase }) r = liftEff do
-  setStatusCode r code
-  setStatusMessage r reasonPhrase
+  HTTP.setStatusCode r code
+  HTTP.setStatusMessage r reasonPhrase
 
 writeHeader' ∷ ∀ req res c m e.
                MonadEff (http ∷ HTTP | e) m
              ⇒ (Tuple String String)
-             → Response
+             → HTTP.Response
              → Middleware m (Conn req res c) (Conn req res c) Unit
 writeHeader' (Tuple name value) r =
-  liftEff $ setHeader r name value
+  liftEff $ HTTP.setHeader r name value
 
 writeResponse ∷ ∀ req res c m e.
                 MonadAff (http ∷ HTTP | e) m
-             ⇒ Response
+             ⇒ HTTP.Response
              → NodeResponseWriter m (http :: HTTP | e)
              → Middleware m (Conn req res c) (Conn req res c) Unit
 writeResponse r (NodeResponseWriter f) =
-  lift' (f (responseAsStream r))
+  lift' (f (HTTP.responseAsStream r))
 
 endResponse ∷ ∀ req res c m e.
               MonadEff (http ∷ HTTP | e) m
-            ⇒ Response
+            ⇒ HTTP.Response
             → Middleware m (Conn req res c) (Conn req res c) Unit
 endResponse r =
-  liftEff (Stream.end (responseAsStream r) (pure unit))
+  liftEff (Stream.end (HTTP.responseAsStream r) (pure unit))
 
 instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
                                     => ResponseWriter HttpResponse m (NodeResponseWriter m (http :: HTTP | e)) where
@@ -180,54 +175,61 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
         endResponse r
         :*> modifyConn (_ { response { writer = HttpResponse r }})
 
-type ServerOptions = { hostname ∷ String
-                     , port ∷ Port
-                     }
+type ServerOptions m e =
+  { hostname ∷ String
+  , port ∷ Port
+  , onListening ∷ Port → Eff (http ∷ HTTP | e) Unit
+  , onRequestError ∷ Error → Eff (http ∷ HTTP | e) Unit
+  , runM ∷ ∀ a. m a → Aff (http ∷ HTTP | e) a
+  }
 
 
-defaultOptions ∷ ServerOptions
+defaultOptions ∷ ∀ e. ServerOptions (Aff (http ∷ HTTP | e)) e
 defaultOptions = { hostname: "0.0.0.0"
                  , port: Port 3000
+                 , onListening: const (pure unit)
+                 , onRequestError: const (pure unit)
+                 , runM: id
                  }
 
 
-runServer :: forall e req res c c'.
-             ServerOptions
-             -> (Port -> Eff (http ∷ HTTP | e) Unit)
-             -> (Error -> Eff (http ∷ HTTP | e) Unit)
-             -> c
-             -> Middleware
-                (Aff (http :: HTTP | e))
-                (Conn { url :: String
-                      , body :: RequestBody
-                      , contentLength :: Maybe Int
-                      , headers :: StrMap String
-                      , method :: Either Method CustomMethod
-                      }
-                      { writer :: HttpResponse StatusLineOpen }
-                      c)
-                (Conn req { writer :: HttpResponse ResponseEnded | res } c')
-                Unit
-             -> Eff (http :: HTTP | e) Unit
-runServer options onListening onRequestError components middleware = do
-  server <- createServer onRequest
+runServer
+  :: forall m e req res c c'.
+     Functor m ⇒
+     ServerOptions m e
+  -> c
+  -> Middleware
+     m
+     (Conn { url :: String
+           , body :: RequestBody
+           , contentLength :: Maybe Int
+           , headers :: StrMap String
+           , method :: Either Method CustomMethod
+           }
+           { writer :: HttpResponse StatusLineOpen }
+           c)
+     (Conn req { writer :: HttpResponse ResponseEnded | res } c')
+     Unit
+  -> Eff (http :: HTTP | e) Unit
+runServer options components middleware = do
+  server <- HTTP.createServer onRequest
   let listenOptions = { port: unwrap options.port
                       , hostname: "0.0.0.0"
                       , backlog: Nothing
                       }
-  listen server listenOptions (onListening options.port)
+  HTTP.listen server listenOptions (options.onListening options.port)
   where
     parseContentLength headers = StrMap.lookup "content-length" headers
-    onRequest ∷ Request → Response → Eff (http :: HTTP | e) Unit
+    onRequest ∷ HTTP.Request → HTTP.Response → Eff (http :: HTTP | e) Unit
     onRequest request response =
-      let headers = requestHeaders request
-          conn = { request: { url: requestURL request
+      let headers = HTTP.requestHeaders request
+          conn = { request: { url: HTTP.requestURL request
                             , body: RequestBody request
                             , headers: headers
-                            , method: Method.fromString (requestMethod request)
+                            , method: Method.fromString (HTTP.requestMethod request)
                             , contentLength: parseContentLength headers >>= Int.fromString
                             }
                  , response: { writer: HttpResponse response }
                  , components: components
                  }
-      in catchException onRequestError (void (launchAff (evalMiddleware middleware conn)))
+      in catchException options.onRequestError (void (launchAff (options.runM (evalMiddleware middleware conn))))

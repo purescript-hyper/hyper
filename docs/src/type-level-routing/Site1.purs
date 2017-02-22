@@ -3,11 +3,10 @@ module Site1 where
 import Prelude
 import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Console (CONSOLE)
 import Data.Maybe (maybe)
 import Data.MediaType.Common (textHTML)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Port (Port(Port))
 import Hyper.Response (contentType, respond, closeHeaders, writeStatus)
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML)
 import Hyper.Routing.Method (Get)
@@ -43,13 +42,8 @@ site1 = Proxy
 -- start snippet main
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
 main =
-  runServer defaultOptions onListening onRequestError {} siteRouter
+  runServer defaultOptions {} siteRouter
   where
-    onListening (Port port) =
-      log ("Listening on http://localhost:" <> show port)
-
-    onRequestError err =
-      log ("Request failed: " <> show err)
 -- end snippet main
 
 -- start snippet router
