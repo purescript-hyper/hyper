@@ -16,7 +16,7 @@ import Data.String (length)
 import Data.Tuple (lookup)
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware.Class (getConn)
-import Hyper.Node.Server (readBodyAsString, defaultOptions, runServer)
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
 import Node.HTTP (HTTP)
@@ -48,7 +48,6 @@ main =
       :*> contentType textHTML
       :*> closeHeaders
       :*> respond (render x)
-
 
     handlePost =
       parseForm :>>=
@@ -84,9 +83,5 @@ main =
           statusMethodNotAllowed
           (text ("Method not supported: " <> show method))
 
-    -- A chain of middleware for parsing the form, and then our response
-    -- handler.
-    app = readBodyAsString :*> router
-
   -- Let's run it.
-  in runServer defaultOptions {} app
+  in runServer defaultOptionsWithLogging {} router

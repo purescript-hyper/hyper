@@ -8,7 +8,7 @@ module Hyper.Routing.Router
 import Prelude
 import Data.HTTP.Method as Method
 import Data.StrMap as StrMap
-import Control.IxMonad (ibind)
+import Control.IxMonad (ibind, (:*>), (:>>=))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Array (elem, filter, null, uncons)
@@ -26,10 +26,12 @@ import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
 import Hyper.ContentNegotiation (AcceptHeader, acceptAll, negotiateContent, parseAcceptHeader)
+import Hyper.Form (class FromForm, fromForm, parseForm)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
-import Hyper.Response (class Response, contentType, respond, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, end, writeStatus)
-import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
+import Hyper.Request (class RequestBodyReader)
+import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, contentType, end, respond, writeStatus)
+import Hyper.Routing (type (:<|>), type (:>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
 import Hyper.Routing.ContentType (class AllMimeRender, allMimeRender)
 import Hyper.Routing.PathPiece (class FromPathPiece, fromPathPiece)
 import Hyper.Status (Status, statusBadRequest, statusMethodNotAllowed, statusNotAcceptable, statusNotFound, statusOK)
@@ -120,6 +122,7 @@ instance routerCaptureAll :: ( Router e h out
                                         , message: Just err
                                         })
       Right xs -> route (Proxy :: Proxy e) ctx { path = [] } (r xs)
+
 
 routeEndpoint :: forall e r method.
                  (IsSymbol method)

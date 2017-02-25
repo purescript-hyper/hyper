@@ -2,7 +2,7 @@ module Hyper.Test.TestServer where
 
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
-import Control.IxMonad ((:*>))
+import Control.IxMonad ((:*>), (:>>=))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
@@ -16,8 +16,9 @@ import Data.Semigroup (class Semigroup, (<>))
 import Hyper.Conn (Conn)
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
-import Hyper.Middleware.Class (modifyConn)
+import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Response (class Response, class ResponseWriter)
+import Hyper.Request (class RequestBodyReader)
 import Hyper.Status (Status)
 
 data TestResponse b = TestResponse (Maybe Status) (Array Header) (Array b)
@@ -77,6 +78,10 @@ instance responseWriterTestResponseWriter :: ( Monad m
 newtype StringBody = StringBody String
 
 derive instance newtypeStringBody :: Newtype StringBody _
+
+instance requestBodyReaderStringBody :: Monad m
+                                        => RequestBodyReader StringBody m String where
+  readBody = getConn :>>= \c -> pure (unwrap c.request.body)
 
 instance responseStringBody :: Monad m => Response StringBody m String where
   toResponse = pure <<< StringBody

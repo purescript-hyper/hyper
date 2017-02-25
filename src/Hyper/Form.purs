@@ -1,10 +1,14 @@
-module Hyper.Form (
-  Form(..),
-  parseForm
-  ) where
+module Hyper.Form
+       ( Form(..)
+       , parseForm
+       , fromForm
+       , toForm
+       , class FromForm
+       , class ToForm
+       ) where
 
 import Prelude
-import Control.IxMonad (class IxMonad, ipure, (:>>=))
+import Control.IxMonad (ibind, ipure)
 import Control.Monad.Eff.Exception (error, Error)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
@@ -20,7 +24,9 @@ import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
 import Global (decodeURIComponent)
 import Hyper.Conn (Conn)
-import Hyper.Middleware.Class (class IxMonadMiddleware, getConn)
+import Hyper.Middleware (Middleware)
+import Hyper.Middleware.Class (getConn)
+import Hyper.Request (class RequestBodyReader, readBody)
 
 newtype Form = Form (Array (Tuple String String))
 
@@ -50,26 +56,37 @@ splitPairs = split (Pattern "&")
              >>> map toTuple
              >>> sequence
 
-parseForm ∷ forall m req res c.
-            (IxMonadMiddleware m, IxMonad m) =>
+parseForm ∷ forall m req res c r.
+            ( Monad m
+            , RequestBodyReader r m String
+            ) =>
+            Middleware
             m
-            (Conn { body ∷ String
+            (Conn { body :: r
                   , headers :: StrMap String
                   | req
                   } res c)
-            (Conn { body ∷ String
+            (Conn { body ∷ r
                   , headers :: StrMap String
                   | req
                   }
                   res
                   c)
             (Either Error Form)
-parseForm =
-  getConn :>>= \conn ->
+parseForm = do
+  conn <- getConn
+  body <- readBody
   case lookup "content-type" conn.request.headers >>= parseContentMediaType of
     Nothing ->
       ipure (throwError (error "Missing or invalid content-type header."))
     Just mediaType | mediaType == applicationFormURLEncoded ->
-      ipure (Form <$> splitPairs conn.request.body)
+      ipure (Form <$> splitPairs body)
     Just mediaType ->
       ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))
+  where bind = ibind
+
+class ToForm a where
+  toForm ∷ a → Form
+
+class FromForm a where
+  fromForm ∷ Form → Either Error a

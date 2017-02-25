@@ -9,6 +9,7 @@ import Data.StrMap (singleton)
 import Data.Tuple (Tuple(Tuple), fst)
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware (runMiddleware)
+import Hyper.Test.TestServer (StringBody(..))
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.Aff (expectError)
@@ -25,7 +26,7 @@ spec =
     it "can parse the request body as a form" do
       form <-
         runMiddleware parseForm
-                      { request: { body: "foo=bar"
+                      { request: { body: StringBody "foo=bar"
                                  , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
                                  }
                       , response: {}
@@ -38,7 +39,7 @@ spec =
 
     it "fails to parse request body as a form when invalid" $ expectError do
       runMiddleware parseForm
-                    { request: { body: "foo=bar=baz"
+                    { request: { body: StringBody "foo=bar=baz"
                                , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
                                }
                     , response: {}

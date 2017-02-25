@@ -16,7 +16,7 @@ import Data.Newtype (class Newtype)
 import Data.Path.Pathy (dir, file, rootDir, (</>))
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.URI (HierarchicalPart(..), URI(..))
-import Hyper.Routing (type (:>), type (:<|>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
+import Hyper.Routing (type (:<|>), type (:>), Capture, CaptureAll, Handler, Lit, Raw, (:<|>))
 import Hyper.Routing.PathPiece (class ToPathPiece, toPathPiece)
 import Type.Proxy (Proxy(..))
 
@@ -67,7 +67,7 @@ instance hasLinksCaptureAll :: (HasLinks sub subMk, IsSymbol c, ToPathPiece t)
   toLinks _ l =
     toLinks (Proxy :: Proxy sub) <<< append l <<< Link <<< map toPathPiece
 
-instance hasLinksHandler :: HasLinks (Handler m ct b) URI where
+instance hasLinksHandlerGet :: HasLinks (Handler m ct b) URI where
   toLinks _ = linkToURI
 
 instance hasLinksRaw :: HasLinks (Raw m) URI where

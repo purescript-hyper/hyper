@@ -4,7 +4,6 @@ module Hyper.Node.Server
        , NodeResponseWriter
        , writeString
        , write
-       , readBodyAsString
        , defaultOptions
        , defaultOptionsWithLogging
        , runServer
@@ -16,14 +15,15 @@ import Data.Int as Int
 import Data.StrMap as StrMap
 import Node.HTTP as HTTP
 import Node.Stream as Stream
-import Control.IxMonad (ibind, ipure, (:*>), (:>>=))
+import Control.IxMonad (ipure, (:*>), (:>>=))
 import Control.Monad.Aff (Aff, launchAff, makeAff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION, catchException, Error)
+import Control.Monad.Eff.Exception (Error, catchException)
+import Control.Monad.Error.Class (throwError)
 import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Maybe (Maybe(..))
@@ -32,8 +32,9 @@ import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
-import Hyper.Middleware.Class (getConn, modifyConn, putConn)
+import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
+import Hyper.Request (class RequestBodyReader)
 import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
@@ -72,31 +73,30 @@ instance bufferNodeResponseWriter :: (MonadAff e m)
   toResponse buf =
     ipure (write buf)
 
-readBody :: forall e. RequestBody -> Aff (http :: HTTP, err :: EXCEPTION, avar :: AVAR | e) String
+readBody
+  :: forall e.
+     RequestBody
+  -> Aff (http :: HTTP, avar :: AVAR | e) String
 readBody body = do
   let stream = HTTP.requestAsStream (unwrap body)
   completeBody <- makeVar
   chunks <- makeVar' ""
-  liftEff do
-    Stream.onDataString stream UTF8 \chunk -> void do
-      launchAff (modifyVar (_ <> chunk) chunks)
-    Stream.onEnd stream $ void (launchAff (takeVar chunks >>= putVar completeBody))
-  takeVar completeBody
+  e <- liftEff (catchException (pure <<< Just) (fillBody stream chunks completeBody *> pure Nothing))
+  case e of
+    Just err -> throwError err
+    Nothing -> takeVar completeBody
+  where
+    fillBody stream chunks completeBody = do
+      Stream.onDataString stream UTF8 \chunk -> void do
+        launchAff (modifyVar (_ <> chunk) chunks)
+      Stream.onEnd stream $ void (launchAff (takeVar chunks >>= putVar completeBody))
 
-readBodyAsString ∷ ∀ e req res c.
-                   Middleware
-                   (Aff (http ∷ HTTP, err :: EXCEPTION, avar :: AVAR | e))
-                   (Conn { body ∷ RequestBody
-                         , contentLength :: Maybe Int
-                         | req
-                         } res c)
-                   (Conn {body ∷ String, contentLength :: Maybe Int | req} res c)
-                   Unit
-readBodyAsString = do
-  conn ← getConn
-  s <- lift' (readBody conn.request.body)
-  putConn (conn { request { body = s } })
-  where bind = ibind
+instance requestBodyReaderReqestBody :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR | e) m)
+                                     => RequestBodyReader RequestBody m String where
+  readBody =
+    _.request.body <$> getConn :>>=
+    case _ of
+      r -> lift' (liftAff (readBody r))
 
 data HttpResponse state = HttpResponse HTTP.Response
 
@@ -211,7 +211,8 @@ defaultOptionsWithLogging =
 
 runServer
   :: forall m e req res c c'.
-     Functor m ⇒
+  ( Functor m
+  ) ⇒
      ServerOptions m e
   -> c
   -> Middleware
