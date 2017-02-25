@@ -17,6 +17,9 @@ import Text.Smolder.Renderer.String (render)
 
 data HTML
 
+-- TODO: Enforce that URI comes from a GET-able resource,
+-- perhaps by wrapping the URI type and adding some phantom
+-- type parameter for the HTTP method.
 linkTo :: URI -> Markup Unit -> Markup Unit
 linkTo uri = a ! href (printURI uri)
 

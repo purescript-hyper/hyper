@@ -73,3 +73,9 @@ parseForm =
       ipure (Form <$> splitPairs conn.request.body)
     Just mediaType ->
       ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))
+
+class ToForm a where
+  toForm ∷ a → Form
+
+class FromForm a where
+  fromForm ∷ Form → Either String Form
