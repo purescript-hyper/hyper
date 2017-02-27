@@ -4,6 +4,7 @@ module Hyper.Routing
        ( Lit
        , Capture
        , CaptureAll
+       , ReqBody
        , Handler
        , Raw
        , Sub
@@ -29,6 +30,12 @@ data Capture (v :: Symbol) t
 -- | Captures all remaining segments of a path, all as type `t`. The `v`
 -- | is a `Symbol` that describes
 data CaptureAll (v :: Symbol) t
+
+-- | Captures and parses the request body in any of the specified content
+-- | types. The `ct` type parmeter can be a single content type, or an `AltE`
+-- | list of content types to allow. There has to be implementations of
+-- | `FromFormData` for `t` and all specified content types.
+data ReqBody ct t
 
 -- | A type-level description of the handler function, terminating a chain of
 -- | path literals, captures, and other endpoint type constructs. The `m` symbol
