@@ -25,7 +25,7 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
-import Hyper.ContentNegotiation (AcceptHeader, acceptAll, negotiateContent, parseAcceptHeader)
+import Hyper.ContentNegotiation (AcceptHeader, NegotiationResult(..), negotiateContent, parseAcceptHeader)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, contentType, end, respond, writeStatus)
@@ -190,13 +190,18 @@ instance routerHandler :: ( Monad m
                           closeHeaders
                           end
                         Right parsedAccept -> do
-                          case negotiateContent (fromMaybe acceptAll parsedAccept) (allMimeRender (Proxy :: Proxy ct) body) of
-                            Just (Tuple ct rendered) -> do
+                          case negotiateContent parsedAccept (allMimeRender (Proxy :: Proxy ct) body) of
+                            Match (Tuple ct rendered) -> do
                               writeStatus statusOK
                               contentType ct
                               closeHeaders
                               respond rendered
-                            Nothing -> do
+                            Default (Tuple ct rendered) -> do
+                              writeStatus statusOK
+                              contentType ct
+                              closeHeaders
+                              respond rendered
+                            NotAcceptable _ -> do
                               writeStatus statusNotAcceptable
                               contentType textPlain
                               closeHeaders

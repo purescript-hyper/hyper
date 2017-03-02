@@ -12,6 +12,7 @@ module Hyper.ContentNegotiation
        , AcceptHeader(..)
        , acceptAll
        , parseAcceptHeader
+       , NegotiationResult(..)
        , negotiateContent
        ) where
 
@@ -24,7 +25,7 @@ import Control.Monad.Error.Class (throwError)
 import Data.Array (uncons)
 import Data.Either (Either)
 import Data.Generic (class Generic, gShow)
-import Data.List.NonEmpty (NonEmptyList, toList)
+import Data.List.NonEmpty (NonEmptyList, toList, head)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType (MediaType(..))
@@ -121,7 +122,7 @@ sortEntriesByQuality = Array.sortBy comparison
     comparison
       -- TODO: Also compare specificity.
       (AcceptEntry _ (AcceptParams q1 _))
-      (AcceptEntry _ (AcceptParams q2 _)) = compare q1 q2
+      (AcceptEntry _ (AcceptParams q2 _)) = compare q2 q1
 
 matching :: forall r. AcceptEntry -> Tuple MediaType r -> Boolean
 matching (AcceptEntry (MediaRange type' subType) _params) (Tuple (MediaType mt) _) =
@@ -137,17 +138,43 @@ matching (AcceptEntry (MediaRange type' subType) _params) (Tuple (MediaType mt) 
         Literal l -> s == l
         Wildcard -> true
 
+data NegotiationResult r
+  = Match (Tuple MediaType r)
+  | Default (Tuple MediaType r)
+  | NotAcceptable AcceptHeader
+
+instance eqNegotiationResult :: Eq r => Eq (NegotiationResult r) where
+  eq =
+    case _, _ of
+      Match a, Match b ->  a == b
+      Default a, Default b -> a == b
+      NotAcceptable a, NotAcceptable b -> a == b
+      _, _ -> false
+
+instance showNegotiationResult :: Show r => Show (NegotiationResult r) where
+  show =
+    case _ of
+      Match (Tuple mt r) -> "Match (" <> show mt <> " " <> show r <> ")"
+      Default (Tuple mt r) -> "Default (" <> show mt <> " " <> show r <> ")"
+      NotAcceptable ah -> "NotAcceptable (" <> show ah <> ")"
+
 negotiateContent
   :: forall r.
-     AcceptHeader
+     Maybe AcceptHeader
   -> NonEmptyList (Tuple MediaType r)
-  -> Maybe (Tuple MediaType r)
-negotiateContent (AcceptHeader entries) responses =
-  Array.head matches
+  -> NegotiationResult r
+negotiateContent accept responses =
+  case accept of
+    Just a@(AcceptHeader entries) ->
+      matches (sortEntriesByQuality entries)
+      # Array.head
+      # map Match
+      # fromMaybe (NotAcceptable a)
+    Nothing ->
+      Default (head responses)
   where
-    entries' = sortEntriesByQuality entries
     responseList = toList responses
-    matches = do
+    matches entries = do
       entry <- entries
       case List.find (matching entry) responseList of
         Just p -> [p]
