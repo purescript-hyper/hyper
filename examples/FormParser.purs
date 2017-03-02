@@ -7,14 +7,13 @@ import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log, CONSOLE)
-import Control.Monad.Eff.Exception (message, EXCEPTION)
+import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.Either (Either(Right, Left))
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.String (length)
-import Data.Tuple (lookup)
-import Hyper.Form (Form(Form), parseForm)
+import Hyper.Form (parseForm, required)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
@@ -53,20 +52,25 @@ main =
       parseForm :>>=
       case _ of
         Left err -> do
-          liftEff (log (message err))
+          liftEff (log err)
           :*> htmlWithStatus
               statusBadRequest
               (p (text "Bad request, invalid form."))
-        Right (Form values) ->
-          case lookup "firstName" values of
-            Just name | length name > 0 ->
-              htmlWithStatus
-              statusOK
-              (p (text ("Hi " <> name <> "!")))
-            _ ->
+        Right form ->
+          case required "firstName" form of
+            Right name
+              | length name > 0 ->
+                htmlWithStatus
+                statusOK
+                (p (text ("Hi " <> name <> "!")))
+              | otherwise ->
+                htmlWithStatus
+                statusBadRequest
+                (renderNameForm (Just "Name cannot be empty."))
+            Left err ->
               htmlWithStatus
               statusBadRequest
-              (renderNameForm (Just "Name is missing."))
+              (renderNameForm (Just err))
 
     -- Our (rather primitive) router.
     router =
