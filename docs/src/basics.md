@@ -1,75 +1,53 @@
 # Basics
 
-This chapter walks you through some of the basic, and more lower-level,
-features of Hyper. We look at how we can use the Conn and Middleware types to
-gain type safety "in the small", and how to implement common things needed in
-web servers.
+This chapter walks through some of the basic and more lower-level features of
+Hyper. We look at how we can use the Conn and Middleware types to gain type
+safety "in the small", and how to implement common things needed in web servers.
 
-_This chapter is very much work in progress!_
+## Request Body Reading
 
-## Request Body Parsing
-
-The request body is, when using the Node server, initially a
-`RequestBody` in the connection. The user explicitly chooses to read
-and parse the body with a given parser, which returns a new connection
-of a type reflecting the action. The following type signature resides
-in `Hyper.Node.Server`, and shows how a request body can be read into
-a `String`. The `Aff` monad, and the `AVAR` effect, is used to
-accomplish this asynchronously in the case of the Node server.
+The `RequestBodyReader` type class has one operation, `readBody`, which supports
+different servers to provide different types of request body values.
 
 ```purescript
-readBodyAsString
-  :: forall e req res c.
-     Middleware
-     (Aff (http :: HTTP, err  :: EXCEPTION, avar  :: AVAR | e))
-     (Conn { body :: RequestBody
-           , contentLength :: Maybe Int
-           | req
-           } res c)
-     (Conn {body :: String, contentLength :: Maybe Int | req} res c)
-     Unit
+class RequestBodyReader r m b | r -> b where
+  readBody
+    :: forall req res c.
+       Middleware
+       m
+       (Conn { body :: r | req } res c)
+       (Conn { body :: r | req } res c)
+       b
 ```
 
-A simple form parser can use `readBodyAsString` to convert the body a
-more useful format for the application. As an example, the following function
-checks the `Content-Type` header in the request, splits the request body, builds
-up a `Form` value, and returns the value, with type `Either Error Form` to
-represent possibly invalid forms.
+Given that there is an instance for the body `b`, and the return type `r`, we
+can use this middleware together with other middleware, like so:
 
-``` purescript
-parseForm :: forall m req res c.
-            (IxMonadMiddleware m, IxMonad m) =>
-            m
-            (Conn { body :: String
-                  , headers :: StrMap String
-                  | req
-                  } res c)
-            (Conn { body :: String
-                  , headers :: StrMap String
-                  | req
-                  }
-                  res
-                  c)
-            (Either Error Form)
-parseForm =
-  getConn :>>= \conn ->
-  case lookup "content-type" conn.request.headers >>= parseContentMediaType of
-    Nothing ->
-      ipure (throwError (error "Missing or invalid content-type header."))
-    Just mediaType | mediaType == applicationFormURLEncoded ->
-      ipure (Form <$> splitPairs conn.request.body)
-    Just mediaType ->
-      ipure (throwError (error ("Cannot parse media of type: " <> show mediaType)))
+```{.purescript include=docs/src/basics/ReadBody.purs snippet=onPost}
 ```
 
-The `parseForm` function can then be used inside a middleware chain.
+## Forms
 
-```purescript
-parseForm :>>=
-case _ of
-  Left err -> ...
-  Right (Form values) -> ...
+When working with form data, we often want to serialize and deserialize forms as
+custom data types, instead of working with the key-value pairs directly. The
+`ToForm` and `FromForm` type classes abstracts serialization and deserialization
+to form data, respectively.
+
+We first declare our data types, and some instance which we will need later.
+
+```{.purescript include=docs/src/basics/FormSerialization.purs snippet=datatypes}
 ```
 
-More efficient parsers, directly operating on the `RequestBody`,
-instead of `String`, can of course be built as well.
+In this example we will only deserialize forms, and thus we only need the
+`FromForm` instance.
+
+```{.purescript include=docs/src/basics/FormSerialization.purs snippet=parsing}
+```
+
+Now we are ready to write our handler. We use `parseFromForm` to get a value
+of type `Either String Order`, where the `String` explains parsing errors. By
+pattern matching using record field puns, we extract the `beers` and `meal`
+values, and respond based on those values.
+
+```{.purescript include=docs/src/basics/FormSerialization.purs snippet=onPost}
+```

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" href="theme/favicon.png">
   <link rel="icon" type="image/svg+xml" href="theme/favicon.svg">
   <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
-  <link rel="stylesheet" href="theme/html/github.css">
+  <link rel="stylesheet" href="theme/html/code.css">
   <link rel="stylesheet" href="theme/html/docs.css">
 
   <meta name="twitter:card" content="summary">
@@ -133,50 +133,81 @@
 <h3 id="servers">Servers</h3>
 <p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server. Currently Hyper bundles a <a href="#nodejs">NodeJS server</a>, as well as a <a href="#testing">test server</a>.</p>
 <h2 id="basics">Basics</h2>
-<p>This chapter walks you through some of the basic, and more lower-level, features of Hyper. We look at how we can use the Conn and Middleware types to gain type safety “in the small”, and how to implement common things needed in web servers.</p>
-<p><em>This chapter is very much work in progress!</em></p>
-<h3 id="request-body-parsing">Request Body Parsing</h3>
-<p>The request body is, when using the Node server, initially a <code>RequestBody</code> in the connection. The user explicitly chooses to read and parse the body with a given parser, which returns a new connection of a type reflecting the action. The following type signature resides in <code>Hyper.Node.Server</code>, and shows how a request body can be read into a <code>String</code>. The <code>Aff</code> monad, and the <code>AVAR</code> effect, is used to accomplish this asynchronously in the case of the Node server.</p>
-<pre class="purescript"><code>readBodyAsString
-  :: forall e req res c.
-     Middleware
-     (Aff (http :: HTTP, err  :: EXCEPTION, avar  :: AVAR | e))
-     (Conn { body :: RequestBody
-           , contentLength :: Maybe Int
-           | req
-           } res c)
-     (Conn {body :: String, contentLength :: Maybe Int | req} res c)
-     Unit</code></pre>
-<p>A simple form parser can use <code>readBodyAsString</code> to convert the body a more useful format for the application. As an example, the following function checks the <code>Content-Type</code> header in the request, splits the request body, builds up a <code>Form</code> value, and returns the value, with type <code>Either Error Form</code> to represent possibly invalid forms.</p>
-<pre class="purescript"><code>parseForm :: forall m req res c.
-            (IxMonadMiddleware m, IxMonad m) =&gt;
-            m
-            (Conn { body :: String
-                  , headers :: StrMap String
-                  | req
-                  } res c)
-            (Conn { body :: String
-                  , headers :: StrMap String
-                  | req
-                  }
-                  res
-                  c)
-            (Either Error Form)
-parseForm =
-  getConn :&gt;&gt;= \conn -&gt;
-  case lookup &quot;content-type&quot; conn.request.headers &gt;&gt;= parseContentMediaType of
-    Nothing -&gt;
-      ipure (throwError (error &quot;Missing or invalid content-type header.&quot;))
-    Just mediaType | mediaType == applicationFormURLEncoded -&gt;
-      ipure (Form &lt;$&gt; splitPairs conn.request.body)
-    Just mediaType -&gt;
-      ipure (throwError (error (&quot;Cannot parse media of type: &quot; &lt;&gt; show mediaType)))</code></pre>
-<p>The <code>parseForm</code> function can then be used inside a middleware chain.</p>
-<pre class="purescript"><code>parseForm :&gt;&gt;=
-case _ of
-  Left err -&gt; ...
-  Right (Form values) -&gt; ...</code></pre>
-<p>More efficient parsers, directly operating on the <code>RequestBody</code>, instead of <code>String</code>, can of course be built as well.</p>
+<p>This chapter walks through some of the basic and more lower-level features of Hyper. We look at how we can use the Conn and Middleware types to gain type safety “in the small”, and how to implement common things needed in web servers.</p>
+<h3 id="request-body-reading">Request Body Reading</h3>
+<p>The <code>RequestBodyReader</code> type class has one operation, <code>readBody</code>, which supports different servers to provide different types of request body values.</p>
+<pre class="purescript"><code>class RequestBodyReader r m b | r -&gt; b where
+  readBody
+    :: forall req res c.
+       Middleware
+       m
+       (Conn { body :: r | req } res c)
+       (Conn { body :: r | req } res c)
+       b</code></pre>
+<p>Given that there is an instance for the body <code>b</code>, and the return type <code>r</code>, we can use this middleware together with other middleware, like so:</p>
+<pre class=purescript><code>onPost =
+  readBody :>>=
+  case _ of
+    "" ->
+      writeStatus statusBadRequest
+      :*> closeHeaders
+      :*> respond "... anyone there?"
+    msg ->
+      writeStatus statusBadRequest
+      :*> closeHeaders
+      :*> respond ("You said: " <> msg)
+</code></pre>
+<h3 id="forms">Forms</h3>
+<p>When working with form data, we often want to serialize and deserialize forms as custom data types, instead of working with the key-value pairs directly. The <code>ToForm</code> and <code>FromForm</code> type classes abstracts serialization and deserialization to form data, respectively.</p>
+<p>We first declare our data types, and some instance which we will need later.</p>
+<pre class=purescript><code>data MealType = Vegan | Vegetarian | Omnivore | Carnivore
+
+derive instance genericMealType :: Generic MealType _
+instance eqMealType :: Eq MealType where eq = genericEq
+instance showMealType :: Show MealType where show = genericShow
+
+newtype Order = Order { beers :: Int, meal :: MealType }
+</code></pre>
+<p>In this example we will only deserialize forms, and thus we only need the <code>FromForm</code> instance.</p>
+<pre class=purescript><code>instance fromFormOrder :: FromForm Order where
+  fromForm form = do
+    beers <- required "beers" form >>= parseBeers
+    meal <- required "meal" form >>= parseMealType
+    pure (Order { beers: beers, meal: meal })
+    where
+      parseBeers s =
+        maybe
+        (throwError ("Invalid number: " <> s))
+        pure
+        (Int.fromString s)
+
+      parseMealType =
+        case _ of
+          "Vegan" -> pure Vegan
+          "Vegetarian" -> pure Vegetarian
+          "Omnivore" -> pure Omnivore
+          "Carnivore" -> pure Carnivore
+          s -> throwError ("Invalid meal type: " <> s)
+</code></pre>
+<p>Now we are ready to write our handler. We use <code>parseFromForm</code> to get a value of type <code>Either String Order</code>, where the <code>String</code> explains parsing errors. By pattern matching using record field puns, we extract the <code>beers</code> and <code>meal</code> values, and respond based on those values.</p>
+<pre class=purescript><code>onPost =
+  parseFromForm :>>=
+  case _ of
+    Left err ->
+      writeStatus statusBadRequest
+      :*> closeHeaders
+      :*> respond err
+    Right (Order { beers, meal })
+      | meal == Omnivore || meal == Carnivore ->
+        writeStatus statusBadRequest
+        :*> closeHeaders
+        :*> respond "Sorry, we do not serve meat here."
+      | otherwise ->
+        writeStatus statusBadRequest
+        :*> closeHeaders
+        :*> respond ("One " <> show meal <> " meal and "
+                     <> show beers <> " beers coming up!")
+</code></pre>
 <h2 id="type-level-routing">Type-Level Routing</h2>
 <p><code>Hyper.Routing</code> provides an API for expressing web application routing as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. By using routing types you get static guarantees about having handled all cases. You also get a lot of stuff for free, such as type-safe parameters for handlers, and automatically generated type-safe URIs to endpoints.</p>
 <h3 id="a-single-endpoint-example">A Single-Endpoint Example</h3>
@@ -413,7 +444,8 @@ main =
     <li><a href="#servers">Servers</a></li>
     </ul></li>
     <li><a href="#basics">Basics</a><ul>
-    <li><a href="#request-body-parsing">Request Body Parsing</a></li>
+    <li><a href="#request-body-reading">Request Body Reading</a></li>
+    <li><a href="#forms">Forms</a></li>
     </ul></li>
     <li><a href="#type-level-routing">Type-Level Routing</a><ul>
     <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
@@ -430,7 +462,7 @@ main =
   </nav>
     <footer>
         <p class="version" itemprop="version">
-    Version 473dc1e.
+    Version ea188ca.
     </p>
         <p>
     The
