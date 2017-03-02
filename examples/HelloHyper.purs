@@ -4,7 +4,7 @@ import Prelude
 import Control.IxMonad ((:*>))
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
-import Hyper.Node.Server (defaultOptions, runServer)
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.HTTP (HTTP)
@@ -16,4 +16,4 @@ main =
       writeStatus statusOK
       :*> closeHeaders
       :*> respond "Hello, Hyper!"
-  in runServer defaultOptions {} app
+  in runServer defaultOptionsWithLogging {} app
