@@ -137,33 +137,12 @@ By making requests to this site, using `Accept` headers, we can see how the
 router chooses the matching content type (output formatted and shortened for
 readability).
 
-```bash
-$ curl -H 'Accept: application/json' http://localhost:3000/users
-[
-  {
-    "name": "John Paul Jones",
-    "id": "1"
-  },
-  {
-    "name": "Tal Wilkenfeld",
-    "id": "2"
-  },
-  ...
-]
+```{.bash include=docs/src/type-level-routing/request-json.html formatted=true}
 ```
 
 There's experimental support for _wildcards_ and _qualities_ as well.
 
-```bash
-$ curl -H 'Accept: text/*;q=1.0' http://localhost:3000/users
-<div>
-  <h1>Users</h1>
-  <ul>
-    <li><a href="/users/1">John Paul Jones</a></li>
-    <li><a href="/users/2">Tal Wilkenfeld</a></li>
-    ...
-  </ul>
-</div>
+```{.bash include=docs/src/type-level-routing/request-html.html formatted=true}
 ```
 
 ## Automatically Derived XHR Clients

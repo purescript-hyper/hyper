@@ -9,7 +9,7 @@ MD_SOURCES=docs/src/index.md \
 					 docs/src/testing.md \
 					 docs/src/contributing.md
 
-DOCS_PURS_SOURCES=$(shell find docs/src -name '*.purs')
+DOCS_INCLUDES=$(shell find docs/src -name '*.purs') $(shell find docs/src -name '*.html')
 SHARED_THEME_FILES=$(shell find docs/theme -d 1)
 
 .PHONY: docs
@@ -18,7 +18,7 @@ docs: docs/index.html docs/hyper.pdf docs/sitemap.xml
 docs/sitemap.xml: docs/theme/html/sitemap.xml.tmpl docs/index.html docs/hyper.pdf
 	cat docs/theme/html/sitemap.xml.tmpl | sed "s/YYYY-MM-DD/$(shell date '+%Y-%m-%d')/" > docs/sitemap.xml
 
-docs/index.html: $(MD_SOURCES) $(DOCS_PURS_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/html)
+docs/index.html: $(MD_SOURCES) $(DOCS_INCLUDES) $(SHARED_THEME_FILES) $(shell find docs/theme/html)
 	pandoc $(SHARED_PANDOC_OPTIONS) \
 		-t html5 \
 		--standalone \
@@ -41,7 +41,7 @@ docs/index.html: $(MD_SOURCES) $(DOCS_PURS_SOURCES) $(SHARED_THEME_FILES) $(shel
 		--template=docs/theme/html/template.html \
 	$(MD_SOURCES)
 
-docs/hyper.pdf: $(MD_SOURCES) $(DOCS_PURS_SOURCES) $(SHARED_THEME_FILES) $(shell find docs/theme/latex)
+docs/hyper.pdf: $(MD_SOURCES) $(DOCS_INCLUDES) $(SHARED_THEME_FILES) $(shell find docs/theme/latex)
 	pandoc $(SHARED_PANDOC_OPTIONS) \
 	-t latex \
 	--listings \

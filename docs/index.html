@@ -196,17 +196,27 @@ newtype Order = Order { beers :: Int, meal :: MealType }
     Left err ->
       writeStatus statusBadRequest
       :*> closeHeaders
-      :*> respond err
+      :*> respond (err <> "\n")
     Right (Order { beers, meal })
       | meal == Omnivore || meal == Carnivore ->
         writeStatus statusBadRequest
         :*> closeHeaders
-        :*> respond "Sorry, we do not serve meat here."
+        :*> respond "Sorry, we do not serve meat here.\n"
       | otherwise ->
         writeStatus statusBadRequest
         :*> closeHeaders
         :*> respond ("One " <> show meal <> " meal and "
-                     <> show beers <> " beers coming up!")
+                     <> show beers <> " beers coming up!\n")
+</code></pre>
+<p>Let’s try this server out at the command line.</p>
+<pre class=bash><code>$ <strong>curl -X POST -d 'beers=6' http://localhost:3000</strong>
+Missing field: meal
+$ <strong>curl -X POST -d 'meal=Vegan&beers=foo' http://localhost:3000</strong>
+Invalid number: foo
+$ <strong>curl -X POST -d 'meal=Omnivore&beers=6' http://localhost:3000</strong>
+Sorry, we do not serve meat here.
+$ <strong>curl -X POST -d 'meal=Vegetarian&beers=6' http://localhost:3000</strong>
+One Vegetarian meal and 6 beers coming up!
 </code></pre>
 <h2 id="type-level-routing">Type-Level Routing</h2>
 <p><code>Hyper.Routing</code> provides an API for expressing web application routing as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. By using routing types you get static guarantees about having handled all cases. You also get a lot of stuff for free, such as type-safe parameters for handlers, and automatically generated type-safe URIs to endpoints.</p>
@@ -352,28 +362,30 @@ main =
   :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
 </code></pre>
 <p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
-<pre class="bash"><code>$ curl -H &#39;Accept: application/json&#39; http://localhost:3000/users
+<pre class=bash><code>$ <strong>curl -H 'Accept: application/json' http://localhost:3000/users</strong>
 [
   {
-    &quot;name&quot;: &quot;John Paul Jones&quot;,
-    &quot;id&quot;: &quot;1&quot;
+    "name": "John Paul Jones",
+    "id": "1"
   },
   {
-    &quot;name&quot;: &quot;Tal Wilkenfeld&quot;,
-    &quot;id&quot;: &quot;2&quot;
+    "name": "Tal Wilkenfeld",
+    "id": "2"
   },
   ...
-]</code></pre>
+]
+</code></pre>
 <p>There’s experimental support for <em>wildcards</em> and <em>qualities</em> as well.</p>
-<pre class="bash"><code>$ curl -H &#39;Accept: text/*;q=1.0&#39; http://localhost:3000/users
+<pre class=bash><code>$ <strong>curl -H 'Accept: text/*;q=1.0' http://localhost:3000/users</strong>
 &lt;div&gt;
   &lt;h1&gt;Users&lt;/h1&gt;
   &lt;ul&gt;
-    &lt;li&gt;&lt;a href=&quot;/users/1&quot;&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
-    &lt;li&gt;&lt;a href=&quot;/users/2&quot;&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/users/1"&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="/users/2"&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
     ...
   &lt;/ul&gt;
-&lt;/div&gt;</code></pre>
+&lt;/div&gt;
+</code></pre>
 <h3 id="automatically-derived-xhr-clients">Automatically Derived XHR Clients</h3>
 <p>As we represent routing as types, we can derive XHR clients from those types. In a client-side application, for example one written using <a href="https://www.purescript-pux.org">Pux</a> or <a href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can use the <a href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a> library to derive such client functions. You get functions with type-safe parameters and encoding/decoding, using your routed types, and results in the <a href="https://github.com/slamdata/purescript-aff">Aff</a> monad, which are easily integrated into most frameworks.</p>
 <h2 id="nodejs">NodeJS</h2>
@@ -462,7 +474,7 @@ main =
   </nav>
     <footer>
         <p class="version" itemprop="version">
-    Version ea188ca.
+    Version fdfb323.
     </p>
         <p>
     The

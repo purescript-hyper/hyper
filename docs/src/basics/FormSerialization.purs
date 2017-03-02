@@ -77,17 +77,17 @@ onPost =
     Left err ->
       writeStatus statusBadRequest
       :*> closeHeaders
-      :*> respond err
+      :*> respond (err <> "\n")
     Right (Order { beers, meal })
       | meal == Omnivore || meal == Carnivore ->
         writeStatus statusBadRequest
         :*> closeHeaders
-        :*> respond "Sorry, we do not serve meat here."
+        :*> respond "Sorry, we do not serve meat here.\n"
       | otherwise ->
         writeStatus statusBadRequest
         :*> closeHeaders
         :*> respond ("One " <> show meal <> " meal and "
-                     <> show beers <> " beers coming up!")
+                     <> show beers <> " beers coming up!\n")
 -- end snippet onPost
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit

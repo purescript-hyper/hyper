@@ -1,0 +1,8 @@
+$ <strong>curl -X POST -d 'beers=6' http://localhost:3000</strong>
+Missing field: meal
+$ <strong>curl -X POST -d 'meal=Vegan&beers=foo' http://localhost:3000</strong>
+Invalid number: foo
+$ <strong>curl -X POST -d 'meal=Omnivore&beers=6' http://localhost:3000</strong>
+Sorry, we do not serve meat here.
+$ <strong>curl -X POST -d 'meal=Vegetarian&beers=6' http://localhost:3000</strong>
+One Vegetarian meal and 6 beers coming up!

@@ -51,3 +51,8 @@ values, and respond based on those values.
 
 ```{.purescript include=docs/src/basics/FormSerialization.purs snippet=onPost}
 ```
+
+Let's try this server out at the command line.
+
+```{.bash include=docs/src/basics/FormSerialization.bash.html formatted=true}
+```
