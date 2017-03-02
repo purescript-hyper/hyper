@@ -2,9 +2,10 @@ module Hyper.FormSpec where
 
 import Prelude
 import Control.Monad.Aff (Aff)
-import Control.Monad.Eff.Exception (Error)
+import Control.Monad.Eff.Exception (error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.StrMap (singleton)
 import Data.Tuple (Tuple(Tuple), fst)
 import Hyper.Form (Form(Form), parseForm)
@@ -14,36 +15,55 @@ import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.Aff (expectError)
 
-liftEither ∷ ∀ e a. Either Error a → Aff e a
+liftEither ∷ ∀ e a. Either String a → Aff e a
 liftEither e =
   case e of
-    Left err → throwError err
+    Left err → throwError (error err)
     Right x → pure x
 
 spec :: forall e. Spec e Unit
 spec =
   describe "Hyper.Form" do
-    it "can parse the request body as a form" do
-      form <-
-        runMiddleware parseForm
-                      { request: { body: StringBody "foo=bar"
-                                 , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
-                                 }
-                      , response: {}
-                      , components: {}
-                      }
-                      # map fst
-                      >>= liftEither
+    it "parses key without value" do
+      form <- runParseForm "foo" Nothing
+      form `shouldEqual` (Form [Tuple "foo" Nothing])
 
-      form `shouldEqual` (Form [Tuple "foo" "bar"])
+    it "parses multiple keys without values" do
+      form <- runParseForm "foo&foo&bar&foo" Nothing
+      form `shouldEqual` (Form [ Tuple "foo" Nothing
+                               , Tuple "foo" Nothing
+                               , Tuple "bar" Nothing
+                               , Tuple "foo" Nothing
+                               ])
 
-    it "fails to parse request body as a form when invalid" $ expectError do
-      runMiddleware parseForm
-                    { request: { body: StringBody "foo=bar=baz"
-                               , headers: singleton "content-type" "application/x-www-form-urlencoded; charset=utf8"
-                               }
-                    , response: {}
-                    , components: {}
-                    }
-                    # map fst
-                    >>= liftEither
+    it "parses key and value" do
+      form <- runParseForm "foo=bar" Nothing
+      form `shouldEqual` (Form [Tuple "foo" (Just "bar")])
+
+    it "parses multiple keys and values" do
+      form <- runParseForm "foo=bar&baz=quux&a=1&b=2" Nothing
+      form `shouldEqual` (Form [ Tuple "foo" (Just "bar")
+                               , Tuple "baz" (Just "quux")
+                               , Tuple "a" (Just "1")
+                               , Tuple "b" (Just "2")
+                               ])
+
+    it "fails to parse request body as a form when invalid" $ expectError $
+      runParseForm "foo=bar=baz" Nothing
+
+  where
+    runParseForm body contentType =
+      runMiddleware
+      parseForm
+      { request: { body: StringBody body
+                 , headers: singleton
+                            "content-type"
+                            (fromMaybe
+                             "application/x-www-form-urlencoded; charset=utf8"
+                             contentType)
+                 }
+      , response: {}
+      , components: {}
+      }
+      # map fst
+      >>= liftEither
