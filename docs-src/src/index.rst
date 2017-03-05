@@ -19,9 +19,6 @@ under the "framework" category.
    so prepare for unstability. Hyper itself should be considered experimental,
    for now.
 
-The Hyper Documentation
-=======================
-
 This documentation is divided into sections, each being suited for different
 types of information you might be looking for.
 
