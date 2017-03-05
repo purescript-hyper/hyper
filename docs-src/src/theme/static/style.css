@@ -34,7 +34,6 @@ div.related ul {
 }
 
 .breadcrumbs {
-  overflow-x: scroll;
   background: #fafafa;
   border-bottom: 1px solid #ddd;
 }
