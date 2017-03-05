@@ -24,7 +24,7 @@
 <meta name="twitter:title" content="{{ title|striptags|e }} &mdash; {{ shorttitle }}">
 <meta name="twitter:url" content="http://hyper.wickstrom.tech">
 <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
-<meta name="twitter:image:src" content="http://hyper.wickstrom.tech/_static/icon-large.png"><Paste>
+<meta name="twitter:image:src" content="http://hyper.wickstrom.tech/_static/icon-large.png">
 
 <meta property="og:type" content="article" />
 <meta property="og:article:author" content="Oskar Wickström" />
@@ -58,25 +58,51 @@
 {% endblock %}
 
 {% block relbar1 %}
-<div class="breadcrumbs-container">
-  {{ relbar_top() }}
+<div class="breadcrumbs">
+  <div class="breadcrumbs-wrapper">
+    {{ relbar_top() }}
+  </div>
 </div>
 {% endblock %}
 
 {% block relbar2 %}
-<div class="bottom-nav">
-  {% if prev %}
-  <div class="previous-page">
-    <a href="{{ prev.link|e }}">{{ prev.title }}</a>
-  </div>
-  {% endif %}
-  {% if next %}
-  <div class="next-page">
-    <a href="{{ next.link|e }}">{{ next.title }}</a>
-  </div>
-  {% endif %}
-</div>
 {% endblock %}
+
+{%- block content %}
+  {%- block sidebar1 %} {# possible location for sidebar #} {% endblock %}
+
+  <div class="document">
+    {%- block sidebar2 %}{{ sidebar() }}{% endblock %}
+
+    {%- block document %}
+    <div class="documentwrapper">
+    {%- if render_sidebar %}
+      <div class="bodywrapper">
+    {%- endif %}
+        <div class="body" role="main">
+          {% block body %} {% endblock %}
+        </div>
+        <div class="bottom-nav">
+          {% if prev %}
+          <div class="previous-page">
+            <a href="{{ prev.link|e }}">{{ prev.title }}</a>
+          </div>
+          {% endif %}
+          {% if next %}
+          <div class="next-page">
+            <a href="{{ next.link|e }}">{{ next.title }}</a>
+          </div>
+          {% endif %}
+        </div>
+    {%- if render_sidebar %}
+      </div>
+    {%- endif %}
+    </div>
+    {%- endblock %}
+
+    <div class="clearer"></div>
+  </div>
+{%- endblock %}
 
 {% block sidebarsearch %}
 <h3>Download</h3>
