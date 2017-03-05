@@ -9,7 +9,14 @@
         <a href="{{ parent.link|e }}">{{ parent.title }}</a>
       </li>
       {%- endfor %}
-      {%- block relbaritems %} {% endblock %}
+
+      {% if pagename != master_doc and pagename != 'search' %}
+      <li>
+        {{ title }}
+      </li>
+      {% endif %}
+
+      {%- block relbaritems %}{% endblock %}
     </ul>
   </nav>
 {%- endmacro %}

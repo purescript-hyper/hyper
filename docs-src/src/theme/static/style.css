@@ -35,7 +35,6 @@ div.related ul {
 
 .breadcrumbs {
   overflow-x: scroll;
-  color: #888;
   background: #fafafa;
   border-bottom: 1px solid #ddd;
 }
@@ -58,13 +57,6 @@ div.related ul {
 }
 #breadcrumbs li:last-child:after {
   content: '';
-}
-#breadcrumbs a {
-  color: #888;
-}
-#breadcrumbs a:hover,
-#breadcrumbs a:active {
-  color: #666;
 }
 
 .bottom-nav {

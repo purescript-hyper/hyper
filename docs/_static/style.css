@@ -60,7 +60,6 @@ div.related ul {
   content: '';
 }
 #breadcrumbs a {
-  color: #888;
 }
 #breadcrumbs a:hover,
 #breadcrumbs a:active {
@@ -182,8 +181,6 @@ div.sphinxsidebar ul ul li {
   }
   .breadcrumbs-container {
     border-bottom: 0;
-  }
-  #breadcrumbs li {
   }
 
   div.sphinxsidebar {
