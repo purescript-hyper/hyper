@@ -236,7 +236,7 @@ livehtml:
 	sphinx-autobuild -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
 .PHONY: release
-release: html latexpdf
+release: clean html latexpdf
 	rm -r ../docs
 	cp -r target/html ../docs
 	echo "hyper.wickstrom.tech" > ../docs/CNAME
