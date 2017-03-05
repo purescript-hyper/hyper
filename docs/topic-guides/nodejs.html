@@ -179,8 +179,9 @@ logging on server startup, and on any request handling errors, use
 instance as a way to pass configuration, or to accumulate some state in
 the chain of middleware. The underlying monad of <code class="docutils literal"><span class="pre">Middleware</span></code> is
 parameterized for this exact purpose. When running the NodeJS server
-with monad transformers, you need to pass a function in the options
-record, in the <code class="docutils literal"><span class="pre">runM</span></code> field.</p>
+with monad transformers, you need to use <cite>runServer&#8217;</cite> instead of the regular
+<cite>runServer</cite>, and pass a function that runs your monad and returns an <cite>Aff</cite>
+value.</p>
 <p>The following code runs a middleware using the <code class="docutils literal"><span class="pre">ReaderT</span></code> monad
 transformer. Note that the <code class="docutils literal"><span class="pre">runAppM</span></code> function might need to be defined
 at the top-level to please the type checker.</p>
@@ -200,10 +201,7 @@ at the top-level to please the type checker.</p>
         <span class="n">closeHeaders</span>
         <span class="n">respond</span> <span class="n">config</span><span class="o">.</span><span class="n">thingToSay</span>
         <span class="kr">where</span> <span class="n">bind</span> <span class="ow">=</span> <span class="n">ibind</span>
-
-      <span class="n">options</span> <span class="ow">=</span> <span class="n">defaultOptionsWithLogging</span> <span class="p">{</span> <span class="n">runM</span> <span class="ow">=</span> <span class="n">runAppM</span> <span class="p">}</span>
-
-  <span class="kr">in</span> <span class="n">runServer</span> <span class="n">options</span> <span class="p">{}</span> <span class="n">app</span>
+  <span class="kr">in</span> <span class="n">runServer&#39;</span> <span class="n">defaultOptionsWithLogging</span> <span class="p">{}</span> <span class="n">runAppM</span> <span class="n">app</span>
 </pre></div>
 </div>
 <p>In a real-world application the configuration type <code class="docutils literal"><span class="pre">MyConfig</span></code> could
