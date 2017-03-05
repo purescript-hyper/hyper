@@ -298,7 +298,7 @@ latex_title_page = r'''
 \begin{titlepage}
     \vspace*{\fill}
     \begin{center}
-        \includegraphics[width=0.25\textwidth]{_static/hyper.png}\par
+        \includegraphics[width=0.5\textwidth]{_static/hyper@2x.png}\par
         \vspace{1cm}
         {\Large\text{Type-safe, statically checked composition of HTTP servers}\par}
         \vspace{2cm}
