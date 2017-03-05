@@ -1,0 +1,412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+<title>Type-Level Routing &mdash; Hyper</title>
+
+    
+    <link rel="stylesheet" href="../../_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/fira/fira.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/fira-code/fira_code.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/bootstrap/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/overrides.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Extensions" href="../index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body role="document">
+<div class="navbar top-nav">
+  <div class="container-fluid">
+    <div class="navbar-text logo">
+      <a href="../../index.html">
+        <img alt="Hyper"
+            height="24"
+            src="../../_static/hyper.png"
+            srcset="../../_static/hyper.png" />
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="search navbar-form">
+        
+<form action="../../search.html" method="get">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="breadcrumbs-container">
+  
+  <div class="related top">
+  <nav id="breadcrumbs">
+    <ul>
+      <li><a href="../../index.html">Hyper</a></li>
+      <li>
+        <a href="../index.html">Extensions</a>
+      </li> 
+    </ul>
+  </nav>
+  </div>
+</div>
+
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Type-Level Routing</a><ul>
+<li><a class="reference internal" href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
+<li><a class="reference internal" href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
+<li><a class="reference internal" href="#content-negotiation">Content Negotiation</a></li>
+<li><a class="reference internal" href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">Extensions</a></p>
+<h3>Download</h3>
+<p>
+  <a href="/hyper.pdf">PDF</a>
+</p>
+<h3>More Resources</h3>
+<ul>
+  <li>
+    <a href="https://github.com/owickstrom/hyper">GitHub Repository</a>
+  </li>
+  <li>
+    <a href="https://github.com/owickstrom/hyper/issues">Issue Tracker</a>
+  </li>
+  <li>
+    <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">License</a>
+  </li>
+  <li>
+    <a href="https://twitter.com/owickstrom">Twitter</a>
+  </li>
+  <li>
+    <a href="https://wickstrom.tech">wickstrom.tech</a>
+  </li>
+</ul>
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="type-level-routing">
+<h1>Type-Level Routing<a class="headerlink" href="#type-level-routing" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">Hyper.Routing</span></code> provides an API for expressing web application routing
+as types, much like <a class="reference external" href="https://haskell-servant.github.io">Servant</a>
+does. By using routing types you get static guarantees about having
+handled all cases. You also get a lot of stuff for free, such as
+type-safe parameters for handlers, and automatically generated type-safe
+URIs to endpoints.</p>
+<div class="section" id="a-single-endpoint-example">
+<h2>A Single-Endpoint Example<a class="headerlink" href="#a-single-endpoint-example" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s say we want to render a home page as HTML. We start out by
+declaring the endpoint data type <code class="docutils literal"><span class="pre">Home</span></code>, and the structure of our
+site:</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">Home</span> <span class="ow">=</span> <span class="kt">Home</span>
+
+<span class="kr">type</span> <span class="kt">Site1</span> <span class="ow">=</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">Get</span> <span class="pre">HTML</span> <span class="pre">Home</span></code> is a routing type with only one endpoint, rendering a
+<code class="docutils literal"><span class="pre">Home</span></code> value as HTML. So where does the <code class="docutils literal"><span class="pre">Home</span></code> value come from? We
+provide it using a <em>handler</em>. A handler for <code class="docutils literal"><span class="pre">Site1</span></code> would be some
+value of the following type:</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">Home</span>
+</pre></div>
+</div>
+<p>We can construct such a value using <code class="docutils literal"><span class="pre">pure</span></code> and a <code class="docutils literal"><span class="pre">Home</span></code> value:</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">home</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Applicative</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="n">m</span> <span class="kt">Home</span>
+<span class="nf">home</span> <span class="ow">=</span> <span class="n">pure</span> <span class="kt">Home</span>
+</pre></div>
+</div>
+<p>Nice! But what comes out on the other end? We need something that
+renders the <code class="docutils literal"><span class="pre">Home</span></code> value as HTML. By providing an instance of
+<code class="docutils literal"><span class="pre">EncodeHTML</span></code> for <code class="docutils literal"><span class="pre">Home</span></code>, we instruct the endpoint how to render.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">instance</span> <span class="n">encodeHTMLHome</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">Home</span> <span class="kr">where</span>
+  <span class="n">encodeHTML</span> <span class="kt">Home</span> <span class="ow">=</span>
+    <span class="n">p</span> <span class="p">(</span><span class="n">text</span> <span class="s">&quot;Welcome to my site!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">HTML</span></code> type is a phantom type, only used as a marker type, and the
+actual markup is written in the <code class="docutils literal"><span class="pre">MarkupM</span></code> DSL from
+<a class="reference external" href="https://github.com/bodil/purescript-smolder">purescript-smolder</a>.</p>
+<p>We are getting ready to create the server. First, we need a value-level
+representation of the <code class="docutils literal"><span class="pre">Site1</span></code> type, to be able to pass it to the
+<code class="docutils literal"><span class="pre">router</span></code> function. For that we use
+<a class="reference external" href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>.
+Its documentation describes it as follows:</p>
+<blockquote>
+<div>The Proxy type and values are for situations where type information
+is required for an input to determine the type of an output, but
+where it is not possible or convenient to provide a value for the
+input.</div></blockquote>
+<p>We create a top-level definition of the type <code class="docutils literal"><span class="pre">Proxy</span> <span class="pre">Site1</span></code> with the
+value constructor <code class="docutils literal"><span class="pre">Proxy</span></code>.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">site1</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="kt">Site1</span>
+<span class="nf">site1</span> <span class="ow">=</span> <span class="kt">Proxy</span>
+</pre></div>
+</div>
+<p>We pass the proxy, our handler, and the <code class="docutils literal"><span class="pre">onRoutingError</span></code> function for
+cases where no route matched the request, to the <code class="docutils literal"><span class="pre">router</span></code> function.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">onRoutingError</span> <span class="n">status</span> <span class="n">msg</span> <span class="ow">=</span>
+  <span class="n">writeStatus</span> <span class="n">status</span>
+  <span class="kt">:*&gt;</span> <span class="n">contentType</span> <span class="n">textHTML</span>
+  <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+  <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="p">(</span><span class="n">maybe</span> <span class="s">&quot;&quot;</span> <span class="n">id</span> <span class="n">msg</span><span class="p">)</span>
+
+<span class="nf">siteRouter</span> <span class="ow">=</span> <span class="n">router</span> <span class="n">site1</span> <span class="n">home</span> <span class="n">onRoutingError</span>
+</pre></div>
+</div>
+<p>The value returned by <code class="docutils literal"><span class="pre">router</span></code> is regular middleware, ready to be
+passed to a server.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">main</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">e</span><span class="o">.</span> <span class="kt">Eff</span> <span class="p">(</span><span class="n">http</span> <span class="ow">::</span> <span class="kt">HTTP</span><span class="p">,</span> <span class="n">console</span> <span class="ow">::</span> <span class="kt">CONSOLE</span><span class="p">,</span> <span class="n">buffer</span> <span class="ow">::</span> <span class="kt">BUFFER</span> <span class="o">|</span> <span class="n">e</span><span class="p">)</span> <span class="kt">Unit</span>
+<span class="nf">main</span> <span class="ow">=</span>
+  <span class="n">runServer</span> <span class="n">defaultOptions</span> <span class="p">{}</span> <span class="n">siteRouter</span>
+  <span class="kr">where</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="routing-multiple-endpoints">
+<h2>Routing Multiple Endpoints<a class="headerlink" href="#routing-multiple-endpoints" title="Permalink to this headline">¶</a></h2>
+<p>Real-world servers often need more than one endpoint. Let&#8217;s define a
+router for an application that shows a home page with links, a page
+listing users, and a page rendering a specific user.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">Home</span> <span class="ow">=</span> <span class="kt">Home</span>
+
+<span class="kr">data</span> <span class="kt">AllUsers</span> <span class="ow">=</span> <span class="kt">AllUsers</span> <span class="p">(</span><span class="kt">Array</span> <span class="kt">User</span><span class="p">)</span>
+
+<span class="kr">newtype</span> <span class="kt">User</span> <span class="ow">=</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span> <span class="ow">::</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">name</span> <span class="ow">::</span> <span class="kt">String</span> <span class="p">}</span>
+
+<span class="kr">type</span> <span class="kt">Site2</span> <span class="ow">=</span>
+  <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">AllUsers</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">User</span>
+
+<span class="nf">site2</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="kt">Site2</span>
+<span class="nf">site2</span> <span class="ow">=</span> <span class="kt">Proxy</span>
+</pre></div>
+</div>
+<p>Let&#8217;s go through the new constructs used:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code> is a type operator that separates <em>alternatives</em>. A router
+for this type will try each route in order until one matches.</li>
+<li><code class="docutils literal"><span class="pre">:/</span></code> separates a literal path segment and the rest of the endpoint
+type.</li>
+<li><code class="docutils literal"><span class="pre">Capture</span></code> takes a descriptive string and a type. It takes the next
+available path segment and tries to convert it to the given type.
+Each capture in an endpoint type corresponds to an argument in the
+handler function.</li>
+<li><code class="docutils literal"><span class="pre">:&gt;</span></code> separates a an endpoint modifier, like <code class="docutils literal"><span class="pre">Capture</span></code>, and the
+rest of the endpoint type.</li>
+</ul>
+<p>We define handlers for our routes as regular functions on the specified
+data types, returning <code class="docutils literal"><span class="pre">ExceptT</span> <span class="pre">RoutingError</span> <span class="pre">m</span> <span class="pre">a</span></code> values, where <code class="docutils literal"><span class="pre">m</span></code>
+is the monad of our middleware, and <code class="docutils literal"><span class="pre">a</span></code> is the type to render for the
+endpoint.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">home</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">Home</span>
+<span class="nf">home</span> <span class="ow">=</span> <span class="n">pure</span> <span class="kt">Home</span>
+
+<span class="nf">allUsers</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">AllUsers</span>
+<span class="nf">allUsers</span> <span class="ow">=</span> <span class="kt">AllUsers</span> <span class="o">&lt;$&gt;</span> <span class="n">getUsers</span>
+
+<span class="nf">getUser</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">User</span>
+<span class="nf">getUser</span> <span class="n">id&#39;</span> <span class="ow">=</span>
+  <span class="n">find</span> <span class="n">userWithId</span> <span class="o">&lt;$&gt;</span> <span class="n">getUsers</span> <span class="o">&gt;&gt;=</span>
+  <span class="kr">case</span> <span class="kr">_</span> <span class="kr">of</span>
+    <span class="kt">Just</span> <span class="n">user</span> <span class="ow">-&gt;</span> <span class="n">pure</span> <span class="n">user</span>
+    <span class="kt">Nothing</span> <span class="ow">-&gt;</span>
+      <span class="n">throwError</span> <span class="p">(</span><span class="kt">HTTPError</span> <span class="p">{</span> <span class="n">status</span><span class="kt">:</span> <span class="n">statusNotFound</span>
+                            <span class="p">,</span> <span class="n">message</span><span class="kt">:</span> <span class="kt">Just</span> <span class="s">&quot;User not found.&quot;</span>
+                            <span class="p">})</span>
+  <span class="kr">where</span>
+    <span class="n">userWithId</span> <span class="p">(</span><span class="kt">User</span> <span class="n">u</span><span class="p">)</span> <span class="ow">=</span> <span class="n">u</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">id&#39;</span>
+</pre></div>
+</div>
+<p>As in the single-endpoint example, we want to render as HTML. Let&#8217;s
+create instances for our data types. Notice how we can create links
+between routes in a type-safe manner.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">instance</span> <span class="n">encodeHTMLHome</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">Home</span> <span class="kr">where</span>
+  <span class="n">encodeHTML</span> <span class="kt">Home</span> <span class="ow">=</span>
+    <span class="kr">case</span> <span class="n">linksTo</span> <span class="n">site2</span> <span class="kr">of</span>
+      <span class="kr">_</span> <span class="kt">:&lt;|&gt;</span> <span class="n">allUsers&#39;</span> <span class="kt">:&lt;|&gt;</span> <span class="kr">_</span> <span class="ow">-&gt;</span>
+        <span class="n">p</span> <span class="kr">do</span>
+          <span class="n">text</span> <span class="s">&quot;Welcome to my site! Go check out my &quot;</span>
+          <span class="n">linkTo</span> <span class="n">allUsers&#39;</span> <span class="p">(</span><span class="n">text</span> <span class="s">&quot;Users&quot;</span><span class="p">)</span>
+          <span class="n">text</span> <span class="s">&quot;.&quot;</span>
+
+<span class="kr">instance</span> <span class="n">encodeHTMLAllUsers</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">AllUsers</span> <span class="kr">where</span>
+  <span class="n">encodeHTML</span> <span class="p">(</span><span class="kt">AllUsers</span> <span class="n">users</span><span class="p">)</span> <span class="ow">=</span>
+    <span class="n">div</span> <span class="kr">do</span>
+      <span class="n">h1</span> <span class="p">(</span><span class="n">text</span> <span class="s">&quot;Users&quot;</span><span class="p">)</span>
+      <span class="n">ul</span> <span class="p">(</span><span class="n">traverse_</span> <span class="n">linkToUser</span> <span class="n">users</span><span class="p">)</span>
+    <span class="kr">where</span>
+      <span class="n">linkToUser</span> <span class="p">(</span><span class="kt">User</span> <span class="n">u</span><span class="p">)</span> <span class="ow">=</span>
+        <span class="kr">case</span> <span class="n">linksTo</span> <span class="n">site2</span> <span class="kr">of</span>
+          <span class="kr">_</span> <span class="kt">:&lt;|&gt;</span> <span class="kr">_</span> <span class="kt">:&lt;|&gt;</span> <span class="n">getUser&#39;</span> <span class="ow">-&gt;</span>
+            <span class="n">li</span> <span class="p">(</span><span class="n">linkTo</span> <span class="p">(</span><span class="n">getUser&#39;</span> <span class="n">u</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="p">(</span><span class="n">text</span> <span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+<span class="kr">instance</span> <span class="n">encodeHTMLUser</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">User</span> <span class="kr">where</span>
+  <span class="n">encodeHTML</span> <span class="p">(</span><span class="kt">User</span> <span class="p">{</span> <span class="n">name</span> <span class="p">})</span> <span class="ow">=</span>
+    <span class="n">h1</span> <span class="p">(</span><span class="n">text</span> <span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The pattern match on the value returned by <code class="docutils literal"><span class="pre">linksTo</span></code> must match the
+structure of the routing type. We use <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code> to pattern match on
+links. Each matched link will have a type based on the corresponding
+endpoint. <code class="docutils literal"><span class="pre">getUser</span></code> in the previous code has type <code class="docutils literal"><span class="pre">Int</span> <span class="pre">-&gt;</span> <span class="pre">URI</span></code>,
+while <code class="docutils literal"><span class="pre">allUsers</span></code> has no captures and thus has type <code class="docutils literal"><span class="pre">URI</span></code>.</p>
+<p>We are still missing <code class="docutils literal"><span class="pre">getUsers</span></code>, our source of User values. In a real
+application it would probably be a database query, but for this example
+we simply hard-code some famous users of proper instruments.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">getUsers</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Applicative</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="n">m</span> <span class="p">(</span><span class="kt">Array</span> <span class="kt">User</span><span class="p">)</span>
+<span class="nf">getUsers</span> <span class="ow">=</span>
+  <span class="n">pure</span>
+  <span class="p">[</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span><span class="kt">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="kt">:</span> <span class="s">&quot;John Paul Jones&quot;</span> <span class="p">}</span>
+  <span class="p">,</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span><span class="kt">:</span> <span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="kt">:</span> <span class="s">&quot;Tal Wilkenfeld&quot;</span> <span class="p">}</span>
+  <span class="p">,</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span><span class="kt">:</span> <span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="kt">:</span> <span class="s">&quot;John Patitucci&quot;</span> <span class="p">}</span>
+  <span class="p">,</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span><span class="kt">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">name</span><span class="kt">:</span> <span class="s">&quot;Jaco Pastorious&quot;</span> <span class="p">}</span>
+  <span class="p">]</span>
+</pre></div>
+</div>
+<p>Almost done! We just need to create the router, and start a server.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">main</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">e</span><span class="o">.</span> <span class="kt">Eff</span> <span class="p">(</span><span class="n">http</span> <span class="ow">::</span> <span class="kt">HTTP</span><span class="p">,</span> <span class="n">console</span> <span class="ow">::</span> <span class="kt">CONSOLE</span><span class="p">,</span> <span class="n">buffer</span> <span class="ow">::</span> <span class="kt">BUFFER</span> <span class="o">|</span> <span class="n">e</span><span class="p">)</span> <span class="kt">Unit</span>
+<span class="nf">main</span> <span class="ow">=</span>
+  <span class="kr">let</span> <span class="n">otherSiteRouter</span> <span class="ow">=</span>
+        <span class="n">router</span> <span class="n">site2</span> <span class="p">(</span><span class="n">home</span> <span class="kt">:&lt;|&gt;</span> <span class="n">allUsers</span> <span class="kt">:&lt;|&gt;</span> <span class="n">getUser</span><span class="p">)</span> <span class="n">onRoutingError</span>
+
+      <span class="n">onRoutingError</span> <span class="n">status</span> <span class="n">msg</span> <span class="ow">=</span>
+        <span class="n">writeStatus</span> <span class="n">status</span>
+        <span class="kt">:*&gt;</span> <span class="n">contentType</span> <span class="n">textHTML</span>
+        <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+        <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="p">(</span><span class="n">maybe</span> <span class="s">&quot;&quot;</span> <span class="n">id</span> <span class="n">msg</span><span class="p">)</span>
+
+  <span class="kr">in</span> <span class="n">runServer</span> <span class="n">defaultOptions</span> <span class="p">{}</span> <span class="n">otherSiteRouter</span>
+</pre></div>
+</div>
+<p>Notice how the composition of handler functions, using the value-level
+operator <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>, matches the structure of our routing type. If we fail
+to match the type we get a compile error.</p>
+</div>
+<div class="section" id="content-negotiation">
+<h2>Content Negotiation<a class="headerlink" href="#content-negotiation" title="Permalink to this headline">¶</a></h2>
+<p>By specifying alternative content types for an endpoint, Hyper can
+choose a response and content type based on the request <code class="docutils literal"><span class="pre">Accept</span></code>
+header. This is called <em>content negotiation</em>. Instead of specifying a
+single type, like <code class="docutils literal"><span class="pre">HTML</span></code> or <code class="docutils literal"><span class="pre">JSON</span></code>, we provide alternatives using
+<code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>. All content types must have <code class="docutils literal"><span class="pre">MimeRender</span></code> instances for the
+response body type.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">type</span> <span class="kt">Site3</span> <span class="ow">=</span>
+  <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Get</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span> <span class="kt">AllUsers</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Get</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span> <span class="kt">User</span>
+</pre></div>
+</div>
+<p>By making requests to this site, using <code class="docutils literal"><span class="pre">Accept</span></code> headers, we can see
+how the router chooses the matching content type (output formatted and
+shortened for readability).</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span>$ &lt;strong&gt;curl -H &#39;Accept: application/json&#39; http://localhost:3000/users&lt;/strong&gt;
+[
+  {
+    &quot;name&quot;: &quot;John Paul Jones&quot;,
+    &quot;id&quot;: &quot;1&quot;
+  },
+  {
+    &quot;name&quot;: &quot;Tal Wilkenfeld&quot;,
+    &quot;id&quot;: &quot;2&quot;
+  },
+  ...
+]
+</pre></div>
+</div>
+<p>There&#8217;s experimental support for <em>wildcards</em> and <em>qualities</em> as well.</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span>$ curl -H &#39;Accept: text/*;q=1.0&#39; http://localhost:3000/users
+&lt;div&gt;
+  &lt;h1&gt;Users&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href=&quot;/users/1&quot;&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;/users/2&quot;&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
+    ...
+  &lt;/ul&gt;
+&lt;/div&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="automatically-derived-xhr-clients">
+<h2>Automatically Derived XHR Clients<a class="headerlink" href="#automatically-derived-xhr-clients" title="Permalink to this headline">¶</a></h2>
+<p>As we represent routing as types, we can derive XHR clients from those
+types. In a client-side application, for example one written using
+<a class="reference external" href="https://www.purescript-pux.org">Pux</a> or
+<a class="reference external" href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can
+use the
+<a class="reference external" href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a>
+library to derive such client functions. You get functions with
+type-safe parameters and encoding/decoding, using your routed types, and
+results in the <a class="reference external" href="https://github.com/slamdata/purescript-aff">Aff</a>
+monad, which are easily integrated into most frameworks.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="bottom-nav">
+  
+  <div class="previous-page">
+    <a href="../index.html">Extensions</a>
+  </div>
+  
+  
+</div>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-wrapper text-muted">
+    <span class="version">v0.3.0
+ &mdash;</span>
+        &copy; Copyright 2016-2017 Oskar Wickström &mdash;
+    <span class="license">
+      Licensed under
+      <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">MPL-2.0</a>
+    </span>
+  </div>
+</footer>
+  </body>
+</html>

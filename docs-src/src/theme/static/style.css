@@ -1,0 +1,261 @@
+html, body {
+  height: 100%;
+}
+img {
+  max-width: 100%;
+}
+
+table {
+  width: 100%;
+  /* Hack to override Sphinx's border="1" */
+  border: 0px transparent;
+}
+
+div.related {
+  font-size: 14px;
+}
+.related:after {
+  display: block;
+  content: '';
+  clear: both;
+}
+div.related ul {
+  padding: 0;
+  margin: 0;
+}
+
+.navbar.top-nav {
+  margin-bottom: 0;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+}
+.navbar .container-fluid {
+  padding: 0 1rem;
+}
+
+.breadcrumbs-container {
+  overflow-x: scroll;
+  color: #888;
+  background: #fafafa;
+  border-bottom: 1px solid #ddd;
+}
+#breadcrumbs {
+  margin: 0 auto;
+  padding: .5rem 1rem;
+}
+#breadcrumbs ul {
+  list-style-type: none;
+  padding: 0;
+}
+#breadcrumbs li {
+  display: inline;
+  vertical-align: middle;
+}
+#breadcrumbs li:after {
+  content: " \00BB ";
+  margin: 0 .25em;
+}
+#breadcrumbs li:last-child:after {
+  content: '';
+}
+#breadcrumbs a {
+  color: #888;
+}
+#breadcrumbs a:hover,
+#breadcrumbs a:active {
+  color: #666;
+}
+
+.bottom-nav {
+  margin: 1rem 0 0 250px;
+  max-width: 750px;
+  color: #888;
+}
+.bottom-nav a {
+  color: inherit;
+}
+.bottom-nav .next-page {
+  float: right;
+}
+.bottom-nav .next-page:after {
+  content: ' \2192';
+}
+.bottom-nav .previous-page {
+  float: left;
+}
+.bottom-nav .previous-page:before {
+  content: '\2190 ';
+}
+.bottom-nav:after {
+  display: block;
+  content: '';
+  clear: both;
+}
+
+.footer {
+  margin: 3rem 0 0 250px;
+  padding: 1rem;
+  font-size: 13px;
+  max-width: 750px;
+}
+
+.footer-wrapper {
+  font-size: 14px;
+  text-align: center;
+}
+
+div.sphinxsidebar {
+  float: left;
+  margin-left: 0;
+  font-size: 13px;
+  overflow: auto;
+  width: 250px;
+  border-left: 1px solid #ddd;
+}
+div.sphinxsidebarwrapper {
+  padding: 1rem 2rem;
+  background: #fffffa;
+}
+
+div.sphinxsidebar a {
+  text-decoration: none;
+}
+div.sphinxsidebar a:active,
+div.sphinxsidebar a:hover {
+  text-decoration: underline;
+}
+
+div.sphinxsidebar h3 {
+  text-transform: uppercase;
+  font-size: inherit;
+}
+div.sphinxsidebar h4 {
+  text-transform: uppercase;
+  font-size: inherit;
+}
+div.sphinxsidebar h3 a {
+  color: #222;
+}
+
+div.sphinxsidebar ul {
+  padding: 0 0 0 1.5em;
+  margin: 1em 0;
+  list-style-type: square;
+}
+div.sphinxsidebar ul li {
+  line-height: 1.7;
+}
+div.sphinxsidebar ul ul {
+  padding: 0 0 0 1em;
+  margin: 0;
+}
+div.sphinxsidebar ul ul li {
+  text-transform: none;
+  font-weight: 400;
+}
+
+.document {
+  margin: 0 0 0 250px;
+  max-width: 750px;
+  padding: 1rem 2rem;
+}
+.clearer {
+  display: block;
+  content: '';
+  clear: both;
+}
+
+@media screen and (max-width: 800px) {
+  body {
+    padding-top: 0;
+  }
+  .navbar {
+    margin-bottom: 0;
+  }
+  .header .search {
+    float: none;
+    margin-bottom: 16px;
+  }
+  .breadcrumbs-container {
+    border-bottom: 0;
+  }
+  #breadcrumbs li {
+  }
+  div.sphinxsidebar {
+    float: none;
+    width: auto;
+    border-left: 0;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 16px;
+  }
+  .document {
+    margin: 0;
+    padding: 16px 8px;
+    font-size: 14px;
+  }
+  .footer {
+    margin: 0;
+  }
+}
+
+div.figure {
+  padding: 0;
+  margin: 32px;
+  text-align: center;
+}
+div.body p.caption {
+  margin-top: 16px;
+  font-style: italic;
+}
+.caption-number {
+  font-weight: 700;
+  margin-right: .25em;
+}
+
+p.rubric {
+  margin: 16px 0;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 20px;
+  color: #666;
+}
+
+img.align-right,
+.figure.align-right,
+object.align-right {
+  margin: 0 0 32px 32px;
+}
+
+.headerlink {
+  display: none;
+  margin-left: .25em;
+}
+
+h1:hover > .headerlink,
+h2:hover > .headerlink,
+h3:hover > .headerlink,
+h4:hover > .headerlink,
+h5:hover > .headerlink,
+h6:hover > .headerlink {
+  display: inline;
+}
+
+.document {
+  font-size: inherit;
+}
+
+/* Index Page */
+.section#hyper h1 {
+  text-align: center;
+  font-size: 300%;
+  margin-top: 3rem;
+}
+.section#hyper h1 a {
+  display: none;
+}
+.section#hyper .rubric {
+  text-align: center;
+  font-style: normal;
+  margin-bottom: 3rem;
+}

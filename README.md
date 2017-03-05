@@ -68,13 +68,10 @@ make examples
 
 ### Building Documentation
 
-Prerequisites:
+See [docs-src/README.md](docs-src/README.md) for prerequisites, setup, and
+how to work with the documentation.
 
-* [A TeX Distribution](https://www.latex-project.org/get/)
-* [Pandoc 1.19+](http://pandoc.org/)
-* [pandoc-include-code](https://github.com/owickstrom/pandoc-include-code)
-
-Then run:
+Then, for the release build, run:
 
 ```bash
 make docs

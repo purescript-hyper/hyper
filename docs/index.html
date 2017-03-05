@@ -1,505 +1,168 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <meta name="author" content="Oskar Wickström">
-  <meta name="keywords" content="http web purescript middleware routing type-safe">
-  <meta name="description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-  <title>Hyper</title>
-  <link rel="icon" type="image/png" href="theme/favicon.png">
-  <link rel="icon" type="image/svg+xml" href="theme/favicon.svg">
-  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Source+Sans+Pro:400,400i,700" rel="stylesheet">
-  <link rel="stylesheet" href="theme/html/code.css">
-  <link rel="stylesheet" href="theme/html/docs.css">
 
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:creator" content="owickstrom">
-  <meta name="twitter:title" content="Hyper">
-  <meta name="twitter:url" content="http://hyper.wickstrom.tech">
-  <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
-  <meta name="twitter:image:src" content="http://hyper.wickstrom.tech/theme/icon-large.png">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
 
-  <meta property="og:type" content="article" />
-  <meta property="og:article:author" content="Oskar Wickström" />
-  <meta property="og:article:section" content="Technology" />
-  <meta property="og:article:keyword" content="http web purescript middleware routing type-safe" />
-  <meta property="og:title" content="Hyper" />
-  <meta property="og:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
-  <meta property="og:type" content="video.movie" />
-  <meta property="og:url" content="http://hyper.wickstrom.tech" />
-  <meta property="og:image" content="http://hyper.wickstrom.tech/theme/icon-large.png" />
 
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
-</head>
 
-<body itemscope itemtype="http://schema.org/TechArticle">
+<title>Type-safe, statically checked composition of HTTP servers &mdash; Hyper</title>
 
-    <div id="main">
-  <header>
-    <h1 class="title" itemprop="name">
-      <a href="http://hyper.wickstrom.tech" id="logo">
-        <img src="theme/hyper@1x.png"
-            srcset="theme/hyper@2x.png 2x, theme/hyper@1x.png 1x"
-            alt="Hyper">
+    
+    <link rel="stylesheet" href="_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/fira/fira.css" type="text/css" />
+    <link rel="stylesheet" href="_static/fira-code/fira_code.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/overrides.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     'v0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="introduction/index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body role="document">
+<div class="navbar top-nav">
+  <div class="container-fluid">
+    <div class="navbar-text logo">
+      <a href="#">
+        <img alt="Hyper"
+            height="24"
+            src="_static/hyper.png"
+            srcset="_static/hyper.png" />
       </a>
-    </h1>
-        <p class="subtitle">Type-safe, statically checked composition of HTTP servers</p>
-            By
-    <cite class="author" itemprop="author">Oskar Wickström</cite>
-        <p>
-    <a href="hyper.pdf">Also available as PDF</a>
-    </p>
-      </header>
-<h2 id="introduction">Introduction</h2>
-<p>Welcome to the Hyper documentation! Hyper is an experimental middleware architecture for HTTP servers written in PureScript. It is also a breeding ground for higher-level web server constructs, which tend to fall under the “framework” category. Right now most things live in the main repository of Hyper, but they will most likely break free soon.</p>
-<p>I hope you find something useful and inspiring in Hyper. If you want to get involved, see <a href="#contributing">Contributing</a> at the end of this document.</p>
-<h3 id="goals">Goals</h3>
-<p>Composing middleware in NodeJS is a risky business. They mutate the HTTP request and response objects freely, and are often dependent on each others’ side-effects. There are no guarantees that you have stacked the middleware functions in a sensible order, and it is often the case, in my experience, that misconfigured middleware takes a lot of time and effort to debug.</p>
-<p>The goal of <em>Hyper</em> is to make use of row polymorphism and other tasty type system features in PureScript to enforce correctly stacked middleware in HTTP server applications. All effects of middleware should be reflected in the types to ensure that common mistakes cannot be made. A few examples could be:</p>
-<ul>
-<li>Incorrect ordering header and body writing</li>
-<li>Writing incomplete responses</li>
-<li>Overwriting headers</li>
-<li>Writing multiple responses</li>
-<li>Trying to consume a non-parsed request body</li>
-<li>Consuming a request body parsed as the wrong type</li>
-<li>Incorrect ordering of error handling middleware</li>
-<li>Incorrect ordering of middleware for sessions, authentication, authorization</li>
-<li>Missing authentication and/or authorization checks</li>
-<li>Linking, in an HTML anchor, to a resource that is not routed</li>
-<li>Posting, in an HTML form, to a resource that is not routed</li>
-</ul>
-<p>Can we use the PureScript type system to eradicate this class of errors? Let’s find out!</p>
-<h2 id="design">Design</h2>
-<p>We will start by looking at the central components of <em>Hyper</em>. While focusing heavily on safety, Hyper tries to provide an open API that can support multiple PureScript backends, and different styles of web applications.</p>
-<p>The design of Hyper is inspired by a number of projects. The middleware chain lends much from <em>Plug</em>, an abstract HTTP interface in Elixir, that enables various HTTP libraries to inter-operate. You might also find similarities with <em>connect</em> in NodeJS. On the type system side, Hyper tries to bring in ideas from <em>Haskell</em> and <em>Idris</em>, specifically the use of phantom types and GADTs to lift invariants to the type level and increase safety.</p>
-<h3 id="conn">Conn</h3>
-<p>A <em>Conn</em>, short for “connection”, models the entirety of a connection between the HTTP server and the user agent, both request and response.</p>
-<pre class="purescript"><code>type Conn req res components =
-  { request :: req
-  , response :: res
-  , components :: components
-  }</code></pre>
-<p>The <code>request</code> and <code>response</code> hold the values representing the HTTP request and response, respectively. The purpose of the <code>components</code> field, however, is not that obvious. It is used for things not directly related to the HTTP, but nonetheless related to the act of responding to the HTTP request. A middleware can add information the Conn using components, like providing authentication or authorization values. The types of these components then becomes part of the Conn type, and you get compile-time guarantees when using the provided components.</p>
-<h3 id="middleware">Middleware</h3>
-<p>A <em>middleware</em> is an <em>indexed monadic action</em> transforming one <code>Conn</code> to another <code>Conn</code>. It operates in some base monad <code>m</code>, and is indexed by <code>i</code> and <code>o</code>, the <em>input</em> and <em>output</em> Conn types of the middleware action.</p>
-<pre class="purescript"><code>newtype Middleware m i o a = ...</code></pre>
-<p>The input and output type parameters are used to ensure that a Conn is transformed, and that side-effects are performed, correctly, throughout the middleware chain.</p>
-<p>Being able to parameterize <code>Middleware</code> with some type <code>m</code>, you can customize the chain depending on the needs of your middleware and handlers. Applications can use monad transformers to track state, provide configuration, gather metrics, and much more, in the chain of middleware.</p>
-<p>Middleware are composed using <code>ibind</code>, the indexed monadic version of <code>bind</code>. The simplest way of composing middleware is by chaining them with <code>:*&gt;</code>, from <code>Control.IxMonad</code>. See <a href="https://pursuit.purescript.org/packages/purescript-indexed-monad/0.1.1">purescript-indexed-monad</a> for more information.</p>
-<pre class="purescript"><code>writeStatus statusOK
-:*&gt; closeHeaders
-:*&gt; respond &quot;We&#39;re composing middleware!&quot;</code></pre>
-<p>If you want to feed the return value of one middleware into another, use <code>:&gt;&gt;=</code>, the infix operator alias for <code>mbind</code>.</p>
-<pre class="purescript"><code>getUser :&gt;&gt;= renderUser</code></pre>
-<p>You can also rebind the <em>do block</em> syntax to use <code>ibind</code> instead of regular <code>bind</code>.</p>
-<pre class="purescript"><code>do
-  user &lt;- getUser
-  writeStatus statusOK
-  closeHeaders
-  respond (&quot;User: &quot; &lt;&gt; user.name)
-  where bind = ibind</code></pre>
-<h3 id="response-state-transitions">Response State Transitions</h3>
-<p>The <code>writer</code> field in the <code>response</code> record of a Conn is a value provided by the server backend. Middleware often constrain the <code>writer</code> field to be a value implementing the <code>ResponseWriter</code> type class. This makes it possible to provide response writing abstractions without depending on a specific server backend.</p>
-<p>The state of a response writer is tracked in its type parameter. This state tracking, and the type-indexed middleware using the response writer, guarantee correctness in response handling, preventing incorrect ordering of headers and body writes, incomplete responses, or other such mistakes. Let us have a look at the type signatures of some of response writing functions in <code>Hyper.Response</code>.</p>
-<p>We see that <code>headers</code> takes a traversable collection of headers, and gives back a middleware that, given a connection where headers are ready to be written (<code>HeadersOpen</code>), writes all specified headers, writes the separating CRLF before the HTTP body, and marks the state of the response writer as being ready to write the body (<code>BodyOpen</code>).</p>
-<pre class="purescript"><code>headers :: forall t m req res rw c.
-           (Traversable t, Monad m, ResponseWriter rw m b) =&gt;
-           t Header
-        -&gt; Middleware
-           m
-           (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw BodyOpen | res } c)
-           Unit</code></pre>
-<p>To be used in combination with <code>headers</code>, the <code>respond</code> function takes some <code>Response m r b</code>, and gives back a middleware that, given a connection <em>where all headers have been written</em>, writes a response, and <em>marks the state of the response writer as ended</em>.</p>
-<pre class="purescript"><code>respond :: forall m r b req res rw c.
-           (Monad m, Response m r b, ResponseWriter rw m b) =&gt;
-           r
-        -&gt; Middleware
-           m
-           (Conn req { writer :: rw BodyOpen | res } c)
-           (Conn req { writer :: rw ResponseEnded | res } c)
-           Unit</code></pre>
-<p>The <code>Response</code> type class describes types that can be written as responses. It takes three type parameters, where <code>b</code> is the target type, <code>m</code> is a base monad for the Middleware returned, and <code>r</code> is the original response type,</p>
-<pre class="purescript"><code>class Response b m r where
-  toResponse :: forall i. r -&gt; Middleware m i i b</code></pre>
-<p>This mechanism allows servers to provide specific types for the response body, along with instances for common response types. When using the Node server, which has a response body type wrapping <code>Buffer</code>, you can still respond with a <code>String</code> or <code>HTML</code> value directly.</p>
-<p>Aside from convenience in having a single function for most response types and servers, the polymorphism of <code>respond</code> lets middleware be decoupled from specific servers. It only requires an instance matching the response type used by the middleware and the type required by the server.</p>
-<h3 id="servers">Servers</h3>
-<p>Although Hyper middleware can applied directly to Conn values using <code>runMiddleware</code>, you likely want a <em>server</em> to run your middleware. Hyper tries to be as open as possible when it comes to servers – your application, and the middleware it depends on, should not be tied to a specific server. This allows for greater reuse and the ability to test entire applications without running the “real” server. Currently Hyper bundles a <a href="#nodejs">NodeJS server</a>, as well as a <a href="#testing">test server</a>.</p>
-<h2 id="basics">Basics</h2>
-<p>This chapter walks through some of the basic and more lower-level features of Hyper. We look at how we can use the Conn and Middleware types to gain type safety “in the small”, and how to implement common things needed in web servers.</p>
-<h3 id="request-body-reading">Request Body Reading</h3>
-<p>The <code>RequestBodyReader</code> type class has one operation, <code>readBody</code>, which supports different servers to provide different types of request body values.</p>
-<pre class="purescript"><code>class RequestBodyReader r m b | r -&gt; b where
-  readBody
-    :: forall req res c.
-       Middleware
-       m
-       (Conn { body :: r | req } res c)
-       (Conn { body :: r | req } res c)
-       b</code></pre>
-<p>Given that there is an instance for the body <code>b</code>, and the return type <code>r</code>, we can use this middleware together with other middleware, like so:</p>
-<pre class=purescript><code>onPost =
-  readBody :>>=
-  case _ of
-    "" ->
-      writeStatus statusBadRequest
-      :*> closeHeaders
-      :*> respond "... anyone there?"
-    msg ->
-      writeStatus statusBadRequest
-      :*> closeHeaders
-      :*> respond ("You said: " <> msg)
-</code></pre>
-<h3 id="forms">Forms</h3>
-<p>When working with form data, we often want to serialize and deserialize forms as custom data types, instead of working with the key-value pairs directly. The <code>ToForm</code> and <code>FromForm</code> type classes abstracts serialization and deserialization to form data, respectively.</p>
-<p>We first declare our data types, and some instance which we will need later.</p>
-<pre class=purescript><code>data MealType = Vegan | Vegetarian | Omnivore | Carnivore
-
-derive instance genericMealType :: Generic MealType _
-instance eqMealType :: Eq MealType where eq = genericEq
-instance showMealType :: Show MealType where show = genericShow
-
-newtype Order = Order { beers :: Int, meal :: MealType }
-</code></pre>
-<p>In this example we will only deserialize forms, and thus we only need the <code>FromForm</code> instance.</p>
-<pre class=purescript><code>instance fromFormOrder :: FromForm Order where
-  fromForm form = do
-    beers <- required "beers" form >>= parseBeers
-    meal <- required "meal" form >>= parseMealType
-    pure (Order { beers: beers, meal: meal })
-    where
-      parseBeers s =
-        maybe
-        (throwError ("Invalid number: " <> s))
-        pure
-        (Int.fromString s)
-
-      parseMealType =
-        case _ of
-          "Vegan" -> pure Vegan
-          "Vegetarian" -> pure Vegetarian
-          "Omnivore" -> pure Omnivore
-          "Carnivore" -> pure Carnivore
-          s -> throwError ("Invalid meal type: " <> s)
-</code></pre>
-<p>Now we are ready to write our handler. We use <code>parseFromForm</code> to get a value of type <code>Either String Order</code>, where the <code>String</code> explains parsing errors. By pattern matching using record field puns, we extract the <code>beers</code> and <code>meal</code> values, and respond based on those values.</p>
-<pre class=purescript><code>onPost =
-  parseFromForm :>>=
-  case _ of
-    Left err ->
-      writeStatus statusBadRequest
-      :*> closeHeaders
-      :*> respond (err <> "\n")
-    Right (Order { beers, meal })
-      | meal == Omnivore || meal == Carnivore ->
-        writeStatus statusBadRequest
-        :*> closeHeaders
-        :*> respond "Sorry, we do not serve meat here.\n"
-      | otherwise ->
-        writeStatus statusBadRequest
-        :*> closeHeaders
-        :*> respond ("One " <> show meal <> " meal and "
-                     <> show beers <> " beers coming up!\n")
-</code></pre>
-<p>Let’s try this server out at the command line.</p>
-<pre class=bash><code>$ <strong>curl -X POST -d 'beers=6' http://localhost:3000</strong>
-Missing field: meal
-$ <strong>curl -X POST -d 'meal=Vegan&beers=foo' http://localhost:3000</strong>
-Invalid number: foo
-$ <strong>curl -X POST -d 'meal=Omnivore&beers=6' http://localhost:3000</strong>
-Sorry, we do not serve meat here.
-$ <strong>curl -X POST -d 'meal=Vegetarian&beers=6' http://localhost:3000</strong>
-One Vegetarian meal and 6 beers coming up!
-</code></pre>
-<h2 id="type-level-routing">Type-Level Routing</h2>
-<p><code>Hyper.Routing</code> provides an API for expressing web application routing as types, much like <a href="https://haskell-servant.github.io">Servant</a> does. By using routing types you get static guarantees about having handled all cases. You also get a lot of stuff for free, such as type-safe parameters for handlers, and automatically generated type-safe URIs to endpoints.</p>
-<h3 id="a-single-endpoint-example">A Single-Endpoint Example</h3>
-<p>Let’s say we want to render a home page as HTML. We start out by declaring the endpoint data type <code>Home</code>, and the structure of our site:</p>
-<pre class=purescript><code>data Home = Home
-
-type Site1 = Get HTML Home
-</code></pre>
-<p><code>Get HTML Home</code> is a routing type with only one endpoint, rendering a <code>Home</code> value as HTML. So where does the <code>Home</code> value come from? We provide it using a <em>handler</em>. A handler for <code>Site1</code> would be some value of the following type:</p>
-<pre class="purescript"><code>forall m. Monad m =&gt; ExceptT RoutingError m Home</code></pre>
-<p>We can construct such a value using <code>pure</code> and a <code>Home</code> value:</p>
-<pre class=purescript><code>home :: forall m. Applicative m => m Home
-home = pure Home
-</code></pre>
-<p>Nice! But what comes out on the other end? We need something that renders the <code>Home</code> value as HTML. By providing an instance of <code>EncodeHTML</code> for <code>Home</code>, we instruct the endpoint how to render.</p>
-<pre class=purescript><code>instance encodeHTMLHome :: EncodeHTML Home where
-  encodeHTML Home =
-    p (text "Welcome to my site!")
-</code></pre>
-<p>The <code>HTML</code> type is a phantom type, only used as a marker type, and the actual markup is written in the <code>MarkupM</code> DSL from <a href="https://github.com/bodil/purescript-smolder">purescript-smolder</a>.</p>
-<p>We are getting ready to create the server. First, we need a value-level representation of the <code>Site1</code> type, to be able to pass it to the <code>router</code> function. For that we use <a href="https://pursuit.purescript.org/packages/purescript-proxy/1.0.0/docs/Type.Proxy">Proxy</a>. Its documentation describes it as follows:</p>
-<blockquote>
-<p>The Proxy type and values are for situations where type information is required for an input to determine the type of an output, but where it is not possible or convenient to provide a value for the input.</p>
-</blockquote>
-<p>We create a top-level definition of the type <code>Proxy Site1</code> with the value constructor <code>Proxy</code>.</p>
-<pre class=purescript><code>site1 :: Proxy Site1
-site1 = Proxy
-</code></pre>
-<p>We pass the proxy, our handler, and the <code>onRoutingError</code> function for cases where no route matched the request, to the <code>router</code> function.</p>
-<pre class=purescript><code>    onRoutingError status msg =
-      writeStatus status
-      :*> contentType textHTML
-      :*> closeHeaders
-      :*> respond (maybe "" id msg)
-
-    siteRouter = router site1 home onRoutingError
-</code></pre>
-<p>The value returned by <code>router</code> is regular middleware, ready to be passed to a server.</p>
-<pre class=purescript><code>main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
-main =
-  runServer defaultOptions {} siteRouter
-  where
-</code></pre>
-<h3 id="routing-multiple-endpoints">Routing Multiple Endpoints</h3>
-<p>Real-world servers often need more than one endpoint. Let’s define a router for an application that shows a home page with links, a page listing users, and a page rendering a specific user.</p>
-<pre class=purescript><code>data Home = Home
-
-data AllUsers = AllUsers (Array User)
-
-newtype User = User { id :: Int, name :: String }
-
-type Site2 =
-  Get HTML Home
-  :<|> "users" :/ Get HTML AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get HTML User
-
-site2 :: Proxy Site2
-site2 = Proxy
-</code></pre>
-<p>Let’s go through the new constructs used:</p>
-<ul>
-<li><code>:&lt;|&gt;</code> is a type operator that separates <em>alternatives</em>. A router for this type will try each route in order until one matches.</li>
-<li><code>:/</code> separates a literal path segment and the rest of the endpoint type.</li>
-<li><code>Capture</code> takes a descriptive string and a type. It takes the next available path segment and tries to convert it to the given type. Each capture in an endpoint type corresponds to an argument in the handler function.</li>
-<li><code>:&gt;</code> separates a an endpoint modifier, like <code>Capture</code>, and the rest of the endpoint type.</li>
-</ul>
-<p>We define handlers for our routes as regular functions on the specified data types, returning <code>ExceptT RoutingError m a</code> values, where <code>m</code> is the monad of our middleware, and <code>a</code> is the type to render for the endpoint.</p>
-<pre class=purescript><code>home :: forall m. Monad m => ExceptT RoutingError m Home
-home = pure Home
-
-allUsers :: forall m. Monad m => ExceptT RoutingError m AllUsers
-allUsers = AllUsers <$> getUsers
-
-getUser :: forall m. Monad m => Int -> ExceptT RoutingError m User
-getUser id' =
-  find userWithId <$> getUsers >>=
-  case _ of
-    Just user -> pure user
-    Nothing ->
-      throwError (HTTPError { status: statusNotFound
-                            , message: Just "User not found."
-                            })
-  where
-    userWithId (User u) = u.id == id'
-</code></pre>
-<p>As in the single-endpoint example, we want to render as HTML. Let’s create instances for our data types. Notice how we can create links between routes in a type-safe manner.</p>
-<pre class=purescript><code>instance encodeHTMLHome :: EncodeHTML Home where
-  encodeHTML Home =
-    case linksTo site2 of
-      _ :<|> allUsers' :<|> _ ->
-        p do
-          text "Welcome to my site! Go check out my "
-          linkTo allUsers' (text "Users")
-          text "."
-
-instance encodeHTMLAllUsers :: EncodeHTML AllUsers where
-  encodeHTML (AllUsers users) =
-    div do
-      h1 (text "Users")
-      ul (traverse_ linkToUser users)
-    where
-      linkToUser (User u) =
-        case linksTo site2 of
-          _ :<|> _ :<|> getUser' ->
-            li (linkTo (getUser' u.id) (text u.name))
-
-instance encodeHTMLUser :: EncodeHTML User where
-  encodeHTML (User { name }) =
-    h1 (text name)
-</code></pre>
-<p>The pattern match on the value returned by <code>linksTo</code> must match the structure of the routing type. We use <code>:&lt;|&gt;</code> to pattern match on links. Each matched link will have a type based on the corresponding endpoint. <code>getUser</code> in the previous code has type <code>Int -&gt; URI</code>, while <code>allUsers</code> has no captures and thus has type <code>URI</code>.</p>
-<p>We are still missing <code>getUsers</code>, our source of User values. In a real application it would probably be a database query, but for this example we simply hard-code some famous users of proper instruments.</p>
-<pre class=purescript><code>getUsers :: forall m. Applicative m => m (Array User)
-getUsers =
-  pure
-  [ User { id: 1, name: "John Paul Jones" }
-  , User { id: 2, name: "Tal Wilkenfeld" }
-  , User { id: 3, name: "John Patitucci" }
-  , User { id: 4, name: "Jaco Pastorious" }
-  ]
-</code></pre>
-<p>Almost done! We just need to create the router, and start a server.</p>
-<pre class=purescript><code>main :: forall e. Eff (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e) Unit
-main =
-  let otherSiteRouter =
-        router site2 (home :<|> allUsers :<|> getUser) onRoutingError
-
-      onRoutingError status msg =
-        writeStatus status
-        :*> contentType textHTML
-        :*> closeHeaders
-        :*> respond (maybe "" id msg)
-
-  in runServer defaultOptions {} otherSiteRouter
-</code></pre>
-<p>Notice how the composition of handler functions, using the value-level operator <code>:&lt;|&gt;</code>, matches the structure of our routing type. If we fail to match the type we get a compile error.</p>
-<h3 id="content-negotiation">Content Negotiation</h3>
-<p>By specifying alternative content types for an endpoint, Hyper can choose a response and content type based on the request <code>Accept</code> header. This is called <em>content negotiation</em>. Instead of specifying a single type, like <code>HTML</code> or <code>JSON</code>, we provide alternatives using <code>:&lt;|&gt;</code>. All content types must have <code>MimeRender</code> instances for the response body type.</p>
-<pre class=purescript><code>type Site3 =
-  Get HTML Home
-  :<|> "users" :/ Get (HTML :<|> JSON) AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
-</code></pre>
-<p>By making requests to this site, using <code>Accept</code> headers, we can see how the router chooses the matching content type (output formatted and shortened for readability).</p>
-<pre class=bash><code>$ <strong>curl -H 'Accept: application/json' http://localhost:3000/users</strong>
-[
-  {
-    "name": "John Paul Jones",
-    "id": "1"
-  },
-  {
-    "name": "Tal Wilkenfeld",
-    "id": "2"
-  },
-  ...
-]
-</code></pre>
-<p>There’s experimental support for <em>wildcards</em> and <em>qualities</em> as well.</p>
-<pre class=bash><code>$ <strong>curl -H 'Accept: text/*;q=1.0' http://localhost:3000/users</strong>
-&lt;div&gt;
-  &lt;h1&gt;Users&lt;/h1&gt;
-  &lt;ul&gt;
-    &lt;li&gt;&lt;a href="/users/1"&gt;John Paul Jones&lt;/a&gt;&lt;/li&gt;
-    &lt;li&gt;&lt;a href="/users/2"&gt;Tal Wilkenfeld&lt;/a&gt;&lt;/li&gt;
-    ...
-  &lt;/ul&gt;
-&lt;/div&gt;
-</code></pre>
-<h3 id="automatically-derived-xhr-clients">Automatically Derived XHR Clients</h3>
-<p>As we represent routing as types, we can derive XHR clients from those types. In a client-side application, for example one written using <a href="https://www.purescript-pux.org">Pux</a> or <a href="https://github.com/slamdata/purescript-halogen">Halogen</a>, you can use the <a href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a> library to derive such client functions. You get functions with type-safe parameters and encoding/decoding, using your routed types, and results in the <a href="https://github.com/slamdata/purescript-aff">Aff</a> monad, which are easily integrated into most frameworks.</p>
-<h2 id="nodejs">NodeJS</h2>
-<p>The server in <code>Hyper.Node.Server</code> wraps the <code>http</code> module in NodeJS, and serves middleware using the <code>Aff</code> monad. Here is how you can start a Node server:</p>
-<pre class="purescript"><code>let
-  app =
-    writeStatus (Tuple 200 &quot;OK&quot;)
-    :*&gt; closeHeaders
-    :*&gt; respond &quot;Hello there!&quot;
-in runServer defaultOptions {} app</code></pre>
-<p>As seen above, <code>runServer</code> takes a record of options, an initial <em>components</em> record, and your application middleware. If you want to do logging on server startup, and on any request handling errors, use <code>defaultOptionsWithLogging</code>.</p>
-<h3 id="monad-transformers">Monad Transformers</h3>
-<p>You might want to use a monad transformer stack in your application, for instance as a way to pass configuration, or to accumulate some state in the chain of middleware. The underlying monad of <code>Middleware</code> is parameterized for this exact purpose. When running the NodeJS server with monad transformers, you need to pass a function in the options record, in the <code>runM</code> field.</p>
-<p>The following code runs a middleware using the <code>ReaderT</code> monad transformer. Note that the <code>runAppM</code> function might need to be defined at the top-level to please the type checker.</p>
-<pre class=purescript><code>type MyConfig = { thingToSay ∷ String }
-
-runAppM
-  ∷ ∀ e a.
-    ReaderT MyConfig (Aff e) a
-  → Aff e a
-runAppM = flip runReaderT { thingToSay: "Hello, ReaderT!" }
-
-main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
-main =
-  let app = do
-        config ← lift' ask
-        writeStatus statusOK
-        closeHeaders
-        respond config.thingToSay
-        where bind = ibind
-
-      options = defaultOptionsWithLogging { runM = runAppM }
-
-  in runServer options {} app
-</code></pre>
-<p>In a real-world application the configuration type <code>MyConfig</code> could hold a database connection pool, or settings read from the environment, for example.</p>
-<h2 id="testing">Testing</h2>
-<p>When running tests you might not want to start a full HTTP server and send requests using an HTTP client. Instead you can use the server in <code>Hyper.Test.TestServer</code>. It runs your middleware directly on <code>Conn</code> values, and collects the response using a Writer monad. You get back a <code>TestResponse</code> from which you can extract the status code, headers, and the response body.</p>
-<pre class="purescript"><code>it &quot;responds with a friendly message&quot; do
-  conn &lt;- { request: {}
-          , response: { writer: testResponseWriter }
-          , components: {}
-          }
-          # evalMiddleware app
-          # testServer
-  testStatus conn `shouldEqual` Just statusOK
-  testStringBody conn `shouldEqual` &quot;Hello there!&quot;</code></pre>
-<h2 id="contributing">Contributing</h2>
-<p>While Hyper is currently an experiment, and in constant flux, you are welcome to contribute. Please post ideas and start discussions using <a href="https://github.com/owickstrom/hyper/issues">the issue tracker on GitHub</a>. You can also contact <a href="https://wickstrom.tech/about.html">Oskar Wickström</a> directly for design discussions. If this project grows, we can setup a mailing list, or other some other means of communication.</p>
-<p>Please note that sending pull requests without first discussing the design is probably a waste of time, if not only fixing simple things like typos.</p>
+    </div>
+    <div class="navbar-right">
+      <div class="search navbar-form">
+        
+<form action="search.html" method="get">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+    </div>
   </div>
-    <nav id="TOC">
-    <header>
-      <a href="http://hyper.wickstrom.tech">
-        <img src="theme/hyper@1x.png"
-            srcset="theme/hyper@2x.png 2x, theme/hyper@1x.png 1x"
-            alt="Hyper">
-      </a>
-    </header>
+</div>
+
+<div class="breadcrumbs-container">
+  
+  <div class="related top">
+  <nav id="breadcrumbs">
     <ul>
-    <li><a href="#introduction">Introduction</a><ul>
-    <li><a href="#goals">Goals</a></li>
-    </ul></li>
-    <li><a href="#design">Design</a><ul>
-    <li><a href="#conn">Conn</a></li>
-    <li><a href="#middleware">Middleware</a></li>
-    <li><a href="#response-state-transitions">Response State Transitions</a></li>
-    <li><a href="#servers">Servers</a></li>
-    </ul></li>
-    <li><a href="#basics">Basics</a><ul>
-    <li><a href="#request-body-reading">Request Body Reading</a></li>
-    <li><a href="#forms">Forms</a></li>
-    </ul></li>
-    <li><a href="#type-level-routing">Type-Level Routing</a><ul>
-    <li><a href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
-    <li><a href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
-    <li><a href="#content-negotiation">Content Negotiation</a></li>
-    <li><a href="#automatically-derived-xhr-clients">Automatically Derived XHR Clients</a></li>
-    </ul></li>
-    <li><a href="#nodejs">NodeJS</a><ul>
-    <li><a href="#monad-transformers">Monad Transformers</a></li>
-    </ul></li>
-    <li><a href="#testing">Testing</a></li>
-    <li><a href="#contributing">Contributing</a></li>
+      <li><a href="#">Hyper</a></li> 
     </ul>
   </nav>
-    <footer>
-        <p class="version" itemprop="version">
-    Version fdfb323.
-    </p>
-        <p>
-    The
-    Hyper
-        <a href="http://github.com/owickstrom/hyper">source code</a>
-        is licensed under <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">Mozilla Public License 2.0</a>.</p>
-    <p>Copyright &copy; 2016 <a href="https://wickstrom.tech">Oskar Wickström</a>.</p>
-    <p>
-    <a href="hyper.pdf">Also available as PDF</a>
-    </p>
-  </footer>
-  <script src="theme/html/jquery.js"></script>
-  <script src="theme/html/highlight.min.js"></script>
-  <script src="theme/html/haskell.min.js"></script>
-  <script src="theme/html/highlight.js"></script>
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  </div>
+</div>
 
-    ga('create', 'UA-42197774-3', 'auto');
-    ga('send', 'pageview');
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Next topic</h4>
+  <p class="topless"><a href="introduction/index.html"
+                        title="next chapter">Introduction</a></p>
+<h3>Download</h3>
+<p>
+  <a href="/hyper.pdf">PDF</a>
+</p>
+<h3>More Resources</h3>
+<ul>
+  <li>
+    <a href="https://github.com/owickstrom/hyper">GitHub Repository</a>
+  </li>
+  <li>
+    <a href="https://github.com/owickstrom/hyper/issues">Issue Tracker</a>
+  </li>
+  <li>
+    <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">License</a>
+  </li>
+  <li>
+    <a href="https://twitter.com/owickstrom">Twitter</a>
+  </li>
+  <li>
+    <a href="https://wickstrom.tech">wickstrom.tech</a>
+  </li>
+</ul>
 
-  </script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="hyper">
+<h1>Hyper<a class="headerlink" href="#hyper" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Type-safe, statically checked composition of HTTP servers</p>
+<p>Hyper is an experimental middleware
+architecture for HTTP servers written in PureScript.  It is also a breeding
+ground for higher-level web server constructs, which tend to fall under the
+&#8220;framework&#8221; category. Right now most things live in the main repository of
+Hyper, but they will most likely break free soon.</p>
+<p>This documentation is divided into sections, each being suited for different
+types of information you might be looking for.</p>
+<ul class="simple">
+<li><a class="reference internal" href="introduction/index.html"><span class="doc">Introduction</span></a> describes the project itself; its motivations,
+goals, and relevant information for contributors to the project.</li>
+<li><a class="reference internal" href="core-api/index.html"><span class="doc">Core API</span></a> is an introduction and reference of the Core API of
+Hyper, on which the higher-level features build.</li>
+<li><a class="reference internal" href="topic-guides/index.html"><span class="doc">Topic Guides</span></a> explain how to solve specifics tasks of writing web
+servers using features of Hyper.</li>
+<li><a class="reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a> are step-by-step guides on how to build complete
+web applications.</li>
+<li><a class="reference internal" href="extensions/index.html"><span class="doc">Extensions</span></a> provides an overview of extensions to Hyper.</li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="bottom-nav">
+  
+  
+  <div class="next-page">
+    <a href="introduction/index.html">Introduction</a>
+  </div>
+  
+</div>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-wrapper text-muted">
+    <span class="version">v0.3.0
+ &mdash;</span>
+        &copy; Copyright 2016-2017 Oskar Wickström &mdash;
+    <span class="license">
+      Licensed under
+      <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">MPL-2.0</a>
+    </span>
+  </div>
+</footer>
   </body>
-
 </html>

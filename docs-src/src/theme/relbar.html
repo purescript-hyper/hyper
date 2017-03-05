@@ -1,0 +1,21 @@
+{%- macro breadcrumbs_markup() %}
+  <nav id="breadcrumbs">
+    <ul>
+      {%- block rootrellink %}
+      <li><a href="{{ pathto(master_doc) }}">{{ shorttitle|e }}</a></li>
+      {%- endblock %}
+      {%- for parent in parents %}
+      <li>
+        <a href="{{ parent.link|e }}">{{ parent.title }}</a>
+      </li>
+      {%- endfor %}
+      {%- block relbaritems %} {% endblock %}
+    </ul>
+  </nav>
+{%- endmacro %}
+
+{%- macro relbar_top() %}
+  <div class="related top">
+    {{- breadcrumbs_markup () }}
+  </div>
+{%- endmacro %}

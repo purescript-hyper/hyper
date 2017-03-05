@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+
+<title>Forms &mdash; Hyper</title>
+
+    
+    <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fira/fira.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fira-code/fira_code.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/bootstrap/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/overrides.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'v0.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NodeJS" href="nodejs.html" />
+    <link rel="prev" title="Request Body Reading" href="request-body-reading.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body role="document">
+<div class="navbar top-nav">
+  <div class="container-fluid">
+    <div class="navbar-text logo">
+      <a href="../index.html">
+        <img alt="Hyper"
+            height="24"
+            src="../_static/hyper.png"
+            srcset="../_static/hyper.png" />
+      </a>
+    </div>
+    <div class="navbar-right">
+      <div class="search navbar-form">
+        
+<form action="../search.html" method="get">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="breadcrumbs-container">
+  
+  <div class="related top">
+  <nav id="breadcrumbs">
+    <ul>
+      <li><a href="../index.html">Hyper</a></li>
+      <li>
+        <a href="index.html">Topic Guides</a>
+      </li> 
+    </ul>
+  </nav>
+  </div>
+</div>
+
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="request-body-reading.html"
+                        title="previous chapter">Request Body Reading</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nodejs.html"
+                        title="next chapter">NodeJS</a></p>
+<h3>Download</h3>
+<p>
+  <a href="/hyper.pdf">PDF</a>
+</p>
+<h3>More Resources</h3>
+<ul>
+  <li>
+    <a href="https://github.com/owickstrom/hyper">GitHub Repository</a>
+  </li>
+  <li>
+    <a href="https://github.com/owickstrom/hyper/issues">Issue Tracker</a>
+  </li>
+  <li>
+    <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">License</a>
+  </li>
+  <li>
+    <a href="https://twitter.com/owickstrom">Twitter</a>
+  </li>
+  <li>
+    <a href="https://wickstrom.tech">wickstrom.tech</a>
+  </li>
+</ul>
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="forms">
+<h1>Forms<a class="headerlink" href="#forms" title="Permalink to this headline">¶</a></h1>
+<p>When working with form data, we often want to serialize and deserialize
+forms as custom data types, instead of working with the key-value pairs
+directly. The <code class="docutils literal"><span class="pre">ToForm</span></code> and <code class="docutils literal"><span class="pre">FromForm</span></code> type classes abstracts
+serialization and deserialization to form data, respectively.</p>
+<p>We first declare our data types, and some instance which we will need
+later.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">MealType</span> <span class="ow">=</span> <span class="kt">Vegan</span> <span class="o">|</span> <span class="kt">Vegetarian</span> <span class="o">|</span> <span class="kt">Omnivore</span> <span class="o">|</span> <span class="kt">Carnivore</span>
+
+<span class="nf">derive</span> <span class="kr">instance</span> <span class="n">genericMealType</span> <span class="ow">::</span> <span class="kt">Generic</span> <span class="kt">MealType</span> <span class="kr">_</span>
+<span class="kr">instance</span> <span class="n">eqMealType</span> <span class="ow">::</span> <span class="kt">Eq</span> <span class="kt">MealType</span> <span class="kr">where</span> <span class="n">eq</span> <span class="ow">=</span> <span class="n">genericEq</span>
+<span class="kr">instance</span> <span class="n">showMealType</span> <span class="ow">::</span> <span class="kt">Show</span> <span class="kt">MealType</span> <span class="kr">where</span> <span class="n">show</span> <span class="ow">=</span> <span class="n">genericShow</span>
+
+<span class="kr">newtype</span> <span class="kt">Order</span> <span class="ow">=</span> <span class="kt">Order</span> <span class="p">{</span> <span class="n">beers</span> <span class="ow">::</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">meal</span> <span class="ow">::</span> <span class="kt">MealType</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>In this example we will only deserialize forms, and thus we only need
+the <code class="docutils literal"><span class="pre">FromForm</span></code> instance.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">instance</span> <span class="n">fromFormOrder</span> <span class="ow">::</span> <span class="kt">FromForm</span> <span class="kt">Order</span> <span class="kr">where</span>
+  <span class="n">fromForm</span> <span class="n">form</span> <span class="ow">=</span> <span class="kr">do</span>
+    <span class="n">beers</span> <span class="ow">&lt;-</span> <span class="n">required</span> <span class="s">&quot;beers&quot;</span> <span class="n">form</span> <span class="o">&gt;&gt;=</span> <span class="n">parseBeers</span>
+    <span class="n">meal</span> <span class="ow">&lt;-</span> <span class="n">required</span> <span class="s">&quot;meal&quot;</span> <span class="n">form</span> <span class="o">&gt;&gt;=</span> <span class="n">parseMealType</span>
+    <span class="n">pure</span> <span class="p">(</span><span class="kt">Order</span> <span class="p">{</span> <span class="n">beers</span><span class="kt">:</span> <span class="n">beers</span><span class="p">,</span> <span class="n">meal</span><span class="kt">:</span> <span class="n">meal</span> <span class="p">})</span>
+    <span class="kr">where</span>
+      <span class="n">parseBeers</span> <span class="n">s</span> <span class="ow">=</span>
+        <span class="n">maybe</span>
+        <span class="p">(</span><span class="n">throwError</span> <span class="p">(</span><span class="s">&quot;Invalid number: &quot;</span> <span class="o">&lt;&gt;</span> <span class="n">s</span><span class="p">))</span>
+        <span class="n">pure</span>
+        <span class="p">(</span><span class="kt">Int</span><span class="o">.</span><span class="n">fromString</span> <span class="n">s</span><span class="p">)</span>
+
+      <span class="n">parseMealType</span> <span class="ow">=</span>
+        <span class="kr">case</span> <span class="kr">_</span> <span class="kr">of</span>
+          <span class="s">&quot;Vegan&quot;</span> <span class="ow">-&gt;</span> <span class="n">pure</span> <span class="kt">Vegan</span>
+          <span class="s">&quot;Vegetarian&quot;</span> <span class="ow">-&gt;</span> <span class="n">pure</span> <span class="kt">Vegetarian</span>
+          <span class="s">&quot;Omnivore&quot;</span> <span class="ow">-&gt;</span> <span class="n">pure</span> <span class="kt">Omnivore</span>
+          <span class="s">&quot;Carnivore&quot;</span> <span class="ow">-&gt;</span> <span class="n">pure</span> <span class="kt">Carnivore</span>
+          <span class="n">s</span> <span class="ow">-&gt;</span> <span class="n">throwError</span> <span class="p">(</span><span class="s">&quot;Invalid meal type: &quot;</span> <span class="o">&lt;&gt;</span> <span class="n">s</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we are ready to write our handler. We use <code class="docutils literal"><span class="pre">parseFromForm</span></code> to get a
+value of type <code class="docutils literal"><span class="pre">Either</span> <span class="pre">String</span> <span class="pre">Order</span></code>, where the <code class="docutils literal"><span class="pre">String</span></code> explains
+parsing errors. By pattern matching using record field puns, we extract
+the <code class="docutils literal"><span class="pre">beers</span></code> and <code class="docutils literal"><span class="pre">meal</span></code> values, and respond based on those values.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">onPost</span> <span class="ow">=</span>
+  <span class="n">parseFromForm</span> <span class="kt">:&gt;&gt;=</span>
+  <span class="kr">case</span> <span class="kr">_</span> <span class="kr">of</span>
+    <span class="kt">Left</span> <span class="n">err</span> <span class="ow">-&gt;</span>
+      <span class="n">writeStatus</span> <span class="n">statusBadRequest</span>
+      <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+      <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;&gt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="kt">Right</span> <span class="p">(</span><span class="kt">Order</span> <span class="p">{</span> <span class="n">beers</span><span class="p">,</span> <span class="n">meal</span> <span class="p">})</span>
+      <span class="o">|</span> <span class="n">meal</span> <span class="o">==</span> <span class="kt">Omnivore</span> <span class="o">||</span> <span class="n">meal</span> <span class="o">==</span> <span class="kt">Carnivore</span> <span class="ow">-&gt;</span>
+        <span class="n">writeStatus</span> <span class="n">statusBadRequest</span>
+        <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+        <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="s">&quot;Sorry, we do not serve meat here.</span><span class="se">\n</span><span class="s">&quot;</span>
+      <span class="o">|</span> <span class="n">otherwise</span> <span class="ow">-&gt;</span>
+        <span class="n">writeStatus</span> <span class="n">statusBadRequest</span>
+        <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+        <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="p">(</span><span class="s">&quot;One &quot;</span> <span class="o">&lt;&gt;</span> <span class="n">show</span> <span class="n">meal</span> <span class="o">&lt;&gt;</span> <span class="s">&quot; meal and &quot;</span>
+                     <span class="o">&lt;&gt;</span> <span class="n">show</span> <span class="n">beers</span> <span class="o">&lt;&gt;</span> <span class="s">&quot; beers coming up!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let&#8217;s try this server out at the command line.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ curl -X POST -d <span class="s1">&#39;beers=6&#39;</span> http://localhost:3000
+Missing field: meal
+$ curl -X POST -d <span class="s1">&#39;meal=Vegan&amp;beers=foo&#39;</span> http://localhost:3000
+Invalid number: foo
+$ curl -X POST -d <span class="s1">&#39;meal=Omnivore&amp;beers=6&#39;</span> http://localhost:3000
+Sorry, we <span class="k">do</span> not serve meat here.
+$ curl -X POST -d <span class="s1">&#39;meal=Vegetarian&amp;beers=6&#39;</span> http://localhost:3000
+One Vegetarian meal and <span class="m">6</span> beers coming up!
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="bottom-nav">
+  
+  <div class="previous-page">
+    <a href="request-body-reading.html">Request Body Reading</a>
+  </div>
+  
+  
+  <div class="next-page">
+    <a href="nodejs.html">NodeJS</a>
+  </div>
+  
+</div>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-wrapper text-muted">
+    <span class="version">v0.3.0
+ &mdash;</span>
+        &copy; Copyright 2016-2017 Oskar Wickström &mdash;
+    <span class="license">
+      Licensed under
+      <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">MPL-2.0</a>
+    </span>
+  </div>
+</footer>
+  </body>
+</html>
