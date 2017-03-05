@@ -2,9 +2,9 @@
 Extensions
 **********
 
-While still being structured as a monolithic Git repository, Hyper's Core API
-is separate from other components built on it. This chapter shows extensions
-built on the Core API that provides higher-level abstractions.
+This chapter shows extensions built on top of the Core API, providing
+higher-level abstractions. They are, for technical reasons, usually hosted as
+separate Git repositories.
 
 .. toctree::
 
