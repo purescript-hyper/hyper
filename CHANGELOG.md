@@ -1,7 +1,17 @@
 # Changelog
 
+* 0.5.0
+  - Separate out
+    [purescript-hyper-routing-server](https://github.com/owickstrom/purescript-hyper-routing-server)
+    into a package, cleaning up the routing type API
+  - Minor changes to docs
+* 0.4.1
+  - Fix issue with leaking type parameters in `runServer`, breaks backwards
+    compatibility (type signatures changed)
 * 0.4.0
-  - Separate out [purescript-hyper-routing](https://github.com/owickstrom/purescript-hyper-routing) into a package
+  - Separate out
+    [purescript-hyper-routing](https://github.com/owickstrom/purescript-hyper-routing)
+    into a package
   - Migrate to Sphinx for documentation
   - Fix bug caused by `stream.writeString` on empty string
   - Improve content negotiation (now in separate routing lib)
