@@ -1,5 +1,10 @@
 # Changelog
 
+* 0.4.0
+  - Separate out [purescript-hyper-routing](https://github.com/owickstrom/purescript-hyper-routing) into a package
+  - Migrate to Sphinx for documentation
+  - Fix bug caused by `stream.writeString` on empty string
+  - Improve content negotiation (now in separate routing lib)
 * 0.3.0
   - Support usage of monad transformers together with Node server.
   - Move `onListening` and `onRequestError` into the Node server
