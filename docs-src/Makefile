@@ -239,6 +239,7 @@ livehtml:
 release: html latexpdf
 	rm -r ../docs
 	cp -r target/html ../docs
+	echo "hyper.wickstrom.tech" > ../docs/CNAME
 	cp target/latex/hyper.pdf ../docs/hyper.pdf
 	echo "# THIS IS AUTO-GENERATED, DO NOT EDIT" > ../docs/README.md
 	echo "Instead edit the sources in [docs-src](../docs-src)." >> ../docs/README.md
