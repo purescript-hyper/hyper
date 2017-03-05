@@ -260,3 +260,27 @@ h6:hover > .headerlink {
   font-style: normal;
   margin-bottom: 3rem;
 }
+
+.admonition {
+  background: #fafafa;
+  padding-bottom: 1rem;
+  color: #666;
+}
+.admonition p {
+  padding: 0 1em;
+}
+.admonition .admonition-title {
+  background: #f0f0f0;
+  padding: .25em 1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: .05rem;
+}
+.admonition.note,
+.admonition.warning {
+  background: #fffce3;
+}
+.admonition.note .admonition-title,
+.admonition.warning .admonition-title {
+  background: #ece9d0;
+}

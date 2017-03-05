@@ -22,7 +22,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     'v0.4.1',
+        VERSION:     'v0.5.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -104,6 +104,14 @@
   <div class="document">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Hyper</a><ul>
+<li><a class="reference internal" href="#the-hyper-documentation">The Hyper Documentation</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Next topic</h4>
   <p class="topless"><a href="introduction/index.html"
                         title="next chapter">Introduction</a></p>
@@ -146,10 +154,21 @@
 <h1>Hyper<a class="headerlink" href="#hyper" title="Permalink to this headline">¶</a></h1>
 <p class="rubric">Type-safe, statically checked composition of HTTP servers</p>
 <p>Hyper is an experimental middleware
-architecture for HTTP servers written in PureScript.  It is also a breeding
-ground for higher-level web server constructs, which tend to fall under the
-&#8220;framework&#8221; category. Right now most things live in the main repository of
-Hyper, but they will most likely break free soon.</p>
+architecture for HTTP servers written in PureScript. Its main focus is
+correctness and type-safety, using type-level information to enforce correct
+composition and abstraction for web servers. The Hyper project is also a
+breeding ground for higher-level web server constructs, which tend to fall
+under the &#8220;framework&#8221; category.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Until recently, most work on extensions and higher-level constructs have
+started their life in the main repository, but have then been separated
+into their own packages. More things might be separated in the near future,
+so prepare for unstability. Hyper itself should be considered experimental,
+for now.</p>
+</div>
+<div class="section" id="the-hyper-documentation">
+<h2>The Hyper Documentation<a class="headerlink" href="#the-hyper-documentation" title="Permalink to this headline">¶</a></h2>
 <p>This documentation is divided into sections, each being suited for different
 types of information you might be looking for.</p>
 <ul class="simple">
@@ -164,6 +183,7 @@ web applications.</li>
 <li><a class="reference internal" href="extensions/index.html"><span class="doc">Extensions</span></a> provides an overview of extensions to Hyper.</li>
 </ul>
 <div class="toctree-wrapper compound">
+</div>
 </div>
 </div>
 
@@ -185,7 +205,7 @@ web applications.</li>
 
 <footer class="footer" role="contentinfo">
   <div class="footer-wrapper text-muted">
-    <span class="version">v0.4.1 &mdash;</span>
+    <span class="version">v0.5.0 &mdash;</span>
         &copy; Copyright 2016-2017 Oskar Wickström &mdash;
     <span class="license">
       Licensed under
