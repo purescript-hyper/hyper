@@ -1,12 +1,13 @@
 Type-Level Routing
 ==================
 
-``Hyper.Routing`` provides an API for expressing web application routing
-as types, much like `Servant <https://haskell-servant.github.io>`__
-does. By using routing types you get static guarantees about having
-handled all cases. You also get a lot of stuff for free, such as
-type-safe parameters for handlers, and automatically generated type-safe
-URIs to endpoints.
+The `purescript-hyper-routing
+<https://github.com/owickstrom/purescript-hyper-routing>`__ package provides an
+API for expressing web application routing as types, much like `Servant
+<https://haskell-servant.github.io>`__ does. By using routing types you get
+static guarantees about having handled all cases. You also get a lot of stuff
+for free, such as type-safe parameters for handlers, and automatically
+generated type-safe URIs to endpoints.
 
 A Single-Endpoint Example
 -------------------------
