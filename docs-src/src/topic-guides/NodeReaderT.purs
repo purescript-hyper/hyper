@@ -7,7 +7,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Reader (ReaderT, ask, runReaderT)
 import Hyper.Middleware (lift')
-import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer')
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.HTTP (HTTP)
@@ -29,8 +29,5 @@ main =
         closeHeaders
         respond config.thingToSay
         where bind = ibind
-
-      options = defaultOptionsWithLogging { runM = runAppM }
-
-  in runServer options {} app
+  in runServer' defaultOptionsWithLogging {} runAppM app
 -- end snippet main

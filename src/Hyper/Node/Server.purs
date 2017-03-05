@@ -7,6 +7,7 @@ module Hyper.Node.Server
        , defaultOptions
        , defaultOptionsWithLogging
        , runServer
+       , runServer'
        )where
 
 import Prelude
@@ -183,26 +184,24 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
         :*> modifyConn (_ { response { writer = HttpResponse r }})
 
 
-type ServerOptions m e =
+type ServerOptions e =
   { hostname ∷ String
   , port ∷ Port
   , onListening ∷ Port → Eff (http ∷ HTTP | e) Unit
   , onRequestError ∷ Error → Eff (http ∷ HTTP | e) Unit
-  , runM ∷ ∀ a. m a → Aff (http ∷ HTTP | e) a
   }
 
 
-defaultOptions ∷ ∀ e. ServerOptions (Aff (http ∷ HTTP | e)) e
+defaultOptions ∷ ∀ e. ServerOptions e
 defaultOptions =
   { hostname: "0.0.0.0"
   , port: Port 3000
   , onListening: const (pure unit)
   , onRequestError: const (pure unit)
-  , runM: id
   }
 
 
-defaultOptionsWithLogging ∷ ∀ e. ServerOptions (Aff (console ∷ CONSOLE, http ∷ HTTP | e)) (console ∷ CONSOLE | e)
+defaultOptionsWithLogging ∷ ∀ e. ServerOptions (console ∷ CONSOLE | e)
 defaultOptionsWithLogging =
   defaultOptions { onListening = onListening
                  , onRequestError = onRequestError
@@ -214,12 +213,13 @@ defaultOptionsWithLogging =
       log ("Request failed: " <> show err)
 
 
-runServer
+runServer'
   :: forall m e req res c c'.
   ( Functor m
   ) ⇒
-     ServerOptions m e
+     ServerOptions e
   -> c
+  -> (forall a. m a -> Aff (http :: HTTP | e) a)
   -> Middleware
      m
      (Conn { url :: String
@@ -233,7 +233,7 @@ runServer
      (Conn req { writer :: HttpResponse ResponseEnded | res } c')
      Unit
   -> Eff (http :: HTTP | e) Unit
-runServer options components middleware = do
+runServer' options components runM middleware = do
   server <- HTTP.createServer onRequest
   let listenOptions = { port: unwrap options.port
                       , hostname: "0.0.0.0"
@@ -254,4 +254,25 @@ runServer options components middleware = do
                  , response: { writer: HttpResponse response }
                  , components: components
                  }
-      in catchException options.onRequestError (void (launchAff (options.runM (evalMiddleware middleware conn))))
+      in catchException options.onRequestError (void (launchAff (runM (evalMiddleware middleware conn))))
+
+
+runServer
+  :: forall e req res c c'.
+     ServerOptions e
+  -> c
+  -> Middleware
+     (Aff (http :: HTTP | e))
+     (Conn { url :: String
+           , body :: RequestBody
+           , contentLength :: Maybe Int
+           , headers :: StrMap String
+           , method :: Either Method CustomMethod
+           }
+           { writer :: HttpResponse StatusLineOpen }
+           c)
+     (Conn req { writer :: HttpResponse ResponseEnded | res } c')
+     Unit
+  -> Eff (http :: HTTP | e) Unit
+runServer options components middleware =
+  runServer' options components id middleware

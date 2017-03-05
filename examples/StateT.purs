@@ -9,7 +9,7 @@ import Control.Monad.State (evalStateT, get, modify)
 import Control.Monad.State.Trans (StateT)
 import Data.String (joinWith)
 import Hyper.Middleware (lift')
-import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer')
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.HTTP (HTTP)
@@ -21,8 +21,7 @@ runAppM = flip evalStateT []
 
 main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
 main =
-  let options = defaultOptionsWithLogging { runM = runAppM }
-
+  let
       -- Our application just appends to the state in between
       -- some operations, then responds with the built up state...
       app = do
@@ -37,4 +36,4 @@ main =
 
         where bind = ibind
 
-  in runServer options {} app
+  in runServer' defaultOptionsWithLogging {} runAppM app
