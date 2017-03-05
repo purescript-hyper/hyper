@@ -202,7 +202,7 @@ html_use_smartypants = True
 
 # If false, no module index is generated.
 #
-# html_domain_indices = True
+html_domain_indices = False
 
 # If false, no index is generated.
 #
