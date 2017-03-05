@@ -67,6 +67,7 @@ div.related ul {
 }
 
 .bottom-nav {
+  padding: 1rem 2rem;
   margin: 1rem 0 0 250px;
   max-width: 750px;
   color: #888;
