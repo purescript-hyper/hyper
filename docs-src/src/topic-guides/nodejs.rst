@@ -27,8 +27,8 @@ You might want to use a monad transformer stack in your application, for
 instance as a way to pass configuration, or to accumulate some state in
 the chain of middleware. The underlying monad of ``Middleware`` is
 parameterized for this exact purpose. When running the NodeJS server
-with monad transformers, you need to use `runServer'` instead of the regular
-`runServer`, and pass a function that runs your monad and returns an `Aff`
+with monad transformers, you need to use ``runServer'`` instead of the regular
+``runServer``, and pass a function that runs your monad and returns an ``Aff``
 value.
 
 The following code runs a middleware using the ``ReaderT`` monad

@@ -20,7 +20,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     'v0.4.0',
+        VERSION:     'v0.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -179,8 +179,8 @@ logging on server startup, and on any request handling errors, use
 instance as a way to pass configuration, or to accumulate some state in
 the chain of middleware. The underlying monad of <code class="docutils literal"><span class="pre">Middleware</span></code> is
 parameterized for this exact purpose. When running the NodeJS server
-with monad transformers, you need to use <cite>runServer&#8217;</cite> instead of the regular
-<cite>runServer</cite>, and pass a function that runs your monad and returns an <cite>Aff</cite>
+with monad transformers, you need to use <code class="docutils literal"><span class="pre">runServer'</span></code> instead of the regular
+<code class="docutils literal"><span class="pre">runServer</span></code>, and pass a function that runs your monad and returns an <code class="docutils literal"><span class="pre">Aff</span></code>
 value.</p>
 <p>The following code runs a middleware using the <code class="docutils literal"><span class="pre">ReaderT</span></code> monad
 transformer. Note that the <code class="docutils literal"><span class="pre">runAppM</span></code> function might need to be defined
@@ -232,7 +232,7 @@ for example.</p>
 
 <footer class="footer" role="contentinfo">
   <div class="footer-wrapper text-muted">
-    <span class="version">v0.4.0
+    <span class="version">v0.4.1
  &mdash;</span>
         &copy; Copyright 2016-2017 Oskar Wickström &mdash;
     <span class="license">
