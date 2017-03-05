@@ -27,7 +27,6 @@
     "purescript-node-fs-aff": "^3.0.0",
     "purescript-generics-rep": "^4.1.0",
     "purescript-proxy": "^1.0.0",
-    "purescript-uri": "^2.0.0",
     "purescript-argonaut": "^2.0.0",
     "purescript-arrays": "^3.2.0",
     "purescript-argonaut-codecs": "^2.0.0",
