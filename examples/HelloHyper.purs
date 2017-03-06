@@ -11,9 +11,7 @@ import Node.HTTP (HTTP)
 
 main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
 main =
-  let
-    app = do
-      writeStatus statusOK
-      :*> closeHeaders
-      :*> respond "Hello, Hyper!"
+  let app = writeStatus statusOK
+            :*> closeHeaders
+            :*> respond "Hello, Hyper!"
   in runServer defaultOptionsWithLogging {} app
