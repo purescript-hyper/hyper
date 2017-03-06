@@ -65,6 +65,13 @@ dd {
 .navbar-text.logo {
   margin: 13px 15px 13px 0;
 }
+.navbar.navbar-inverse {
+  background: #222;
+}
+.navbar.navbar-inverse .navbar-collapse,
+.navbar.navbar-inverse .navbar-form {
+  border-color: #1c1c1c;
+}
 
 p {
   margin-bottom: 1em;

@@ -38,14 +38,15 @@
 {% endblock %}
 
 {% block header %}
-<div class="navbar top-nav">
+<div class="navbar navbar-inverse top-nav">
   <div class="container-fluid">
     <div class="navbar-text logo">
       <a href="{{ pathto(master_doc) }}">
         <img alt="{{ shorttitle|e }}"
             height="24"
-            src="{{ pathto('_static/hyper.png', 1) }}"
-            srcset="{{ pathto('_static/hyper.png', 1) }}" />
+            src="{{ pathto('_static/hyper-inverse.png', 1) }}"
+            srcset="{{ pathto('_static/hyper-inverse.png', 1) }} 1x,
+                    {{ pathto('_static/hyper-inverse.png', 1) }} 2x" />
       </a>
     </div>
     <div class="navbar-right">
