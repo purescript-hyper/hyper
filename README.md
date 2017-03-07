@@ -11,8 +11,9 @@
 </p>
 
 <p align="center">
-<a href="https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html">Introduction</a>
-| <a href="https://owickstrom.github.io/hyper/">Documentation</a> (also in <a href="https://owickstrom.github.io/hyper/hyper.pdf">PDF</a>)
+<a href="http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html">Getting Started</a>
+| <a href="http://hyper.wickstrom.tech">Documentation</a> (also in <a href="https://owickstrom.github.io/hyper/hyper.pdf">PDF</a>)
+| <a href="http://hyper.wickstrom.tech/faq.html">FAQ</a>
 | <a href="examples/">Examples</a>
 </p>
 
@@ -20,11 +21,9 @@
 
 Hyper is an experimental project, trying to improve correctness in web server
 programming, and in HTTP middleware and request handlers specifically. To learn
-more about Hyper, check out the
-[documentation](http://hyper.wickstrom.tech), ["Hyper: Elegant Weapons
-for a More Civilized
-Page"](https://wickstrom.tech/programming/2017/01/06/hyper-elegant-weapons-for-a-more-civilized-page.html)
-(introductory blog post), or the [examples](examples/).
+more about Hyper, check out the [documentation](http://hyper.wickstrom.tech)
+and [the Getting Started
+tutorial](http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html).
 
 <p align="right">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
