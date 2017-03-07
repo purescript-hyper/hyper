@@ -31,6 +31,8 @@ types of information you might be looking for.
 * :doc:`tutorials/index` are step-by-step guides on how to build complete
   web applications.
 * :doc:`extensions/index` provides an overview of extensions to Hyper.
+* :doc:`faq` lists some of the questions and considerations about Hyper that
+  come up frequently, answered for future reference.
 
 .. toctree::
   :hidden:
@@ -40,4 +42,5 @@ types of information you might be looking for.
   topic-guides/index
   tutorials/index
   extensions/index
+  faq
 
