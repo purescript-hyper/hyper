@@ -109,6 +109,38 @@
   
 
   <div class="document">
+    <div class="documentwrapper">
+      <div class="bodywrapper">
+        <div class="body" role="main">
+          
+  <div class="section" id="servers">
+<h1>Servers<a class="headerlink" href="#servers" title="Permalink to this headline">¶</a></h1>
+<p>Although Hyper middleware can applied directly to Conn values using
+<code class="docutils literal"><span class="pre">runMiddleware</span></code>, you likely want a <em>server</em> to run your middleware.
+Hyper tries to be as open as possible when it comes to servers &#8211; your
+application, and the middleware it depends on, should not be tied to a
+specific server. This allows for greater reuse and the ability to test
+entire applications without running the &#8220;real&#8221; server. Currently Hyper
+bundles a NodeJS server, described in <a class="reference internal" href="../topic-guides/nodejs.html"><span class="doc">NodeJS</span></a>, as well as a
+test server, described in <a class="reference internal" href="../topic-guides/testing.html"><span class="doc">Testing</span></a>.</p>
+</div>
+
+
+        </div>
+        <div class="bottom-nav">
+          
+          <div class="previous-page">
+            <a href="response-state-transitions.html">Response State Transitions</a>
+          </div>
+          
+          
+          <div class="next-page">
+            <a href="../topic-guides/index.html">Topic Guides</a>
+          </div>
+          
+        </div>
+      </div>
+    </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
@@ -148,38 +180,6 @@
 
         </div>
       </div>
-    <div class="documentwrapper">
-      <div class="bodywrapper">
-        <div class="body" role="main">
-          
-  <div class="section" id="servers">
-<h1>Servers<a class="headerlink" href="#servers" title="Permalink to this headline">¶</a></h1>
-<p>Although Hyper middleware can applied directly to Conn values using
-<code class="docutils literal"><span class="pre">runMiddleware</span></code>, you likely want a <em>server</em> to run your middleware.
-Hyper tries to be as open as possible when it comes to servers &#8211; your
-application, and the middleware it depends on, should not be tied to a
-specific server. This allows for greater reuse and the ability to test
-entire applications without running the &#8220;real&#8221; server. Currently Hyper
-bundles a NodeJS server, described in <a class="reference internal" href="../topic-guides/nodejs.html"><span class="doc">NodeJS</span></a>, as well as a
-test server, described in <a class="reference internal" href="../topic-guides/testing.html"><span class="doc">Testing</span></a>.</p>
-</div>
-
-
-        </div>
-        <div class="bottom-nav">
-          
-          <div class="previous-page">
-            <a href="response-state-transitions.html">Response State Transitions</a>
-          </div>
-          
-          
-          <div class="next-page">
-            <a href="../topic-guides/index.html">Topic Guides</a>
-          </div>
-          
-        </div>
-      </div>
-    </div>
 
     <div class="clearer"></div>
   </div>

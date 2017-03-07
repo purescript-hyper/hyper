@@ -33,12 +33,15 @@ div.related ul {
   border-color: #333;
   color: #aaa;
 }
+.navbar.top-nav .form-control:focus {
+  background-color: #555;
+}
 .navbar .container-fluid {
   max-width: 1000px;
 }
 
 .breadcrumbs {
-  background: #333;
+  background: #444;
   color: #ccc;
 }
 .breadcrumbs-wrapper {
@@ -108,10 +111,11 @@ div.related ul {
   max-width: 1000px;
 }
 .document .documentwrapper {
+  float: left;
+  width: 75%;
   margin: 0;
 }
 .document .bodywrapper {
-  margin-right: 250px;
   padding: 1rem 2rem;
 }
 
@@ -120,7 +124,7 @@ div.sphinxsidebar {
   margin-left: 0;
   font-size: 13px;
   overflow: auto;
-  width: 250px;
+  width: 25%;
 }
 div.sphinxsidebarwrapper {
   padding: 1rem 2rem;
@@ -189,20 +193,26 @@ div.sphinxsidebar ul ul li {
   div.sphinxsidebar {
     float: none;
     width: auto;
-    border-left: 0;
-    margin-bottom: 16px;
+    border: 0;
+    margin: 2em 0 0 0;
+    background: #f0f0f0;
   }
   .document {
     font-size: 14px;
   }
+  .document .documentwrapper {
+    float: none;
+    width: auto;
+  }
   .document .bodywrapper {
     padding-left: 8px;
     padding-right: 8px;
-    margin-right: 0;
   }
-  .bottom-nav,
   .footer {
     margin: 0;
+  }
+  .footer {
+    background: #f0f0f0;
   }
 }
 */

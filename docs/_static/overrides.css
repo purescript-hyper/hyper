@@ -66,11 +66,12 @@ dd {
   margin: 13px 15px 13px 0;
 }
 .navbar.navbar-inverse {
-  background: #222;
+  background: #333;
 }
-.navbar.navbar-inverse .navbar-collapse,
 .navbar.navbar-inverse .navbar-form {
-  border-color: #1c1c1c;
+  border: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
 }
 
 p {

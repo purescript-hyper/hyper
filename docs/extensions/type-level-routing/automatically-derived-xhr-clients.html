@@ -111,6 +111,36 @@
   
 
   <div class="document">
+    <div class="documentwrapper">
+      <div class="bodywrapper">
+        <div class="body" role="main">
+          
+  <div class="section" id="automatically-derived-xhr-clients">
+<h1>Automatically Derived XHR Clients<a class="headerlink" href="#automatically-derived-xhr-clients" title="Permalink to this headline">¶</a></h1>
+<p>As we represent routing as types, we can derive XHR clients from those
+types. In a client-side application, for example one written using
+<a class="reference external" href="https://www.purescript-pux.org">Pux</a> or
+<a class="reference external" href="https://github.com/slamdata/purescript-halogen">Halogen</a>, we
+use the
+<a class="reference external" href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a>
+library to derive such client functions. We get functions with
+type-safe parameters and encoding/decoding, using our routed types, and
+results in the <a class="reference external" href="https://github.com/slamdata/purescript-aff">Aff</a>
+monad, which are easily integrated into most frameworks.</p>
+</div>
+
+
+        </div>
+        <div class="bottom-nav">
+          
+          <div class="previous-page">
+            <a href="servers-for-routing-types.html">Servers for Routing Types</a>
+          </div>
+          
+          
+        </div>
+      </div>
+    </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
@@ -147,36 +177,6 @@
 
         </div>
       </div>
-    <div class="documentwrapper">
-      <div class="bodywrapper">
-        <div class="body" role="main">
-          
-  <div class="section" id="automatically-derived-xhr-clients">
-<h1>Automatically Derived XHR Clients<a class="headerlink" href="#automatically-derived-xhr-clients" title="Permalink to this headline">¶</a></h1>
-<p>As we represent routing as types, we can derive XHR clients from those
-types. In a client-side application, for example one written using
-<a class="reference external" href="https://www.purescript-pux.org">Pux</a> or
-<a class="reference external" href="https://github.com/slamdata/purescript-halogen">Halogen</a>, we
-use the
-<a class="reference external" href="https://github.com/owickstrom/purescript-hyper-routing-xhr">purescript-hyper-routing-xhr</a>
-library to derive such client functions. We get functions with
-type-safe parameters and encoding/decoding, using our routed types, and
-results in the <a class="reference external" href="https://github.com/slamdata/purescript-aff">Aff</a>
-monad, which are easily integrated into most frameworks.</p>
-</div>
-
-
-        </div>
-        <div class="bottom-nav">
-          
-          <div class="previous-page">
-            <a href="servers-for-routing-types.html">Servers for Routing Types</a>
-          </div>
-          
-          
-        </div>
-      </div>
-    </div>
 
     <div class="clearer"></div>
   </div>

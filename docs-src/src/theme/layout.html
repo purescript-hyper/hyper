@@ -73,8 +73,6 @@
   {%- block sidebar1 %} {# possible location for sidebar #} {% endblock %}
 
   <div class="document">
-    {%- block sidebar2 %}{{ sidebar() }}{% endblock %}
-
     {%- block document %}
     <div class="documentwrapper">
     {%- if render_sidebar %}
@@ -100,6 +98,8 @@
     {%- endif %}
     </div>
     {%- endblock %}
+
+    {%- block sidebar2 %}{{ sidebar() }}{% endblock %}
 
     <div class="clearer"></div>
   </div>
