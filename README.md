@@ -19,8 +19,9 @@
 
 <hr>
 
-Hyper is an experimental project, trying to improve correctness in web server
-programming, and in HTTP middleware and request handlers specifically. To learn
+Hyper is an experimental middleware architecture for HTTP servers written in PureScript. Its main focus is correctness and type-safety, using type-level information to enforce correct composition and abstraction for web servers. The Hyper project is also a breeding ground for higher-level web server constructs, which tend to fall under the “framework” category.
+
+To learn
 more about Hyper, check out the [documentation](http://hyper.wickstrom.tech)
 and [the Getting Started
 tutorial](http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html).
