@@ -10,7 +10,7 @@ a casual summary of discussions that have been held in the past.
 Why PureScript, and not Haskell?
 --------------------------------
 
-This project started out as a curiosity around expression statically typed
+This project started out as a curiosity around expressing statically typed
 middleware using `extensible records
 <https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/>`__.
 While Haskell has a record construct, extensible records is not a built-in
