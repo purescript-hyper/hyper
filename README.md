@@ -34,6 +34,13 @@ tutorial](http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html)
 
 <hr>
 
+## Prerequisites
+
+* PureScript 0.10.6 or higher
+* NodeJS
+* Bower
+* Pulp
+
 ## Build
 
 Install dependencies and build:
@@ -52,9 +59,9 @@ pulp test
 ### Running Examples
 
 ```bash
-# for examples using the node server:
-npm install
+# general format:
 pulp run -I examples --main Examples.<example-name>
+
 # for instance to run HelloHyper:
 pulp run -I examples --main Examples.HelloHyper
 ```
@@ -62,7 +69,6 @@ pulp run -I examples --main Examples.HelloHyper
 ### Building all Examples
 
 ```bash
-npm install # for examples using the node server
 make examples
 ```
 

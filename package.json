@@ -1,6 +1,6 @@
 {
   "name": "purescript-hyper",
-  "description": "Type-safe, statically checked stacking of HTTP middleware, using PureScript.",
+  "description": "Type-safe, statically checked composition of HTTP servers",
   "main": " ",
   "directories": {
     "doc": "docs",
@@ -15,10 +15,5 @@
   },
   "author": "oskar.wickstrom@gmail.com",
   "license": "MPL-2.0",
-  "homepage": "https://github.com/owickstrom/hyper#readme",
-  "dependencies": {
-    "media-typer": "^0.3.0",
-    "raw-body": "^2.1.7",
-    "string-to-stream": "^1.1.0"
-  }
+  "homepage": "http://hyper.wickstrom.tech"
 }

@@ -10,6 +10,12 @@ follow the installation steps described in `Getting Started
 <https://github.com/purescript/documentation/blob/master/guides/Getting-Started.md>`__
 in the PureScript documentation.
 
+.. note::
+
+   Hyper requires PureScript `version 0.10.6
+   <https://github.com/purescript/purescript/releases/tag/v0.10.6>`__, or
+   higher.
+
 Start off by generating an empty project by entering the following commands in
 your terminal:
 
