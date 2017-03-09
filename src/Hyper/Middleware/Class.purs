@@ -9,5 +9,5 @@ class IxMonadMiddleware m where
 
 modifyConn ∷ ∀ m i o.
              (IxMonad m, IxMonadMiddleware m)
-             ⇒ (i → o) → m i o Unit
+             => (i → o) -> m i o Unit
 modifyConn f = getConn :>>= \c -> putConn (f c)

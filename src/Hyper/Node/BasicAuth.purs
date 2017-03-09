@@ -88,6 +88,7 @@ authenticated
       { writer :: rw ResponseEnded | res }
       { authentication :: Maybe t | c })
      Unit
+
 authenticated realm mw = do
   conn ← getConn
   case conn.components.authentication of

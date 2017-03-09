@@ -61,7 +61,7 @@ instance monadEffMiddleware ∷ MonadEff e m ⇒ MonadEff e (Middleware m i i) w
     pure (Tuple x s)
 
 -- TODO: Can this be written as an instance of MonadTrans? Can't get the type
--- arguments to line up proplerly...
+-- arguments to line up properly...
 lift' ∷ ∀ m i a. Monad m ⇒ m a → Middleware m i i a
 lift' a = Middleware $ \s → do
   x ← a

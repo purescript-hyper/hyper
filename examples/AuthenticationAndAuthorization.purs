@@ -55,8 +55,7 @@ htmlWithStatus status x =
 
 
 -- Users have user names.
-type Name = String
-data User = User Name
+newtype User = User { name :: String }
 
 
 -- In this example there is a single authorization role that users can have.
@@ -85,7 +84,7 @@ profileHandler =
   where
     view =
       case _ of
-        Just (User name) ->
+        Just (User { name }) ->
           section do
             h1 (text "Profile")
             p (text ("Logged in as " <> name <> "."))
@@ -115,7 +114,7 @@ adminHandler =
   statusOK
   (view conn.components.authentication)
   where
-    view (User name) =
+    view (User { name }) =
       section do
         h1 (text "Administration")
         p (text ("Here be dragons, " <> name <> "."))
@@ -123,11 +122,14 @@ adminHandler =
 
 -- This could be a function checking the username/password in a database
 -- in your application.
-userFromBasicAuth :: forall m e. MonadAff e m => Tuple String String -> m (Maybe User)
+userFromBasicAuth
+  :: forall m e. MonadAff e m =>
+     Tuple String String
+  -> m (Maybe User)
 userFromBasicAuth =
   case _ of
-    Tuple "admin" "admin" -> pure (Just (User "admin"))
-    Tuple "guest" "guest" -> pure (Just (User "guest"))
+    Tuple "admin" "admin" -> pure (Just (User { name: "admin" }))
+    Tuple "guest" "guest" -> pure (Just (User { name: "guest" }))
     _ -> pure Nothing
 
 
@@ -142,7 +144,7 @@ getAdminRole :: forall m req res c.
              -> m (Maybe Admin)
 getAdminRole conn =
   case conn.components.authentication of
-    User "admin" -> pure (Just Admin)
+    User { name: "admin" } -> pure (Just Admin)
     _ -> pure Nothing
 
 
