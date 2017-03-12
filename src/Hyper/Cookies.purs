@@ -1,11 +1,12 @@
-module Hyper.Node.Cookie
-       (cookies
+module Hyper.Cookies
+       ( Name
+       , Values
+       , cookies
        ) where
 
 import Prelude
 import Data.NonEmpty as NonEmpty
 import Data.StrMap as StrMap
-import Hyper.Cookie as Cookie
 import Control.IxMonad ((:>>=))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (filter, foldMap, uncons, (:))
@@ -20,6 +21,9 @@ import Global (decodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
+
+type Name = String
+type Values = NonEmpty Array String
 
 toPair :: Array String -> Either String (Tuple String (Array String))
 toPair kv =
@@ -38,7 +42,7 @@ splitPairs =
   >>> map toPair
   >>> sequence
 
-parseCookies :: String -> Either String (StrMap Cookie.Values)
+parseCookies :: String -> Either String (StrMap Values)
 parseCookies s =
   splitPairs s
   # map (foldMap toCookieMap)
@@ -58,7 +62,7 @@ cookies
      Middleware
      m
      (Conn { headers :: StrMap String | req } res { cookies :: Unit | c})
-     (Conn { headers :: StrMap String | req } res { cookies :: Either String (StrMap Cookie.Values) | c})
+     (Conn { headers :: StrMap String | req } res { cookies :: Either String (StrMap Values) | c})
      Unit
 cookies =
   getConn :>>= \conn ->

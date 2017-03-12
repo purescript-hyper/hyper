@@ -1,4 +1,4 @@
-module Hyper.Node.CookieSpec where
+module Hyper.CookiesSpec where
 
 import Prelude
 import Data.Set as Set
@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(Just))
 import Data.NonEmpty (fromNonEmpty, (:|))
 import Data.Tuple (Tuple(..))
 import Hyper.Middleware (evalMiddleware)
-import Hyper.Node.Cookie (cookies)
+import Hyper.Cookies (cookies)
 import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -31,7 +31,7 @@ spec = do
         >>> map (fromNonEmpty (:))
         >>> map Set.fromFoldable
 
-  describe "Hyper.Node.Cookie" do
+  describe "Hyper.Node.Cookies" do
     describe "cookies" do
 
       it "parses a no cookies" do
