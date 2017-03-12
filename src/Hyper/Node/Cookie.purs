@@ -21,7 +21,6 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
 
-
 toPair :: Array String -> Either String (Tuple String (Array String))
 toPair kv =
   case kv of
@@ -29,7 +28,6 @@ toPair kv =
       pure (Tuple (decodeURIComponent key) [decodeURIComponent value])
     parts ->
       throwError ("Invalid cookie-pair: " <> joinWith " " parts)
-
 
 splitPairs :: String → Either String (Array (Tuple String (Array String)))
 splitPairs =
@@ -39,7 +37,6 @@ splitPairs =
   >>> map (split (Pattern "="))
   >>> map toPair
   >>> sequence
-
 
 parseCookies :: String -> Either String (StrMap Cookie.Values)
 parseCookies s =
@@ -54,7 +51,6 @@ parseCookies s =
 
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
-
 
 cookies
   :: forall m req res c.
