@@ -1,7 +1,9 @@
 module Hyper.Cookies
        ( Name
+       , Value
        , Values
        , cookies
+       , setCookie
        ) where
 
 import Prelude
@@ -17,13 +19,15 @@ import Data.StrMap (StrMap)
 import Data.String (Pattern(..), joinWith, split, trim)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
-import Global (decodeURIComponent)
+import Global (encodeURIComponent, decodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
+import Hyper.Response (class ResponseWriter, HeadersOpen, writeHeader)
 
 type Name = String
-type Values = NonEmpty Array String
+type Value = String
+type Values = NonEmpty Array Value
 
 toPair :: Array String -> Either String (Tuple String (Array String))
 toPair kv =
@@ -68,3 +72,18 @@ cookies =
   getConn :>>= \conn ->
   let cookies' = maybe (pure StrMap.empty) parseCookies (StrMap.lookup "cookie" conn.request.headers)
   in putConn conn { components { cookies = cookies' }}
+
+setCookie
+  :: forall m req res c rw b
+   . ( Monad m
+     , ResponseWriter rw m b
+     )
+  => Name
+  -> Value
+  -> Middleware
+     m
+     (Conn req { writer :: rw HeadersOpen | res } c)
+     (Conn req  { writer :: rw HeadersOpen | res } c)
+     Unit
+setCookie key value =
+  writeHeader (Tuple "Set-Cookie" (encodeURIComponent key <> "=" <> encodeURIComponent value))

@@ -9,29 +9,18 @@ import Data.Either (Either(..), either, isLeft)
 import Data.Maybe (Maybe(Just))
 import Data.NonEmpty (fromNonEmpty, (:|))
 import Data.Tuple (Tuple(..))
-import Hyper.Middleware (evalMiddleware)
-import Hyper.Cookies (cookies)
+import Hyper.Cookies (cookies, setCookie)
+import Hyper.Middleware (evalMiddleware, runMiddleware)
+import Hyper.Test.TestServer (TestResponseWriter(..), testHeaders, testServer)
 import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 
 spec :: forall e. Spec (buffer :: BUFFER | e) Unit
 spec = do
-  let parseCookies s =
-        { request: { headers: StrMap.singleton "cookie" s }
-        , response: {}
-        , components: { cookies: unit }
-        }
-        # evalMiddleware cookies
-
-      cookieValues key =
-        _.components.cookies
-        >>> either (const StrMap.empty) id
-        >>> StrMap.lookup key
-        >>> map (fromNonEmpty (:))
-        >>> map Set.fromFoldable
 
   describe "Hyper.Node.Cookies" do
+
     describe "cookies" do
 
       it "parses a no cookies" do
@@ -74,3 +63,48 @@ spec = do
       it "fails on triples" do
         conn <- parseCookies "foo=bar=baz"
         isLeft conn.components.cookies `shouldEqual` true
+
+    describe "setCookie" do
+
+      it "sets a simple cookie" do
+        response <- { request: {}
+                    , response: { writer: TestResponseWriter }
+                    , components: {}
+                    }
+                    # evalMiddleware (setCookie "foo" "bar")
+                    # testServer
+        testHeaders response `shouldEqual` [Tuple "Set-Cookie" "foo=bar"]
+
+      it "URL encodes cookie key" do
+        response <- { request: {}
+                    , response: { writer: TestResponseWriter }
+                    , components: {}
+                    }
+                    # evalMiddleware (setCookie "&stuff!we like" "bar")
+                    # testServer
+        testHeaders response `shouldEqual` [Tuple "Set-Cookie" "%26stuff!we%20like=bar"]
+
+      it "URL encodes cookie value" do
+        response <- { request: {}
+                    , response: { writer: TestResponseWriter }
+                    , components: {}
+                    }
+                    # evalMiddleware (setCookie "yeah" "=& ?%")
+                    # testServer
+        testHeaders response `shouldEqual` [Tuple "Set-Cookie" "yeah=%3D%26%20%3F%25"]
+
+  where
+    parseCookies s =
+      { request: { headers: StrMap.singleton "cookie" s }
+      , response: {}
+      , components: { cookies: unit }
+      }
+      # evalMiddleware cookies
+
+    cookieValues key =
+      _.components.cookies
+      >>> either (const StrMap.empty) id
+      >>> StrMap.lookup key
+      >>> map (fromNonEmpty (:))
+      >>> map Set.fromFoldable
+
