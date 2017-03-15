@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Conn (Conn)
 import Hyper.Header (Header)
 import Hyper.Middleware (Middleware)
-import Hyper.Status (Status)
+import Hyper.Status (Status, statusFound)
 
 -- | Type indicating that the status-line is ready to be
 -- | sent.
@@ -69,6 +69,21 @@ contentType :: forall m req res rw b c.
                (Conn req { writer :: rw HeadersOpen | res } c)
                Unit
 contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
+
+redirect
+  :: forall m req res rw b c
+   . ( Monad m
+     , ResponseWriter rw m b
+     )
+  => String
+  -> Middleware
+      m
+      (Conn req { writer :: rw StatusLineOpen | res } c)
+      (Conn req { writer :: rw HeadersOpen | res } c)
+      Unit
+redirect uri =
+  writeStatus statusFound
+  :*> writeHeader (Tuple "Location" uri)
 
 class Response b m r where
   toResponse :: forall i. r -> Middleware m i i b
