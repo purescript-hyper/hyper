@@ -14,6 +14,9 @@ runMiddleware (Middleware m) x = m x
 evalMiddleware ∷ ∀ m i o a. Functor m ⇒ Middleware m i o a → i → m o
 evalMiddleware a s = map snd (runMiddleware a s)
 
+hoistMiddleware ∷ ∀ f g i o a. (f ~> g) → Middleware f i o a → Middleware g i o a
+hoistMiddleware f (Middleware k) = Middleware (f <<< k)
+
 instance ixMonadMiddlewareMiddleware ∷ Applicative m ⇒ IxMonadMiddleware (Middleware m) where
   getConn = Middleware $ \c → pure (Tuple c c)
   putConn c = Middleware $ \_ → pure (Tuple unit c)
