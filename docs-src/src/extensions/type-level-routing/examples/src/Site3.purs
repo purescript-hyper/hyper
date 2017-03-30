@@ -12,7 +12,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.MediaType.Common (textHTML)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
-import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
+import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, Resource, (:<|>))
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
 import Hyper.Routing.ContentType.JSON (JSON)
 import Hyper.Routing.Links (linksTo)
@@ -44,9 +44,9 @@ instance encodeJsonAllUsers :: EncodeJson AllUsers where
 
 -- start snippet routing-type
 type Site3 =
-  Get HTML Home
-  :<|> "users" :/ Get (HTML :<|> JSON) AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get (HTML :<|> JSON) User
+  Resource (Get Home) HTML
+  :<|> "users" :/ Resource (Get AllUsers) (HTML :<|> JSON)
+  :<|> "users" :/ Capture "user-id" Int :> Resource (Get User) (HTML :<|> JSON)
 -- end snippet routing-type
 
 site3 :: Proxy Site3

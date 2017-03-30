@@ -11,7 +11,7 @@ import Data.MediaType.Common (textHTML)
 import Data.Traversable (traverse_)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
-import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, (:<|>))
+import Hyper.Routing (type (:/), type (:<|>), type (:>), Capture, Resource, (:<|>))
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML, linkTo)
 import Hyper.Routing.Links (linksTo)
 import Hyper.Routing.Method (Get)
@@ -32,9 +32,9 @@ data AllUsers = AllUsers (Array User)
 newtype User = User { id :: Int, name :: String }
 
 type Site2 =
-  Get HTML Home
-  :<|> "users" :/ Get HTML AllUsers
-  :<|> "users" :/ Capture "user-id" Int :> Get HTML User
+  Resource (Get Home) HTML
+  :<|> "users" :/ Resource (Get AllUsers) HTML
+  :<|> "users" :/ Capture "user-id" Int :> Resource (Get User) HTML
 
 site2 :: Proxy Site2
 site2 = Proxy

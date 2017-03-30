@@ -132,7 +132,7 @@ declaring the endpoint data type <code class="docutils literal"><span class="pre
 site:</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">Home</span> <span class="ow">=</span> <span class="kt">Home</span>
 
-<span class="kr">type</span> <span class="kt">Site1</span> <span class="ow">=</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
+<span class="kr">type</span> <span class="kt">Site1</span> <span class="ow">=</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">Home</span><span class="p">)</span> <span class="kt">HTML</span>
 </pre></div>
 </div>
 <p><code class="docutils literal"><span class="pre">Get</span> <span class="pre">HTML</span> <span class="pre">Home</span></code> is a routing type with only one endpoint, rendering a
@@ -206,9 +206,9 @@ listing users, and a page rendering a specific user.</p>
 <span class="kr">newtype</span> <span class="kt">User</span> <span class="ow">=</span> <span class="kt">User</span> <span class="p">{</span> <span class="n">id</span> <span class="ow">::</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">name</span> <span class="ow">::</span> <span class="kt">String</span> <span class="p">}</span>
 
 <span class="kr">type</span> <span class="kt">Site2</span> <span class="ow">=</span>
-  <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
-  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">AllUsers</span>
-  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">User</span>
+  <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">Home</span><span class="p">)</span> <span class="kt">HTML</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">AllUsers</span><span class="p">)</span> <span class="kt">HTML</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">User</span><span class="p">)</span> <span class="kt">HTML</span>
 
 <span class="nf">site2</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="kt">Site2</span>
 <span class="nf">site2</span> <span class="ow">=</span> <span class="kt">Proxy</span>
@@ -324,9 +324,9 @@ single type, like <code class="docutils literal"><span class="pre">HTML</span></
 <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>. All content types must have <code class="docutils literal"><span class="pre">MimeRender</span></code> instances for the
 response body type.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">type</span> <span class="kt">Site3</span> <span class="ow">=</span>
-  <span class="kt">Get</span> <span class="kt">HTML</span> <span class="kt">Home</span>
-  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Get</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span> <span class="kt">AllUsers</span>
-  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Get</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span> <span class="kt">User</span>
+  <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">Home</span><span class="p">)</span> <span class="kt">HTML</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">AllUsers</span><span class="p">)</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span>
+  <span class="kt">:&lt;|&gt;</span> <span class="s">&quot;users&quot;</span> <span class="kt">:/</span> <span class="kt">Capture</span> <span class="s">&quot;user-id&quot;</span> <span class="kt">Int</span> <span class="kt">:&gt;</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">User</span><span class="p">)</span> <span class="p">(</span><span class="kt">HTML</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">JSON</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>By making requests to this site, using <code class="docutils literal"><span class="pre">Accept</span></code> headers, we can see

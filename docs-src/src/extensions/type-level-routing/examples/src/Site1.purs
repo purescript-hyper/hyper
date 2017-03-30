@@ -8,6 +8,7 @@ import Data.Maybe (maybe)
 import Data.MediaType.Common (textHTML)
 import Hyper.Node.Server (defaultOptions, runServer)
 import Hyper.Response (contentType, respond, closeHeaders, writeStatus)
+import Hyper.Routing (Resource)
 import Hyper.Routing.ContentType.HTML (class EncodeHTML, HTML)
 import Hyper.Routing.Method (Get)
 import Hyper.Routing.Router (router)
@@ -20,7 +21,7 @@ import Type.Proxy (Proxy(..))
 -- start snippet routing-type
 data Home = Home
 
-type Site1 = Get HTML Home
+type Site1 = Resource (Get Home) HTML
 -- end snippet routing-type
 
 -- start snippet handler

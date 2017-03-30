@@ -14,7 +14,7 @@ Let's say we want to render a home page as HTML. We start out by
 declaring the endpoint data type ``Home``, and the structure of our
 site:
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet routing-type
    :end-before: end snippet routing-type
@@ -30,7 +30,7 @@ value of the following type:
 
 We can construct such a value using ``pure`` and a ``Home`` value:
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet handler
    :end-before: end snippet handler
@@ -39,7 +39,7 @@ Nice! But what comes out on the other end? We need something that
 renders the ``Home`` value as HTML. By providing an instance of
 ``EncodeHTML`` for ``Home``, we instruct the endpoint how to render.
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet encoding
    :end-before: end snippet encoding
@@ -62,7 +62,7 @@ Its documentation describes it as follows:
 We create a top-level definition of the type ``Proxy Site1`` with the
 value constructor ``Proxy``.
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet proxy
    :end-before: end snippet proxy
@@ -70,7 +70,7 @@ value constructor ``Proxy``.
 We pass the proxy, our handler, and the ``onRoutingError`` function for
 cases where no route matched the request, to the ``router`` function.
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :dedent: 4
    :start-after: start snippet router
@@ -79,7 +79,7 @@ cases where no route matched the request, to the ``router`` function.
 The value returned by ``router`` is regular middleware, ready to be
 passed to a server.
 
-.. literalinclude:: Site1.purs
+.. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet main
    :end-before: end snippet main
@@ -91,7 +91,7 @@ Real-world servers often need more than one endpoint. Let's define a
 router for an application that shows a home page with links, a page
 listing users, and a page rendering a specific user.
 
-.. literalinclude:: Site2.purs
+.. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet resources-and-type
    :end-before: end snippet resources-and-type
@@ -114,7 +114,7 @@ data types, returning ``ExceptT RoutingError m a`` values, where ``m``
 is the monad of our middleware, and ``a`` is the type to render for the
 endpoint.
 
-.. literalinclude:: Site2.purs
+.. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet handlers
    :end-before: end snippet handlers
@@ -123,7 +123,7 @@ As in the single-endpoint example, we want to render as HTML. Let's
 create instances for our data types. Notice how we can create links
 between routes in a type-safe manner.
 
-.. literalinclude:: Site2.purs
+.. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet encoding
    :end-before: end snippet encoding
@@ -138,14 +138,14 @@ We are still missing ``getUsers``, our source of User values. In a real
 application it would probably be a database query, but for this example
 we simply hard-code some famous users of proper instruments.
 
-.. literalinclude:: Site2.purs
+.. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet get-users
    :end-before: end snippet get-users
 
 Almost done! We just need to create the router, and start a server.
 
-.. literalinclude:: Site2.purs
+.. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet main
    :end-before: end snippet main
@@ -164,7 +164,7 @@ single type, like ``HTML`` or ``JSON``, we provide alternatives using
 ``:<|>``. All content types must have ``MimeRender`` instances for the
 response body type.
 
-.. literalinclude:: Site3.purs
+.. literalinclude:: examples/src/Site3.purs
    :language: haskell
    :start-after: start snippet routing-type
    :end-before: end snippet routing-type
