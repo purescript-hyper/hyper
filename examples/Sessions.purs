@@ -1,4 +1,4 @@
-module Examples.SecureSessions where
+module Examples.Sessions where
 
 import Prelude
 import Control.IxMonad ((:*>), (:>>=))
