@@ -314,6 +314,24 @@ we simply hard-code some famous users of proper instruments.</p>
 operator <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>, matches the structure of our routing type. If we fail
 to match the type we get a compile error.</p>
 </div>
+<div class="section" id="multi-method-resources">
+<h2>Multi-Method Resources<a class="headerlink" href="#multi-method-resources" title="Permalink to this headline">¶</a></h2>
+<p>So far we have just used a single method per resource, the <code class="docutils literal"><span class="pre">Get</span></code> method.
+By replacing the single method type with a sequence of alternatives,
+constructed with the type-level operator <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>, we get a resource with
+multiple methods.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">type</span> <span class="kt">MultiMethodExample</span> <span class="ow">=</span>
+  <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">User</span> <span class="kt">:&lt;|&gt;</span> <span class="kt">Delete</span> <span class="kt">User</span><span class="p">)</span> <span class="kt">HTML</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">MultiMethodExample</span></code> is a routing type with a <em>single resource</em>, which has
+<em>multiple resource methods</em>. Handlers for the resource methods needs to be
+separated by the value-level operator <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code>, just as with handlers for
+different resources.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">router</span> <span class="n">site</span> <span class="p">(</span><span class="n">getUsers</span> <span class="kt">:&lt;|&gt;</span> <span class="n">deleteUser</span><span class="p">)</span> <span class="n">onRoutingError</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="content-negotiation">
 <h2>Content Negotiation<a class="headerlink" href="#content-negotiation" title="Permalink to this headline">¶</a></h2>
 <p>By specifying alternative content types for a resource, Hyper can
@@ -383,6 +401,7 @@ shortened for readability).</p>
 <li><a class="reference internal" href="#">Servers for Routing Types</a><ul>
 <li><a class="reference internal" href="#a-single-resource-example">A Single-Resource Example</a></li>
 <li><a class="reference internal" href="#routing-multiple-resources">Routing Multiple Resources</a></li>
+<li><a class="reference internal" href="#multi-method-resources">Multi-Method Resources</a></li>
 <li><a class="reference internal" href="#content-negotiation">Content Negotiation</a></li>
 </ul>
 </li>

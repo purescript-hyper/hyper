@@ -153,6 +153,30 @@ Notice how the composition of handler functions, using the value-level
 operator ``:<|>``, matches the structure of our routing type. If we fail
 to match the type we get a compile error.
 
+Multi-Method Resources
+======================
+
+So far we have just used a single method per resource, the ``Get`` method.
+By replacing the single method type with a sequence of alternatives,
+constructed with the type-level operator ``:<|>``, we get a resource with
+multiple methods.
+
+.. literalinclude:: examples/src/MultiMethodExample.purs
+   :language: haskell
+   :start-after: start snippet routing-type
+   :end-before: end snippet routing-type
+
+``MultiMethodExample`` is a routing type with a *single resource*, which has
+*multiple resource methods*. Handlers for the resource methods needs to be
+separated by the value-level operator ``:<|>``, just as with handlers for
+different resources.
+
+.. literalinclude:: examples/src/MultiMethodExample.purs
+   :language: haskell
+   :start-after: start snippet router
+   :end-before: end snippet router
+   :dedent: 8
+
 Content Negotiation
 ===================
 
