@@ -7,22 +7,21 @@ The primary use of routing types in Hyper is for writing web servers. The
 package provides a router middleware which, together with our handler and
 rendering functions, gives us a full-fledged server.
 
-A Single-Endpoint Example
+A Single-Resource Example
 =========================
 
 Let's say we want to render a home page as HTML. We start out by
-declaring the endpoint data type ``Home``, and the structure of our
-site:
+declaring the data type ``Home``, and the structure of our site:
 
 .. literalinclude:: examples/src/Site1.purs
    :language: haskell
    :start-after: start snippet routing-type
    :end-before: end snippet routing-type
 
-``Get HTML Home`` is a routing type with only one endpoint, rendering a
-``Home`` value as HTML. So where does the ``Home`` value come from? We
-provide it using a *handler*. A handler for ``Site1`` would be some
-value of the following type:
+``Resource (Get Home) HTML`` is a routing type with only one resource,
+responding to HTTP GET requests, rendering a ``Home`` value as HTML. So where
+does the ``Home`` value come from?  We provide it using a *handler*. A handler
+for ``Site1`` would be some value of the following type:
 
 .. code-block:: haskell
 
@@ -37,7 +36,7 @@ We can construct such a value using ``pure`` and a ``Home`` value:
 
 Nice! But what comes out on the other end? We need something that
 renders the ``Home`` value as HTML. By providing an instance of
-``EncodeHTML`` for ``Home``, we instruct the endpoint how to render.
+``EncodeHTML`` for ``Home``, we instruct the resource how to render.
 
 .. literalinclude:: examples/src/Site1.purs
    :language: haskell
@@ -84,10 +83,10 @@ passed to a server.
    :start-after: start snippet main
    :end-before: end snippet main
 
-Routing Multiple Endpoints
+Routing Multiple Resources
 ==========================
 
-Real-world servers often need more than one endpoint. Let's define a
+Real-world servers often need more than one resource. Let's define a
 router for an application that shows a home page with links, a page
 listing users, and a page rendering a specific user.
 
@@ -100,26 +99,26 @@ Let's go through the new constructs used:
 
 -  ``:<|>`` is a type operator that separates *alternatives*. A router
    for this type will try each route in order until one matches.
--  ``:/`` separates a literal path segment and the rest of the endpoint
+-  ``:/`` separates a literal path segment and the rest of the routing
    type.
 -  ``Capture`` takes a descriptive string and a type. It takes the next
    available path segment and tries to convert it to the given type.
-   Each capture in an endpoint type corresponds to an argument in the
+   Each capture in a routing type corresponds to an argument in the
    handler function.
--  ``:>`` separates a an endpoint modifier, like ``Capture``, and the
-   rest of the endpoint type.
+-  ``:>`` separates a routing type modifier, like ``Capture``, and the
+   rest of the routing type.
 
-We define handlers for our routes as regular functions on the specified
-data types, returning ``ExceptT RoutingError m a`` values, where ``m``
-is the monad of our middleware, and ``a`` is the type to render for the
-endpoint.
+We define handlers for our resource methods as regular functions on the
+specified data types, returning ``ExceptT RoutingError m a`` values, where
+``m`` is the monad of our middleware, and ``a`` is the type to render for the
+resource.
 
 .. literalinclude:: examples/src/Site2.purs
    :language: haskell
    :start-after: start snippet handlers
    :end-before: end snippet handlers
 
-As in the single-endpoint example, we want to render as HTML. Let's
+As in the single-resource example, we want to render as HTML. Let's
 create instances for our data types. Notice how we can create links
 between routes in a type-safe manner.
 
@@ -131,7 +130,7 @@ between routes in a type-safe manner.
 The pattern match on the value returned by ``linksTo`` must match the
 structure of the routing type. We use ``:<|>`` to pattern match on
 links. Each matched link will have a type based on the corresponding
-endpoint. ``getUser`` in the previous code has type ``Int -> URI``,
+resource. ``getUser`` in the previous code has type ``Int -> URI``,
 while ``allUsers`` has no captures and thus has type ``URI``.
 
 We are still missing ``getUsers``, our source of User values. In a real
@@ -157,7 +156,7 @@ to match the type we get a compile error.
 Content Negotiation
 ===================
 
-By specifying alternative content types for an endpoint, Hyper can
+By specifying alternative content types for a resource, Hyper can
 choose a response and content type based on the request ``Accept``
 header. This is called *content negotiation*. Instead of specifying a
 single type, like ``HTML`` or ``JSON``, we provide alternatives using

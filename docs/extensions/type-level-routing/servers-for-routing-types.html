@@ -125,20 +125,19 @@
 <a class="reference external" href="https://github.com/owickstrom/purescript-hyper-routing-server">purescript-hyper-routing-server</a>
 package provides a router middleware which, together with our handler and
 rendering functions, gives us a full-fledged server.</p>
-<div class="section" id="a-single-endpoint-example">
-<h2>A Single-Endpoint Example<a class="headerlink" href="#a-single-endpoint-example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="a-single-resource-example">
+<h2>A Single-Resource Example<a class="headerlink" href="#a-single-resource-example" title="Permalink to this headline">¶</a></h2>
 <p>Let&#8217;s say we want to render a home page as HTML. We start out by
-declaring the endpoint data type <code class="docutils literal"><span class="pre">Home</span></code>, and the structure of our
-site:</p>
+declaring the data type <code class="docutils literal"><span class="pre">Home</span></code>, and the structure of our site:</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">Home</span> <span class="ow">=</span> <span class="kt">Home</span>
 
 <span class="kr">type</span> <span class="kt">Site1</span> <span class="ow">=</span> <span class="kt">Resource</span> <span class="p">(</span><span class="kt">Get</span> <span class="kt">Home</span><span class="p">)</span> <span class="kt">HTML</span>
 </pre></div>
 </div>
-<p><code class="docutils literal"><span class="pre">Get</span> <span class="pre">HTML</span> <span class="pre">Home</span></code> is a routing type with only one endpoint, rendering a
-<code class="docutils literal"><span class="pre">Home</span></code> value as HTML. So where does the <code class="docutils literal"><span class="pre">Home</span></code> value come from? We
-provide it using a <em>handler</em>. A handler for <code class="docutils literal"><span class="pre">Site1</span></code> would be some
-value of the following type:</p>
+<p><code class="docutils literal"><span class="pre">Resource</span> <span class="pre">(Get</span> <span class="pre">Home)</span> <span class="pre">HTML</span></code> is a routing type with only one resource,
+responding to HTTP GET requests, rendering a <code class="docutils literal"><span class="pre">Home</span></code> value as HTML. So where
+does the <code class="docutils literal"><span class="pre">Home</span></code> value come from?  We provide it using a <em>handler</em>. A handler
+for <code class="docutils literal"><span class="pre">Site1</span></code> would be some value of the following type:</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">Home</span>
 </pre></div>
 </div>
@@ -149,7 +148,7 @@ value of the following type:</p>
 </div>
 <p>Nice! But what comes out on the other end? We need something that
 renders the <code class="docutils literal"><span class="pre">Home</span></code> value as HTML. By providing an instance of
-<code class="docutils literal"><span class="pre">EncodeHTML</span></code> for <code class="docutils literal"><span class="pre">Home</span></code>, we instruct the endpoint how to render.</p>
+<code class="docutils literal"><span class="pre">EncodeHTML</span></code> for <code class="docutils literal"><span class="pre">Home</span></code>, we instruct the resource how to render.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">instance</span> <span class="n">encodeHTMLHome</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">Home</span> <span class="kr">where</span>
   <span class="n">encodeHTML</span> <span class="kt">Home</span> <span class="ow">=</span>
     <span class="n">p</span> <span class="p">(</span><span class="n">text</span> <span class="s">&quot;Welcome to my site!&quot;</span><span class="p">)</span>
@@ -194,9 +193,9 @@ passed to a server.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="routing-multiple-endpoints">
-<h2>Routing Multiple Endpoints<a class="headerlink" href="#routing-multiple-endpoints" title="Permalink to this headline">¶</a></h2>
-<p>Real-world servers often need more than one endpoint. Let&#8217;s define a
+<div class="section" id="routing-multiple-resources">
+<h2>Routing Multiple Resources<a class="headerlink" href="#routing-multiple-resources" title="Permalink to this headline">¶</a></h2>
+<p>Real-world servers often need more than one resource. Let&#8217;s define a
 router for an application that shows a home page with links, a page
 listing users, and a page rendering a specific user.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">data</span> <span class="kt">Home</span> <span class="ow">=</span> <span class="kt">Home</span>
@@ -218,19 +217,19 @@ listing users, and a page rendering a specific user.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code> is a type operator that separates <em>alternatives</em>. A router
 for this type will try each route in order until one matches.</li>
-<li><code class="docutils literal"><span class="pre">:/</span></code> separates a literal path segment and the rest of the endpoint
+<li><code class="docutils literal"><span class="pre">:/</span></code> separates a literal path segment and the rest of the routing
 type.</li>
 <li><code class="docutils literal"><span class="pre">Capture</span></code> takes a descriptive string and a type. It takes the next
 available path segment and tries to convert it to the given type.
-Each capture in an endpoint type corresponds to an argument in the
+Each capture in a routing type corresponds to an argument in the
 handler function.</li>
-<li><code class="docutils literal"><span class="pre">:&gt;</span></code> separates a an endpoint modifier, like <code class="docutils literal"><span class="pre">Capture</span></code>, and the
-rest of the endpoint type.</li>
+<li><code class="docutils literal"><span class="pre">:&gt;</span></code> separates a routing type modifier, like <code class="docutils literal"><span class="pre">Capture</span></code>, and the
+rest of the routing type.</li>
 </ul>
-<p>We define handlers for our routes as regular functions on the specified
-data types, returning <code class="docutils literal"><span class="pre">ExceptT</span> <span class="pre">RoutingError</span> <span class="pre">m</span> <span class="pre">a</span></code> values, where <code class="docutils literal"><span class="pre">m</span></code>
-is the monad of our middleware, and <code class="docutils literal"><span class="pre">a</span></code> is the type to render for the
-endpoint.</p>
+<p>We define handlers for our resource methods as regular functions on the
+specified data types, returning <code class="docutils literal"><span class="pre">ExceptT</span> <span class="pre">RoutingError</span> <span class="pre">m</span> <span class="pre">a</span></code> values, where
+<code class="docutils literal"><span class="pre">m</span></code> is the monad of our middleware, and <code class="docutils literal"><span class="pre">a</span></code> is the type to render for the
+resource.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">home</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">m</span><span class="o">.</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="kt">ExceptT</span> <span class="kt">RoutingError</span> <span class="n">m</span> <span class="kt">Home</span>
 <span class="nf">home</span> <span class="ow">=</span> <span class="n">pure</span> <span class="kt">Home</span>
 
@@ -250,7 +249,7 @@ endpoint.</p>
     <span class="n">userWithId</span> <span class="p">(</span><span class="kt">User</span> <span class="n">u</span><span class="p">)</span> <span class="ow">=</span> <span class="n">u</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">id&#39;</span>
 </pre></div>
 </div>
-<p>As in the single-endpoint example, we want to render as HTML. Let&#8217;s
+<p>As in the single-resource example, we want to render as HTML. Let&#8217;s
 create instances for our data types. Notice how we can create links
 between routes in a type-safe manner.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">instance</span> <span class="n">encodeHTMLHome</span> <span class="ow">::</span> <span class="kt">EncodeHTML</span> <span class="kt">Home</span> <span class="kr">where</span>
@@ -281,7 +280,7 @@ between routes in a type-safe manner.</p>
 <p>The pattern match on the value returned by <code class="docutils literal"><span class="pre">linksTo</span></code> must match the
 structure of the routing type. We use <code class="docutils literal"><span class="pre">:&lt;|&gt;</span></code> to pattern match on
 links. Each matched link will have a type based on the corresponding
-endpoint. <code class="docutils literal"><span class="pre">getUser</span></code> in the previous code has type <code class="docutils literal"><span class="pre">Int</span> <span class="pre">-&gt;</span> <span class="pre">URI</span></code>,
+resource. <code class="docutils literal"><span class="pre">getUser</span></code> in the previous code has type <code class="docutils literal"><span class="pre">Int</span> <span class="pre">-&gt;</span> <span class="pre">URI</span></code>,
 while <code class="docutils literal"><span class="pre">allUsers</span></code> has no captures and thus has type <code class="docutils literal"><span class="pre">URI</span></code>.</p>
 <p>We are still missing <code class="docutils literal"><span class="pre">getUsers</span></code>, our source of User values. In a real
 application it would probably be a database query, but for this example
@@ -317,7 +316,7 @@ to match the type we get a compile error.</p>
 </div>
 <div class="section" id="content-negotiation">
 <h2>Content Negotiation<a class="headerlink" href="#content-negotiation" title="Permalink to this headline">¶</a></h2>
-<p>By specifying alternative content types for an endpoint, Hyper can
+<p>By specifying alternative content types for a resource, Hyper can
 choose a response and content type based on the request <code class="docutils literal"><span class="pre">Accept</span></code>
 header. This is called <em>content negotiation</em>. Instead of specifying a
 single type, like <code class="docutils literal"><span class="pre">HTML</span></code> or <code class="docutils literal"><span class="pre">JSON</span></code>, we provide alternatives using
@@ -382,8 +381,8 @@ shortened for readability).</p>
   <h3><a href="../../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Servers for Routing Types</a><ul>
-<li><a class="reference internal" href="#a-single-endpoint-example">A Single-Endpoint Example</a></li>
-<li><a class="reference internal" href="#routing-multiple-endpoints">Routing Multiple Endpoints</a></li>
+<li><a class="reference internal" href="#a-single-resource-example">A Single-Resource Example</a></li>
+<li><a class="reference internal" href="#routing-multiple-resources">Routing Multiple Resources</a></li>
 <li><a class="reference internal" href="#content-negotiation">Content Negotiation</a></li>
 </ul>
 </li>
