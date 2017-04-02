@@ -1,5 +1,5 @@
 module Hyper.Node.Server
-       ( RequestBody
+       ( HttpRequest
        , HttpResponse
        , NodeResponseWriter
        , writeString
@@ -25,17 +25,14 @@ import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (Error, catchException, error)
 import Control.Monad.Error.Class (throwError)
-import Data.Either (Either)
-import Data.HTTP.Method (CustomMethod, Method)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
-import Data.StrMap (StrMap)
+import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
-import Hyper.Request (class RequestBodyReader)
+import Hyper.Request (class ReadableBody, class Request, RequestData)
 import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
@@ -44,9 +41,15 @@ import Node.HTTP (HTTP)
 import Node.Stream (Writable)
 
 
-newtype RequestBody = RequestBody HTTP.Request
+data HttpRequest
+  = HttpRequest HTTP.Request RequestData
 
-derive instance newtypeRequestBody :: Newtype RequestBody _
+
+instance requestHttpRequest :: Monad m => Request HttpRequest m where
+  getRequestData = do
+    getConn :>>=
+    case _ of
+      { request: HttpRequest _ d } -> ipure d
 
 
 -- A limited version of Writable () e, with which you can only write, not end,
@@ -81,10 +84,10 @@ instance bufferNodeResponseWriter :: (MonadAff e m)
 
 readBody
   :: forall e.
-     RequestBody
+     HttpRequest
   -> Aff (http :: HTTP, avar :: AVAR | e) String
-readBody body = do
-  let stream = HTTP.requestAsStream (unwrap body)
+readBody (HttpRequest request _) = do
+  let stream = HTTP.requestAsStream request
   completeBody <- makeVar
   chunks <- makeVar' ""
   e <- liftEff (catchException (pure <<< Just) (fillBody stream chunks completeBody *> pure Nothing))
@@ -98,12 +101,13 @@ readBody body = do
       Stream.onEnd stream $ void (launchAff (takeVar chunks >>= putVar completeBody))
 
 instance requestBodyReaderReqestBody :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR | e) m)
-                                     => RequestBodyReader RequestBody m String where
+                                     => ReadableBody HttpRequest m String where
   readBody =
-    _.request.body <$> getConn :>>=
+    _.request <$> getConn :>>=
     case _ of
       r -> lift' (liftAff (readBody r))
 
+-- TODO: Make a newtype
 data HttpResponse state = HttpResponse HTTP.Response
 
 getWriter ∷ ∀ req res c m rw.
@@ -213,24 +217,30 @@ defaultOptionsWithLogging =
       log ("Request failed: " <> show err)
 
 
+mkHttpRequest :: HTTP.Request -> HttpRequest
+mkHttpRequest request =
+  HttpRequest request requestData
+  where
+    headers = HTTP.requestHeaders request
+    requestData =
+      { url: HTTP.requestURL request
+      , headers: headers
+      , method: Method.fromString (HTTP.requestMethod request)
+      , contentLength: StrMap.lookup "content-length" headers
+                      >>= Int.fromString
+      }
+
+
 runServer'
-  :: forall m e req res c c'.
-  ( Functor m
-  ) ⇒
-     ServerOptions e
+  :: forall m e c c'
+   . Functor m
+  => ServerOptions e
   -> c
   -> (forall a. m a -> Aff (http :: HTTP | e) a)
   -> Middleware
      m
-     (Conn { url :: String
-           , body :: RequestBody
-           , contentLength :: Maybe Int
-           , headers :: StrMap String
-           , method :: Either Method CustomMethod
-           }
-           { writer :: HttpResponse StatusLineOpen }
-           c)
-     (Conn req { writer :: HttpResponse ResponseEnded | res } c')
+     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
+     (Conn HttpRequest (HttpResponse ResponseEnded) c')
      Unit
   -> Eff (http :: HTTP | e) Unit
 runServer' options components runM middleware = do
@@ -241,37 +251,23 @@ runServer' options components runM middleware = do
                       }
   HTTP.listen server listenOptions (options.onListening options.port)
   where
-    parseContentLength headers = StrMap.lookup "content-length" headers
     onRequest ∷ HTTP.Request → HTTP.Response → Eff (http :: HTTP | e) Unit
     onRequest request response =
-      let headers = HTTP.requestHeaders request
-          conn = { request: { url: HTTP.requestURL request
-                            , body: RequestBody request
-                            , headers: headers
-                            , method: Method.fromString (HTTP.requestMethod request)
-                            , contentLength: parseContentLength headers >>= Int.fromString
-                            }
-                 , response: { writer: HttpResponse response }
+      let conn = { request: mkHttpRequest request
+                 , response: HttpResponse response
                  , components: components
                  }
       in catchException options.onRequestError (void (launchAff (runM (evalMiddleware middleware conn))))
 
 
 runServer
-  :: forall e req res c c'.
+  :: forall e c c'.
      ServerOptions e
   -> c
   -> Middleware
      (Aff (http :: HTTP | e))
-     (Conn { url :: String
-           , body :: RequestBody
-           , contentLength :: Maybe Int
-           , headers :: StrMap String
-           , method :: Either Method CustomMethod
-           }
-           { writer :: HttpResponse StatusLineOpen }
-           c)
-     (Conn req { writer :: HttpResponse ResponseEnded | res } c')
+     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
+     (Conn HttpRequest (HttpResponse ResponseEnded) c')
      Unit
   -> Eff (http :: HTTP | e) Unit
 runServer options components middleware =

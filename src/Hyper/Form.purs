@@ -22,7 +22,7 @@ import Data.MediaType (MediaType(MediaType))
 import Data.MediaType.Common (applicationFormURLEncoded)
 import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype, unwrap)
-import Data.StrMap (lookup, StrMap)
+import Data.StrMap (lookup)
 import Data.String (split, joinWith, Pattern(Pattern))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
@@ -30,7 +30,7 @@ import Global (decodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
-import Hyper.Request (class RequestBodyReader, readBody)
+import Hyper.Request (class Request, class ReadableBody, getRequestData, readBody)
 
 newtype Form = Form (Array (Tuple String (Maybe String)))
 
@@ -78,27 +78,21 @@ splitPairs = split (Pattern "&")
              >>> map toTuple
              >>> sequence
 
-parseForm ∷ forall m req res c r.
+parseForm ∷ forall m req res c.
             ( Monad m
-            , RequestBodyReader r m String
+            , Request req m
+            , ReadableBody req m String
             ) =>
             Middleware
             m
-            (Conn { body :: r
-                  , headers :: StrMap String
-                  | req
-                  } res c)
-            (Conn { body ∷ r
-                  , headers :: StrMap String
-                  | req
-                  }
-                  res
-                  c)
+            (Conn req res c)
+            (Conn req res c)
             (Either String Form)
 parseForm = do
   conn <- getConn
+  { headers } <- getRequestData
   body <- readBody
-  case lookup "content-type" conn.request.headers >>= parseContentMediaType of
+  case lookup "content-type" headers >>= parseContentMediaType of
     Nothing ->
       ipure (Left "Missing or invalid content-type header.")
     Just mediaType | mediaType == applicationFormURLEncoded ->
@@ -117,23 +111,16 @@ class FromForm a where
 
 
 parseFromForm
-  ∷ forall m req res c r a.
+  ∷ forall m req res c a.
     ( Monad m
-    , RequestBodyReader r m String
+    , Request req m
+    , ReadableBody req m String
     , FromForm a
     )
   => Middleware
      m
-     (Conn { body :: r
-           , headers :: StrMap String
-           | req
-           } res c)
-     (Conn { body ∷ r
-           , headers :: StrMap String
-           | req
-           }
-           res
-           c)
+     (Conn req res c)
+     (Conn req res c)
      (Either String a)
 parseFromForm =
   parseForm :>>=

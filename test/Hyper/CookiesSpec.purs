@@ -10,8 +10,8 @@ import Data.Maybe (Maybe(Just))
 import Data.NonEmpty (fromNonEmpty, (:|))
 import Data.Tuple (Tuple(..))
 import Hyper.Cookies (cookies, setCookie)
-import Hyper.Middleware (evalMiddleware, runMiddleware)
-import Hyper.Test.TestServer (TestResponseWriter(..), testHeaders, testServer)
+import Hyper.Middleware (evalMiddleware)
+import Hyper.Test.TestServer (TestRequest(..), TestResponseWriter(..), defaultRequest, testHeaders, testServer)
 import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -67,7 +67,7 @@ spec = do
     describe "setCookie" do
 
       it "sets a simple cookie" do
-        response <- { request: {}
+        response <- { request: TestRequest defaultRequest
                     , response: { writer: TestResponseWriter }
                     , components: {}
                     }
@@ -76,7 +76,7 @@ spec = do
         testHeaders response `shouldEqual` [Tuple "Set-Cookie" "foo=bar"]
 
       it "URL encodes cookie key" do
-        response <- { request: {}
+        response <- { request: TestRequest defaultRequest
                     , response: { writer: TestResponseWriter }
                     , components: {}
                     }
@@ -85,7 +85,7 @@ spec = do
         testHeaders response `shouldEqual` [Tuple "Set-Cookie" "%26stuff!we%20like=bar"]
 
       it "URL encodes cookie value" do
-        response <- { request: {}
+        response <- { request: TestRequest defaultRequest
                     , response: { writer: TestResponseWriter }
                     , components: {}
                     }
@@ -95,7 +95,8 @@ spec = do
 
   where
     parseCookies s =
-      { request: { headers: StrMap.singleton "cookie" s }
+      { request: TestRequest
+                 (defaultRequest { headers = StrMap.singleton "cookie" s })
       , response: {}
       , components: { cookies: unit }
       }

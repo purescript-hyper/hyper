@@ -9,7 +9,7 @@ module Hyper.Cookies
 import Prelude
 import Data.NonEmpty as NonEmpty
 import Data.StrMap as StrMap
-import Control.IxMonad ((:>>=))
+import Control.IxMonad (ibind)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (filter, foldMap, uncons, (:))
 import Data.Either (Either)
@@ -23,6 +23,7 @@ import Global (encodeURIComponent, decodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
+import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWriter, HeadersOpen, writeHeader)
 
 type Name = String
@@ -61,17 +62,21 @@ parseCookies s =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
 cookies
-  :: forall m req res c.
-     Monad m =>
-     Middleware
+  :: forall m req res c
+   . ( Monad m
+     , Request req m
+     )
+  => Middleware
      m
-     (Conn { headers :: StrMap String | req } res { cookies :: Unit | c})
-     (Conn { headers :: StrMap String | req } res { cookies :: Either String (StrMap Values) | c})
+     (Conn req res { cookies :: Unit | c})
+     (Conn req res { cookies :: Either String (StrMap Values) | c})
      Unit
-cookies =
-  getConn :>>= \conn ->
-  let cookies' = maybe (pure StrMap.empty) parseCookies (StrMap.lookup "cookie" conn.request.headers)
-  in putConn conn { components { cookies = cookies' }}
+cookies = do
+  conn <- getConn
+  { headers } <- getRequestData
+  let cookies' = maybe (pure StrMap.empty) parseCookies (StrMap.lookup "cookie" headers)
+  putConn conn { components { cookies = cookies' }}
+  where bind = ibind
 
 setCookie
   :: forall m req res c rw b
