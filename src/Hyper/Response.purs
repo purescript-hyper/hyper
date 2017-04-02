@@ -2,10 +2,9 @@ module Hyper.Response where
 
 import Prelude
 import Control.IxMonad ((:>>=), (:*>))
-import Data.Foldable (traverse_)
+import Data.Foldable (class Foldable, traverse_)
 import Data.MediaType (MediaType)
 import Data.Newtype (unwrap)
-import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Conn (Conn)
 import Hyper.Header (Header)
@@ -57,12 +56,12 @@ class Response (res :: * -> *) m b | res -> b where
     :: ResponseStateTransition m res BodyOpen ResponseEnded
 
 headers
-  :: forall t m req res b c
-   . ( Traversable t
+  :: forall f m req res b c
+   . ( Foldable f
      , Monad m
      , Response res m b
      )
-  => t Header
+  => f Header
   -> Middleware
      m
      (Conn req (res HeadersOpen) c)

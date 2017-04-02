@@ -14,7 +14,7 @@ body writes, incomplete responses, or other such mistakes. Let us have a look
 at the type signatures of some of response writing functions in
 ``Hyper.Response``.
 
-We see that ``headers`` takes a traversable collection of headers, and
+We see that ``headers`` takes a foldable collection of headers, and
 gives back a middleware that, given a connection where headers are ready
 to be written (``HeadersOpen``), writes all specified headers, writes
 the separating CRLF before the HTTP body, and marks the state of the
@@ -24,11 +24,11 @@ response as being ready to write the body (``BodyOpen``).
 
    headers
      :: forall t m req res b c
-     . ( Traversable t
+     . ( Foldable f
        , Monad m
        , Response res m b
        )
-     => t Header
+     => f Header
      -> Middleware
        m
        (Conn req (res HeadersOpen) c)
