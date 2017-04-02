@@ -104,15 +104,16 @@ redirect uri =
 class ResponseWritable b m r where
   toResponse :: forall i. r -> Middleware m i i b
 
-respond :: forall m r b req res c.
-           ( Monad m
-           , ResponseWritable b m r
-           , Response res m b
-           ) =>
-           r
-        -> Middleware
-           m
-           (Conn req (res BodyOpen) c)
-           (Conn req (res ResponseEnded) c)
-           Unit
+respond
+  :: forall m r b req res c
+   . ( Monad m
+     , ResponseWritable b m r
+     , Response res m b
+     )
+  => r
+  -> Middleware
+     m
+     (Conn req (res BodyOpen) c)
+     (Conn req (res ResponseEnded) c)
+     Unit
 respond r = (toResponse r :>>= send) :*> end

@@ -2,20 +2,19 @@
 Request Body Reading
 ********************
 
-The ``RequestBodyReader`` type class has one operation, ``readBody``,
-which supports different servers to provide different types of request
-body values.
+The ``ReadableBody`` type class has one operation, ``readBody``, which supports
+different servers to provide different types of request body values.
 
 .. code-block:: haskell
 
-    class RequestBodyReader r m b | r -> b where
-      readBody
-        :: forall req res c.
-           Middleware
-           m
-           (Conn { body :: r | req } res c)
-           (Conn { body :: r | req } res c)
-           b
+   class ReadableBody req m b | req -> b where
+     readBody
+       :: forall res c
+        . Middleware
+          m
+          (Conn req res c)
+          (Conn req res c)
+          b
 
 Given that there is an instance for the body ``b``, and the return type
 ``r``, we can use this middleware together with other middleware, like

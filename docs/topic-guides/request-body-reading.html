@@ -118,16 +118,15 @@
           
   <div class="section" id="request-body-reading">
 <h1>Request Body Reading<a class="headerlink" href="#request-body-reading" title="Permalink to this headline">¶</a></h1>
-<p>The <code class="docutils literal"><span class="pre">RequestBodyReader</span></code> type class has one operation, <code class="docutils literal"><span class="pre">readBody</span></code>,
-which supports different servers to provide different types of request
-body values.</p>
-<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">class</span> <span class="kt">RequestBodyReader</span> <span class="n">r</span> <span class="n">m</span> <span class="n">b</span> <span class="o">|</span> <span class="n">r</span> <span class="ow">-&gt;</span> <span class="n">b</span> <span class="kr">where</span>
+<p>The <code class="docutils literal"><span class="pre">ReadableBody</span></code> type class has one operation, <code class="docutils literal"><span class="pre">readBody</span></code>, which supports
+different servers to provide different types of request body values.</p>
+<div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="kr">class</span> <span class="kt">ReadableBody</span> <span class="n">req</span> <span class="n">m</span> <span class="n">b</span> <span class="o">|</span> <span class="n">req</span> <span class="ow">-&gt;</span> <span class="n">b</span> <span class="kr">where</span>
   <span class="n">readBody</span>
-    <span class="ow">::</span> <span class="n">forall</span> <span class="n">req</span> <span class="n">res</span> <span class="n">c</span><span class="o">.</span>
-       <span class="kt">Middleware</span>
+    <span class="ow">::</span> <span class="n">forall</span> <span class="n">res</span> <span class="n">c</span>
+     <span class="o">.</span> <span class="kt">Middleware</span>
        <span class="n">m</span>
-       <span class="p">(</span><span class="kt">Conn</span> <span class="p">{</span> <span class="n">body</span> <span class="ow">::</span> <span class="n">r</span> <span class="o">|</span> <span class="n">req</span> <span class="p">}</span> <span class="n">res</span> <span class="n">c</span><span class="p">)</span>
-       <span class="p">(</span><span class="kt">Conn</span> <span class="p">{</span> <span class="n">body</span> <span class="ow">::</span> <span class="n">r</span> <span class="o">|</span> <span class="n">req</span> <span class="p">}</span> <span class="n">res</span> <span class="n">c</span><span class="p">)</span>
+       <span class="p">(</span><span class="kt">Conn</span> <span class="n">req</span> <span class="n">res</span> <span class="n">c</span><span class="p">)</span>
+       <span class="p">(</span><span class="kt">Conn</span> <span class="n">req</span> <span class="n">res</span> <span class="n">c</span><span class="p">)</span>
        <span class="n">b</span>
 </pre></div>
 </div>

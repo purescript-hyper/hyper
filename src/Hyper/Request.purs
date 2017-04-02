@@ -36,8 +36,8 @@ class Request req m <= BaseRequest req m
 -- | reader type.
 class ReadableBody req m b | req -> b where
   readBody
-    :: forall res c.
-       Middleware
+    :: forall res c
+     . Middleware
        m
        (Conn req res c)
        (Conn req res c)
