@@ -1,7 +1,7 @@
 module Hyper.Node.Server
        ( HttpRequest
        , HttpResponse
-       , NodeResponseWriter
+       , NodeResponse
        , writeString
        , write
        , defaultOptions
@@ -33,7 +33,7 @@ import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
 import Hyper.Request (class ReadableBody, class Request, RequestData)
-import Hyper.Response (class ResponseWritable, class ResponseWriter, ResponseEnded, StatusLineOpen)
+import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
 import Node.Encoding (Encoding(..))
@@ -54,11 +54,11 @@ instance requestHttpRequest :: Monad m => Request HttpRequest m where
 
 -- A limited version of Writable () e, with which you can only write, not end,
 -- the Stream.
-newtype NodeResponseWriter m e
-  = NodeResponseWriter (Writable () e -> m Unit)
+newtype NodeResponse m e
+  = NodeResponse (Writable () e -> m Unit)
 
-writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponseWriter m e
-writeString enc str = NodeResponseWriter $ \w -> liftAff (makeAff (writeAsAff w))
+writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponse m e
+writeString enc str = NodeResponse $ \w -> liftAff (makeAff (writeAsAff w))
   where
     writeAsAff w fail succeed =
       Stream.writeString w enc str (succeed unit) >>=
@@ -66,19 +66,19 @@ writeString enc str = NodeResponseWriter $ \w -> liftAff (makeAff (writeAsAff w)
         then succeed unit
         else fail (error "Failed to write string to response")
 
-write :: forall m e. MonadAff e m => Buffer -> NodeResponseWriter m e
-write buffer = NodeResponseWriter $ \w ->
+write :: forall m e. MonadAff e m => Buffer -> NodeResponse m e
+write buffer = NodeResponse $ \w ->
   liftAff (makeAff (\fail succeed -> void $ Stream.write w buffer (succeed unit)))
 
-instance stringNodeResponseWriter :: (MonadAff e m) => ResponseWritable (NodeResponseWriter m e) m String where
+instance stringNodeResponse :: (MonadAff e m) => ResponseWritable (NodeResponse m e) m String where
   toResponse = ipure <<< writeString UTF8
 
-instance stringAndEncodingNodeResponseWriter :: (MonadAff e m) => ResponseWritable (NodeResponseWriter m e) m (Tuple String Encoding) where
+instance stringAndEncodingNodeResponse :: (MonadAff e m) => ResponseWritable (NodeResponse m e) m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
     ipure (writeString encoding body)
 
-instance bufferNodeResponseWriter :: (MonadAff e m)
-                                  => ResponseWritable (NodeResponseWriter m e) m Buffer where
+instance bufferNodeResponse :: (MonadAff e m)
+                                  => ResponseWritable (NodeResponse m e) m Buffer where
   toResponse buf =
     ipure (write buf)
 
@@ -139,9 +139,9 @@ writeHeader' (Tuple name value) r =
 writeResponse ∷ ∀ req res c m e.
                 MonadAff (http ∷ HTTP | e) m
              ⇒ HTTP.Response
-             → NodeResponseWriter m (http :: HTTP | e)
+             → NodeResponse m (http :: HTTP | e)
              → Middleware m (Conn req res c) (Conn req res c) Unit
-writeResponse r (NodeResponseWriter f) =
+writeResponse r (NodeResponse f) =
   lift' (f (HTTP.responseAsStream r))
 
 endResponse ∷ ∀ req res c m e.
@@ -152,7 +152,7 @@ endResponse r =
   liftEff (Stream.end (HTTP.responseAsStream r) (pure unit))
 
 instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
-                                    => ResponseWriter HttpResponse m (NodeResponseWriter m (http :: HTTP | e)) where
+                                    => Response HttpResponse m (NodeResponse m (http :: HTTP | e)) where
   writeStatus status =
     getConn :>>= \{ response: HttpResponse r } ->
       setStatus status r

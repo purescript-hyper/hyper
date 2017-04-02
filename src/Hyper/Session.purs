@@ -23,7 +23,7 @@ import Hyper.Conn (Conn)
 import Hyper.Cookies (setCookie)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
-import Hyper.Response (class ResponseWriter, HeadersOpen)
+import Hyper.Response (class Response, HeadersOpen)
 
 newtype SessionID = SessionID String
 
@@ -104,7 +104,7 @@ getSession = do
 saveSession
   :: forall m req res c b store session
    . ( Monad m
-     , ResponseWriter res m b
+     , Response res m b
      , SessionStore store m session
      )
   => session
@@ -136,7 +136,7 @@ saveSession session = do
 deleteSession
   :: forall m req res c b store session
    . ( Monad m
-     , ResponseWriter res m b
+     , Response res m b
      , SessionStore store m session
      )
   => Middleware

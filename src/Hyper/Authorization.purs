@@ -7,7 +7,7 @@ import Data.Unit (unit, Unit)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
-import Hyper.Response (class ResponseWritable, respond, headers, writeStatus, class ResponseWriter, ResponseEnded, StatusLineOpen)
+import Hyper.Response (class ResponseWritable, respond, headers, writeStatus, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (statusForbidden)
 
 withAuthorization :: forall a b req res c.
@@ -22,7 +22,7 @@ authorized
   :: forall a m req res b c
    . ( Monad m
      , ResponseWritable b m String
-     , ResponseWriter res m b
+     , Response res m b
      )
   => (Conn req (res StatusLineOpen) { authorization :: Unit | c } -> m (Maybe a))
   -> Middleware

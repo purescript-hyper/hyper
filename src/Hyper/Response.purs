@@ -30,7 +30,7 @@ data BodyOpen
 data ResponseEnded
 
 
--- | A middleware transitioning from one `ResponseWriter` state to another.
+-- | A middleware transitioning from one `Response` state to another.
 type ResponseStateTransition m res from to =
   forall req c.
   Middleware
@@ -41,7 +41,7 @@ type ResponseStateTransition m res from to =
 
 -- | The operations that a response writer, provided by the server backend,
 -- | must support.
-class ResponseWriter (res :: * -> *) m b | res -> b where
+class Response (res :: * -> *) m b | res -> b where
   writeStatus
     :: Status
     -> ResponseStateTransition m res StatusLineOpen HeadersOpen
@@ -60,7 +60,7 @@ headers
   :: forall t m req res b c
    . ( Traversable t
      , Monad m
-     , ResponseWriter res m b
+     , Response res m b
      )
   => t Header
   -> Middleware
@@ -75,7 +75,7 @@ headers hs =
 contentType
   :: forall m req res b c
    . ( Monad m
-     , ResponseWriter res m b
+     , Response res m b
      )
    => MediaType
    -> Middleware
@@ -89,7 +89,7 @@ contentType mediaType =
 redirect
   :: forall m req res b c
    . ( Monad m
-     , ResponseWriter res m b
+     , Response res m b
      )
   => String
   -> Middleware
@@ -107,7 +107,7 @@ class ResponseWritable b m r where
 respond :: forall m r b req res c.
            ( Monad m
            , ResponseWritable b m r
-           , ResponseWriter res m b
+           , Response res m b
            ) =>
            r
         -> Middleware

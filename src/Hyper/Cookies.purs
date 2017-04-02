@@ -24,7 +24,7 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class ResponseWriter, HeadersOpen, writeHeader)
+import Hyper.Response (class Response, HeadersOpen, writeHeader)
 
 type Name = String
 type Value = String
@@ -81,7 +81,7 @@ cookies = do
 setCookie
   :: forall m req res c b
    . ( Monad m
-     , ResponseWriter res m b
+     , Response res m b
      )
   => Name
   -> Value

@@ -23,7 +23,7 @@ import Hyper.Header (Header)
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class ReadableBody, class Request)
-import Hyper.Response (class ResponseWritable, class ResponseWriter)
+import Hyper.Response (class ResponseWritable, class Response)
 import Hyper.Status (Status)
 
 -- REQUEST
@@ -125,7 +125,7 @@ resetResponse conn@{ response: TestResponse status headers body } =
 instance responseWriterTestResponse :: ( Monad m
                                        , MonadTell (TestResponse b state) m
                                        ) =>
-                                       ResponseWriter
+                                       Response
                                        (TestResponse b)
                                        m
                                        b where
