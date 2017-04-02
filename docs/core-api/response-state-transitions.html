@@ -128,18 +128,18 @@ correctness in response handling, preventing incorrect ordering of headers and
 body writes, incomplete responses, or other such mistakes. Let us have a look
 at the type signatures of some of response writing functions in
 <code class="docutils literal"><span class="pre">Hyper.Response</span></code>.</p>
-<p>We see that <code class="docutils literal"><span class="pre">headers</span></code> takes a traversable collection of headers, and
+<p>We see that <code class="docutils literal"><span class="pre">headers</span></code> takes a foldable collection of headers, and
 gives back a middleware that, given a connection where headers are ready
 to be written (<code class="docutils literal"><span class="pre">HeadersOpen</span></code>), writes all specified headers, writes
 the separating CRLF before the HTTP body, and marks the state of the
 response as being ready to write the body (<code class="docutils literal"><span class="pre">BodyOpen</span></code>).</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">headers</span>
   <span class="ow">::</span> <span class="n">forall</span> <span class="n">t</span> <span class="n">m</span> <span class="n">req</span> <span class="n">res</span> <span class="n">b</span> <span class="n">c</span>
-  <span class="o">.</span> <span class="p">(</span> <span class="kt">Traversable</span> <span class="n">t</span>
+  <span class="o">.</span> <span class="p">(</span> <span class="kt">Foldable</span> <span class="n">f</span>
     <span class="p">,</span> <span class="kt">Monad</span> <span class="n">m</span>
     <span class="p">,</span> <span class="kt">Response</span> <span class="n">res</span> <span class="n">m</span> <span class="n">b</span>
     <span class="p">)</span>
-  <span class="ow">=&gt;</span> <span class="n">t</span> <span class="kt">Header</span>
+  <span class="ow">=&gt;</span> <span class="n">f</span> <span class="kt">Header</span>
   <span class="ow">-&gt;</span> <span class="kt">Middleware</span>
     <span class="n">m</span>
     <span class="p">(</span><span class="kt">Conn</span> <span class="n">req</span> <span class="p">(</span><span class="n">res</span> <span class="kt">HeadersOpen</span><span class="p">)</span> <span class="n">c</span><span class="p">)</span>
