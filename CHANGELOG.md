@@ -1,6 +1,6 @@
 # Changelog
 
-* 0.7.0 (ongoing)
+* 0.7.0
   - Use type classes instead of exposing record structure of `request` and
     `response`
     - The `Request` type class provides the `getRequestData` method
