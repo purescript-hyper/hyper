@@ -125,8 +125,8 @@ values, and collects the response using a Writer monad. You get back a
 <code class="docutils literal"><span class="pre">TestResponse</span></code> from which you can extract the status code, headers,
 and the response body.</p>
 <div class="highlight-haskell"><div class="highlight"><pre><span></span><span class="nf">it</span> <span class="s">&quot;responds with a friendly message&quot;</span> <span class="kr">do</span>
-  <span class="n">conn</span> <span class="ow">&lt;-</span> <span class="p">{</span> <span class="n">request</span><span class="kt">:</span> <span class="p">{}</span>
-          <span class="p">,</span> <span class="n">response</span><span class="kt">:</span> <span class="p">{</span> <span class="n">writer</span><span class="kt">:</span> <span class="n">testResponseWriter</span> <span class="p">}</span>
+  <span class="n">conn</span> <span class="ow">&lt;-</span> <span class="p">{</span> <span class="n">request</span><span class="kt">:</span> <span class="kt">TestRequest</span> <span class="n">defaultRequest</span>
+          <span class="p">,</span> <span class="n">response</span><span class="kt">:</span> <span class="kt">TestResponse</span> <span class="kt">Nothing</span> <span class="kt">[]</span> <span class="kt">[]</span>
           <span class="p">,</span> <span class="n">components</span><span class="kt">:</span> <span class="p">{}</span>
           <span class="p">}</span>
           <span class="o">#</span> <span class="n">evalMiddleware</span> <span class="n">app</span>

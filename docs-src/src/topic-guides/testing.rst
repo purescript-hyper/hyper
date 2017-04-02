@@ -12,8 +12,8 @@ and the response body.
 .. code-block:: haskell
 
     it "responds with a friendly message" do
-      conn <- { request: {}
-              , response: { writer: testResponseWriter }
+      conn <- { request: TestRequest defaultRequest
+              , response: TestResponse Nothing [] []
               , components: {}
               }
               # evalMiddleware app

@@ -12,22 +12,22 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
-import Hyper.Request (class RequestBodyReader, readBody)
-import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
+import Hyper.Request (class ReadableBody, getRequestData, readBody)
+import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
 import Node.HTTP (HTTP)
 
 onPost
-  :: forall m r rw b req res c.
+  :: forall m b req res c.
      ( Monad m
-     , RequestBodyReader r m String
-     , ResponseWriter rw m b
-     , Response b m String
+     , ReadableBody req m String
+     , Response res m b
+     , ResponseWritable b m String
      )
   => Middleware
      m
-     (Conn { body :: r | req } { writer :: rw StatusLineOpen | res } c)
-     (Conn { body :: r | req } { writer :: rw ResponseEnded | res } c)
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res ResponseEnded) c)
      Unit
 -- start snippet onPost
 onPost =
@@ -47,8 +47,8 @@ main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar 
 main =
   let
     router =
-      getConn :>>= \conn →
-      case conn.request.method of
+      _.method <$> getRequestData :>>=
+      case _ of
         Left POST -> onPost
         Left method ->
           writeStatus statusMethodNotAllowed

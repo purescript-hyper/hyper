@@ -5,12 +5,13 @@ import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Exception (error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.StrMap (singleton)
 import Data.Tuple (Tuple(Tuple), fst)
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware (runMiddleware)
-import Hyper.Test.TestServer (StringBody(..))
+import Hyper.Test.TestServer (TestRequest(TestRequest))
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.Aff (expectError)
@@ -55,13 +56,15 @@ spec =
     runParseForm body contentType =
       runMiddleware
       parseForm
-      { request: { body: StringBody body
-                 , headers: singleton
-                            "content-type"
-                            (fromMaybe
-                             "application/x-www-form-urlencoded; charset=utf8"
-                             contentType)
-                 }
+      { request: TestRequest { method: Left GET
+                             , body: body
+                             , url: ""
+                             , headers: singleton
+                                         "content-type"
+                                         (fromMaybe
+                                         "application/x-www-form-urlencoded; charset=utf8"
+                                         contentType)
+                             }
       , response: {}
       , components: {}
       }

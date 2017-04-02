@@ -13,9 +13,9 @@ import Data.Maybe (Maybe(..))
 import Data.MediaType.Common (textHTML)
 import Hyper.Cookies (cookies)
 import Hyper.Middleware (lift')
-import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Node.Session.InMemory (newInMemorySessionStore)
+import Hyper.Request (getRequestData)
 import Hyper.Response (closeHeaders, contentType, end, redirect, respond, writeStatus)
 import Hyper.Session (deleteSession, getSession, saveSession)
 import Hyper.Status (statusNotFound, statusOK)
@@ -70,8 +70,8 @@ main = void $ launchAff do
 
     -- Simple router for this example.
     router =
-      getConn :>>= \conn ->
-      case conn.request.url of
+      getRequestData :>>= \{ url } ->
+      case url of
         "/" -> home
         "/login" -> login
         "/logout" -> logout

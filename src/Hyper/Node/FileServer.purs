@@ -10,7 +10,8 @@ import Data.Tuple (Tuple(Tuple))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
-import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
+import Hyper.Request (class Request, getRequestData)
+import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (BUFFER, Buffer)
 import Node.FS (FS)
@@ -19,17 +20,17 @@ import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
 
 serveFile
-  :: forall m e rw req res c b.
+  :: forall m e req res c b.
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
-     , Response b m Buffer
-     , ResponseWriter rw m b
+     , ResponseWritable b m Buffer
+     , Response res m b
      ) =>
      FilePath
   -> Middleware
      m
-     (Conn { url :: String | req } { writer :: rw StatusLineOpen |  res } c)
-     (Conn { url :: String | req } { writer :: rw ResponseEnded | res } c)
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res ResponseEnded) c)
      Unit
 serveFile path = do
   buf <- lift' (liftAff (readFile path))
@@ -45,26 +46,28 @@ serveFile path = do
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m e rw req res c b.
+  :: forall m e req res c b.
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
-     , Response b m Buffer
-     , ResponseWriter rw m b
+     , Request req m
+     , ResponseWritable b m Buffer
+     , Response res m b
      ) =>
      FilePath
   -> Middleware
      m
-     (Conn { url :: String | req } { writer :: rw StatusLineOpen |  res } c)
-     (Conn { url :: String | req } { writer :: rw ResponseEnded | res } c)
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res ResponseEnded) c)
      Unit
   -> Middleware
      m
-     (Conn { url :: String | req } { writer :: rw StatusLineOpen |  res } c)
-     (Conn { url :: String | req } { writer :: rw ResponseEnded | res } c)
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res ResponseEnded) c)
      Unit
 fileServer dir on404 = do
   conn ← getConn
-  serve (Path.concat [dir, conn.request.url])
+  { url } <- getRequestData
+  serve (Path.concat [dir, url])
   where
     serveStats absolutePath stats
       | isFile stats = serveFile absolutePath

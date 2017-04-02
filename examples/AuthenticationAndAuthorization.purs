@@ -17,17 +17,17 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.Either (Either(..))
-import Data.HTTP.Method (CustomMethod, Method(..))
+import Data.HTTP.Method (Method(GET))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
-import Data.StrMap (StrMap)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptions, runServer)
-import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
+import Hyper.Request (class Request, getRequestData)
+import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
@@ -38,14 +38,17 @@ import Text.Smolder.Renderer.String (render)
 
 -- Helper for responding with HTML.
 htmlWithStatus
-  :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response b m String) =>
-     Status
+  :: forall m req res b c
+   . ( Monad m
+     , Response res m b
+     , ResponseWritable b m String
+     )
+  => Status
   -> Markup Unit
   -> Middleware
      m
-     (Conn req { writer :: rw StatusLineOpen | res } c)
-     (Conn req { writer :: rw ResponseEnded | res } c)
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res ResponseEnded) c)
      Unit
 htmlWithStatus status x =
   writeStatus status
@@ -69,12 +72,15 @@ data Admin = Admin
 -- A handler that does not require an authenticated user, but displays the
 -- name if the user _is_ authenticated.
 profileHandler
-  :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response b m String) =>
-     Middleware
+  :: forall m req res b c
+   . ( Monad m
+     , Response res m b
+     , ResponseWritable b m String
+     )
+  => Middleware
      m
-     (Conn req { writer :: rw StatusLineOpen | res } { authentication :: Maybe User | c })
-     (Conn req { writer :: rw ResponseEnded | res } { authentication :: Maybe User | c })
+     (Conn req (res StatusLineOpen) { authentication :: Maybe User | c })
+     (Conn req (res ResponseEnded) { authentication :: Maybe User | c })
      Unit
 profileHandler =
   getConn :>>= \conn →
@@ -101,12 +107,15 @@ profileHandler =
 -- place . You simply mark the requirement in the type signature,
 -- as seen below.
 adminHandler
-  :: forall m req res rw b c.
-     (Monad m, ResponseWriter rw m b, Response b m String) =>
-     Middleware
+  :: forall m req res b c
+   . ( Monad m
+     , Response res m b
+     , ResponseWritable b m String
+     )
+  => Middleware
      m
-     (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Admin, authentication :: User | c })
-     (Conn req { writer :: rw ResponseEnded | res } { authorization :: Admin, authentication :: User | c })
+     (Conn req (res StatusLineOpen) { authorization :: Admin, authentication :: User | c })
+     (Conn req (res ResponseEnded) { authorization :: Admin, authentication :: User | c })
      Unit
 adminHandler =
   getConn :>>= \conn →
@@ -148,18 +157,22 @@ getAdminRole conn =
     _ -> pure Nothing
 
 
-app :: forall m e req res rw b c.
-       (MonadAff (buffer :: BUFFER | e) m, ResponseWriter rw m b, Response b m String) =>
-       Middleware
+app :: forall m e req res b c
+     . ( MonadAff (buffer :: BUFFER | e) m
+       , Request req m
+       , Response res m b
+       , ResponseWritable b m String
+       )
+    => Middleware
        m
-       (Conn { url :: String, method :: Either Method CustomMethod, headers :: StrMap String | req }
-             { writer :: rw StatusLineOpen | res }
+       (Conn req
+             (res StatusLineOpen)
              { authentication :: Unit
              , authorization :: Unit
              | c
              })
-       (Conn { url :: String, method :: Either Method CustomMethod, headers :: StrMap String | req }
-             { writer :: rw ResponseEnded | res }
+       (Conn req
+             (res ResponseEnded)
              { authentication :: Maybe User
              , authorization :: Unit
              | c
@@ -179,19 +192,19 @@ app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
             li (a ! A.href "/admin" $ text "Administration")
 
       router =
-        getConn :>>= \conn →
-        case Tuple conn.request.method conn.request.url of
-          Tuple (Left GET) "/" ->
+        getRequestData :>>= \{ method, url } →
+        case method, url of
+          Left GET, "/" ->
             htmlWithStatus statusOK homeView
-          Tuple (Left GET) "/profile" ->
+          Left GET, "/profile" ->
             profileHandler
-          Tuple (Left GET) "/admin" ->
+          Left GET, "/admin" ->
               -- To use the admin handler, we must ensure that the user is
               -- authenticated and authorized as `Admin`.
             BasicAuth.authenticated
             "Authorization Example"
             (authorized getAdminRole adminHandler)
-          _ ->
+          _, _ ->
             notFound
 
 main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit

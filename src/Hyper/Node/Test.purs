@@ -6,12 +6,12 @@ import Data.Array (singleton)
 import Data.Function ((<<<))
 import Data.Monoid (class Monoid)
 import Data.Semigroup ((<>), class Semigroup)
-import Hyper.Response (class Response)
+import Hyper.Response (class ResponseWritable)
 import Node.Buffer (Buffer)
 
 newtype TestResponseBody = TestResponseBody (Array Buffer)
 
-instance bufferTestResponseBody :: Monad m => Response TestResponseBody m Buffer where
+instance bufferTestResponseBody :: Monad m => ResponseWritable TestResponseBody m Buffer where
   toResponse = pure <<< TestResponseBody <<< singleton
 
 instance semigroupBufferResponse :: Semigroup TestResponseBody where
