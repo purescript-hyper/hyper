@@ -1,5 +1,12 @@
 # Changelog
 
+* 0.7.0 (ongoing)
+  - Use type classes instead of exposing record structure of `request` and
+    `response`
+    - The `Request` type class provides the `getRequestData` method
+    - The `ReadableBody` type class provides overloaded ways of reading the
+      request body as different types
+    - Type signatures are generally much lighter and nicer to read!
 * 0.6.0
   - Include early support for cookies and sessions
   - Add docs for new type-level routing API featuring the `Resource` construct
