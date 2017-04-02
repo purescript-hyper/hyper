@@ -14,7 +14,6 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.String (length)
 import Hyper.Form (parseForm, required)
-import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (getRequestData)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
@@ -75,8 +74,8 @@ main =
 
     -- Our (rather primitive) router.
     router =
-      getRequestData :>>= \{ method } →
-      case method of
+      _.method <$> getRequestData :>>=
+      case _ of
         Left GET ->
           htmlWithStatus
           statusOK
