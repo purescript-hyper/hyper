@@ -8,7 +8,7 @@ module Hyper.Node.Server
        , defaultOptionsWithLogging
        , runServer
        , runServer'
-       )where
+       ) where
 
 import Prelude
 import Data.HTTP.Method as Method
@@ -154,38 +154,28 @@ endResponse r =
 instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
                                     => ResponseWriter HttpResponse m (NodeResponseWriter m (http :: HTTP | e)) where
   writeStatus status =
-    getWriter :>>=
-    case _ of
-      HttpResponse r → do
-        setStatus status r
-        :*> modifyConn (_ { response { writer = HttpResponse r }})
+    getConn :>>= \{ response: HttpResponse r } ->
+      setStatus status r
+      :*> modifyConn (_ { response = HttpResponse r })
 
   writeHeader header =
-    getWriter :>>=
-    case _ of
-      HttpResponse r →
-        writeHeader' header r
-        :*> modifyConn (_ { response { writer = HttpResponse r }})
+    getConn :>>= \{ response: HttpResponse r } ->
+      writeHeader' header r
+      :*> modifyConn (_ { response = HttpResponse r })
 
   closeHeaders =
-    getWriter :>>=
-    case _ of
-      HttpResponse r →
-        modifyConn (_ { response { writer = HttpResponse r }})
+    getConn :>>= \{ response: HttpResponse r } ->
+      modifyConn (_ { response = HttpResponse r })
 
   send f =
-    getWriter :>>=
-    case _ of
-      HttpResponse r → do
-        writeResponse r f
-        :*> modifyConn (_ { response { writer = HttpResponse r }})
+    getConn :>>= \{ response: HttpResponse r } ->
+      writeResponse r f
+      :*> modifyConn (_ { response = HttpResponse r })
 
   end =
-    getWriter :>>=
-    case _ of
-      HttpResponse r → do
-        endResponse r
-        :*> modifyConn (_ { response { writer = HttpResponse r }})
+    getConn :>>= \{ response: HttpResponse r } ->
+      endResponse r
+      :*> modifyConn (_ { response = HttpResponse r })
 
 
 type ServerOptions e =

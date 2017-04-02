@@ -12,9 +12,9 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.String (shouldContain)
 
 assertBody
-  :: forall e.
-     (String -> String -> Aff (buffer :: BUFFER | e) Unit)
-  -> TestResponse TestResponseBody
+  :: forall e state
+   . (String -> String -> Aff (buffer :: BUFFER | e) Unit)
+  -> TestResponse TestResponseBody state
   -> String
   -> Aff (buffer :: BUFFER | e) Unit
 assertBody assertion response expected =
@@ -24,15 +24,15 @@ assertBody assertion response expected =
       body `assertion` expected
 
 bodyShouldEqual
-  :: forall e.
-     TestResponse TestResponseBody
+  :: forall e state
+   . TestResponse TestResponseBody state
   -> String
   -> Aff (buffer :: BUFFER | e) Unit
 bodyShouldEqual = assertBody shouldEqual
 
 bodyShouldContain
-  :: forall e.
-     TestResponse TestResponseBody
+  :: forall e state
+   . TestResponse TestResponseBody state
   -> String
   -> Aff (buffer :: BUFFER | e) Unit
 bodyShouldContain = assertBody shouldContain

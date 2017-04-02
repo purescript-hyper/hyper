@@ -31,56 +31,72 @@ data ResponseEnded
 
 
 -- | A middleware transitioning from one `ResponseWriter` state to another.
-type ResponseStateTransition m rw from to =
-  forall req res c.
+type ResponseStateTransition m res from to =
+  forall req c.
   Middleware
   m
-  (Conn req {writer :: rw from | res} c)
-  (Conn req {writer :: rw to | res} c)
+  (Conn req (res from) c)
+  (Conn req (res to) c)
   Unit
 
 -- | The operations that a response writer, provided by the server backend,
 -- | must support.
-class ResponseWriter rw m b | rw -> b where
-  writeStatus :: Status -> ResponseStateTransition m rw StatusLineOpen HeadersOpen
-  writeHeader :: Header -> ResponseStateTransition m rw HeadersOpen HeadersOpen
-  closeHeaders :: ResponseStateTransition m rw HeadersOpen BodyOpen
-  send :: b -> ResponseStateTransition m rw BodyOpen BodyOpen
-  end :: ResponseStateTransition m rw BodyOpen ResponseEnded
+class ResponseWriter (res :: * -> *) m b | res -> b where
+  writeStatus
+    :: Status
+    -> ResponseStateTransition m res StatusLineOpen HeadersOpen
+  writeHeader
+    :: Header
+    -> ResponseStateTransition m res HeadersOpen HeadersOpen
+  closeHeaders
+    :: ResponseStateTransition m res HeadersOpen BodyOpen
+  send
+    :: b
+    -> ResponseStateTransition m res BodyOpen BodyOpen
+  end
+    :: ResponseStateTransition m res BodyOpen ResponseEnded
 
-headers :: forall t m req res rw b c.
-           (Traversable t, Monad m, ResponseWriter rw m b) =>
-           t Header
-        -> Middleware
-           m
-           (Conn req { writer :: rw HeadersOpen | res } c)
-           (Conn req { writer :: rw BodyOpen | res } c)
-           Unit
+headers
+  :: forall t m req res b c
+   . ( Traversable t
+     , Monad m
+     , ResponseWriter res m b
+     )
+  => t Header
+  -> Middleware
+     m
+     (Conn req (res HeadersOpen) c)
+     (Conn req (res BodyOpen) c)
+     Unit
 headers hs =
   traverse_ writeHeader hs
   :*> closeHeaders
 
-contentType :: forall m req res rw b c.
-               (Monad m, ResponseWriter rw m b) =>
-               MediaType
-            -> Middleware
-               m
-               (Conn req { writer :: rw HeadersOpen | res } c)
-               (Conn req { writer :: rw HeadersOpen | res } c)
-               Unit
-contentType mediaType = writeHeader (Tuple "Content-Type" (unwrap mediaType))
+contentType
+  :: forall m req res b c
+   . ( Monad m
+     , ResponseWriter res m b
+     )
+   => MediaType
+   -> Middleware
+       m
+       (Conn req (res HeadersOpen) c)
+       (Conn req (res HeadersOpen) c)
+       Unit
+contentType mediaType =
+  writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
 redirect
-  :: forall m req res rw b c
+  :: forall m req res b c
    . ( Monad m
-     , ResponseWriter rw m b
+     , ResponseWriter res m b
      )
   => String
   -> Middleware
-      m
-      (Conn req { writer :: rw StatusLineOpen | res } c)
-      (Conn req { writer :: rw HeadersOpen | res } c)
-      Unit
+     m
+     (Conn req (res StatusLineOpen) c)
+     (Conn req (res HeadersOpen) c)
+     Unit
 redirect uri =
   writeStatus statusFound
   :*> writeHeader (Tuple "Location" uri)
@@ -88,15 +104,15 @@ redirect uri =
 class Response b m r where
   toResponse :: forall i. r -> Middleware m i i b
 
-respond :: forall m r b req res rw c.
+respond :: forall m r b req res c.
            ( Monad m
            , Response b m r
-           , ResponseWriter rw m b
+           , ResponseWriter res m b
            ) =>
            r
         -> Middleware
            m
-           (Conn req { writer :: rw BodyOpen | res } c)
-           (Conn req { writer :: rw ResponseEnded | res } c)
+           (Conn req (res BodyOpen) c)
+           (Conn req (res ResponseEnded) c)
            Unit
 respond r = (toResponse r :>>= send) :*> end

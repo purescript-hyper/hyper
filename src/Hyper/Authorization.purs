@@ -19,18 +19,21 @@ withAuthorization a conn =
 
 
 authorized
-  :: forall a m req res rw b c.
-     (Monad m, Response b m String, ResponseWriter rw m b) =>
-     (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Unit | c } -> m (Maybe a))
-  -> (Middleware
-      m
-      (Conn req { writer :: rw StatusLineOpen | res } { authorization :: a | c })
-      (Conn req { writer :: rw ResponseEnded | res } { authorization :: a | c }))
-      Unit
+  :: forall a m req res b c
+   . ( Monad m
+     , Response b m String
+     , ResponseWriter res m b
+     )
+  => (Conn req (res StatusLineOpen) { authorization :: Unit | c } -> m (Maybe a))
   -> Middleware
      m
-     (Conn req { writer :: rw StatusLineOpen | res } { authorization :: Unit | c })
-     (Conn req { writer :: rw ResponseEnded | res } { authorization :: Unit | c })
+     (Conn req (res StatusLineOpen) { authorization :: a | c })
+     (Conn req (res ResponseEnded) { authorization :: a | c })
+     Unit
+  -> Middleware
+     m
+     (Conn req (res StatusLineOpen) { authorization :: Unit | c })
+     (Conn req (res ResponseEnded) { authorization :: Unit | c })
      Unit
 authorized authorizer mw = do
   conn ← getConn

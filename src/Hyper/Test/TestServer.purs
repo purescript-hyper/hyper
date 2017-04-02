@@ -28,12 +28,11 @@ import Hyper.Status (Status)
 
 -- REQUEST
 
-newtype TestRequest r
+newtype TestRequest
   = TestRequest { url :: String
                 , method :: Either Method CustomMethod
                 , body :: String
                 , headers :: StrMap String
-                | r
                 }
 
 defaultRequest :: { url :: String
@@ -49,10 +48,10 @@ defaultRequest =
   }
 
 instance readableBodyStringBody :: Monad m
-                                => ReadableBody (TestRequest r) m String where
+                                => ReadableBody TestRequest m String where
   readBody = getConn :>>= \{ request: TestRequest { body }} -> pure body
 
-instance requestTestRequest :: Monad m => Request (TestRequest r) m where
+instance requestTestRequest :: Monad m => Request TestRequest m where
   getRequestData =
     getConn :>>= \{ request: TestRequest r } ->
     ipure { url: r.url
@@ -61,7 +60,7 @@ instance requestTestRequest :: Monad m => Request (TestRequest r) m where
           , headers: r.headers
           }
 
--- RESPONSE
+-- RESPONSE BODY
 
 newtype StringBody = StringBody String
 
@@ -77,65 +76,69 @@ instance semigroupStringBody :: Semigroup StringBody where
 instance monoidStringBody :: Monoid StringBody where
   mempty = StringBody ""
 
-data TestResponse b = TestResponse (Maybe Status) (Array Header) (Array b)
+-- RESPONSE
 
-testStatus :: forall b. TestResponse b → Maybe Status
+data TestResponse b state
+  = TestResponse (Maybe Status) (Array Header) (Array b)
+
+testStatus :: forall b state. TestResponse b state → Maybe Status
 testStatus (TestResponse status _ _) = status
 
-testHeaders :: forall b. TestResponse b → Array Header
+testHeaders :: forall b state. TestResponse b state → Array Header
 testHeaders (TestResponse _ headers _) = headers
 
-testBodyChunks :: forall b. TestResponse b → Array b
+testBodyChunks :: forall b state. TestResponse b state → Array b
 testBodyChunks (TestResponse _ _ body) = body
 
-testBody :: forall b. Monoid b => TestResponse b → b
+testBody :: forall b state. Monoid b => TestResponse b state → b
 testBody (TestResponse _ _ body) = fold body
 
-instance semigroupTestResponse :: Semigroup (TestResponse b) where
+instance semigroupTestResponse :: Semigroup (TestResponse b state) where
   append (TestResponse status headers bodyChunks) (TestResponse status' headers' bodyChunks') =
     TestResponse (status <|> status') (headers <> headers') (bodyChunks <> bodyChunks')
 
-instance monoidTestResponse :: Monoid (TestResponse b) where
+instance monoidTestResponse :: Monoid (TestResponse b state) where
   mempty = TestResponse Nothing [] []
 
-testStringBody :: TestResponse StringBody → String
+testStringBody :: forall state. TestResponse StringBody state → String
 testStringBody (TestResponse _ _ chunks) = fold (map unwrap chunks)
 
 
 -- SERVER
 
 
-testServer :: forall m a b. Monad m ⇒ WriterT (TestResponse b) m a → m (TestResponse b)
+testServer
+  :: forall m a b state
+   . Monad m
+   => WriterT (TestResponse b state) m a
+   -> m (TestResponse b state)
 testServer = execWriterT <<< void
 
 
-data TestResponseWriter state = TestResponseWriter
+resetResponse
+  :: forall req c body a b
+   . Conn req (TestResponse body a) c
+  -> Conn req (TestResponse body b) c
+resetResponse conn@{ response: TestResponse status headers body } =
+  conn { response = TestResponse status headers body }
 
-
-resetWriter ∷ ∀ req res c a b.
-            Conn req { writer ∷ TestResponseWriter a | res } c
-          → Conn req { writer ∷ TestResponseWriter b | res } c
-resetWriter conn =
-  case conn.response.writer of
-       TestResponseWriter → conn { response { writer = TestResponseWriter } }
-
-instance responseWriterTestResponseWriter :: ( Monad m
-                                             , MonadTell (TestResponse b) m
-                                             ) =>
-                                             ResponseWriter
-                                             TestResponseWriter
-                                             m
-                                             b where
+instance responseWriterTestResponse :: ( Monad m
+                                       , MonadTell (TestResponse b state) m
+                                       ) =>
+                                       ResponseWriter
+                                       (TestResponse b)
+                                       m
+                                       b where
   writeStatus status = do
     lift' (tell (TestResponse (Just status) [] []))
-    :*> modifyConn resetWriter
+    :*> modifyConn resetResponse
 
   writeHeader header =
     lift' (tell (TestResponse Nothing [header] mempty))
 
-  closeHeaders = modifyConn resetWriter
+  closeHeaders = modifyConn resetResponse
 
   send chunk =
     lift' (tell (TestResponse Nothing [] [chunk]))
 
-  end = modifyConn resetWriter
+  end = modifyConn resetResponse

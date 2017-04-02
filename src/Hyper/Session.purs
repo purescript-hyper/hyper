@@ -47,14 +47,14 @@ currentSessionID
   => Middleware
      m
      (Conn
-      { headers :: StrMap String | req }
+      req
       res
       { sessions :: Sessions store
       , cookies :: Either String (StrMap Cookies.Values)
       | c
       })
      (Conn
-      { headers :: StrMap String | req }
+      req
       res
       { sessions :: Sessions store
       , cookies :: Either String (StrMap Cookies.Values)
@@ -79,14 +79,14 @@ getSession
   => Middleware
      m
      (Conn
-      { headers :: StrMap String | req }
+      req
       res
       { sessions :: Sessions store
       , cookies :: Either String (StrMap Cookies.Values)
       | c
       })
      (Conn
-      { headers :: StrMap String | req }
+      req
       res
       { sessions :: Sessions store
       , cookies :: Either String (StrMap Cookies.Values)
@@ -102,21 +102,21 @@ getSession = do
   where bind = ibind
 
 saveSession
-  :: forall m req res c rw b store session
+  :: forall m req res c b store session
    . ( Monad m
-     , ResponseWriter rw m b
+     , ResponseWriter res m b
      , SessionStore store m session
      )
   => session
   -> Middleware
      m
      (Conn
-      { headers :: StrMap String | req }
-      { writer :: rw HeadersOpen | res }
+      req
+      (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
      (Conn
-      { headers :: StrMap String | req }
-      { writer :: rw HeadersOpen | res }
+      req
+      (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
      Unit
 saveSession session = do
@@ -134,20 +134,20 @@ saveSession session = do
     bind = ibind
 
 deleteSession
-  :: forall m req res c rw b store session
+  :: forall m req res c b store session
    . ( Monad m
-     , ResponseWriter rw m b
+     , ResponseWriter res m b
      , SessionStore store m session
      )
   => Middleware
      m
      (Conn
-      { headers :: StrMap String | req }
-      { writer :: rw HeadersOpen | res }
+      req
+      (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
      (Conn
-      { headers :: StrMap String | req }
-      { writer :: rw HeadersOpen | res }
+      req
+      (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
      Unit
 deleteSession = do

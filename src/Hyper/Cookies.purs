@@ -79,16 +79,16 @@ cookies = do
   where bind = ibind
 
 setCookie
-  :: forall m req res c rw b
+  :: forall m req res c b
    . ( Monad m
-     , ResponseWriter rw m b
+     , ResponseWriter res m b
      )
   => Name
   -> Value
   -> Middleware
      m
-     (Conn req { writer :: rw HeadersOpen | res } c)
-     (Conn req  { writer :: rw HeadersOpen | res } c)
+     (Conn req (res HeadersOpen) c)
+     (Conn req (res HeadersOpen) c)
      Unit
 setCookie key value =
   writeHeader (Tuple "Set-Cookie" (encodeURIComponent key <> "=" <> encodeURIComponent value))

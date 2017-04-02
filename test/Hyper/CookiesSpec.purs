@@ -6,12 +6,12 @@ import Data.StrMap as StrMap
 import Control.Alternative (empty)
 import Data.Array ((:))
 import Data.Either (Either(..), either, isLeft)
-import Data.Maybe (Maybe(Just))
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty (fromNonEmpty, (:|))
 import Data.Tuple (Tuple(..))
 import Hyper.Cookies (cookies, setCookie)
 import Hyper.Middleware (evalMiddleware)
-import Hyper.Test.TestServer (TestRequest(..), TestResponseWriter(..), defaultRequest, testHeaders, testServer)
+import Hyper.Test.TestServer (TestRequest(..), TestResponse(..), defaultRequest, testHeaders, testServer)
 import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
@@ -68,7 +68,7 @@ spec = do
 
       it "sets a simple cookie" do
         response <- { request: TestRequest defaultRequest
-                    , response: { writer: TestResponseWriter }
+                    , response: TestResponse Nothing [] []
                     , components: {}
                     }
                     # evalMiddleware (setCookie "foo" "bar")
@@ -77,7 +77,7 @@ spec = do
 
       it "URL encodes cookie key" do
         response <- { request: TestRequest defaultRequest
-                    , response: { writer: TestResponseWriter }
+                    , response: TestResponse Nothing [] []
                     , components: {}
                     }
                     # evalMiddleware (setCookie "&stuff!we like" "bar")
@@ -86,7 +86,7 @@ spec = do
 
       it "URL encodes cookie value" do
         response <- { request: TestRequest defaultRequest
-                    , response: { writer: TestResponseWriter }
+                    , response: TestResponse Nothing [] []
                     , components: {}
                     }
                     # evalMiddleware (setCookie "yeah" "=& ?%")

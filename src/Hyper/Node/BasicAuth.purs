@@ -8,7 +8,6 @@ import Control.Monad.Eff.Class (liftEff, class MonadEff)
 import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid ((<>))
-import Data.StrMap (StrMap)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
@@ -16,6 +15,7 @@ import Hyper.Authentication (setAuthentication)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
+import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class Response, respond, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
 import Hyper.Status (statusUnauthorized)
 import Node.Buffer (BUFFER)
@@ -32,13 +32,15 @@ decodeBase64 encoded =
 
 
 withAuthentication
-  :: forall m e req res c t.
-     MonadEff (buffer :: BUFFER | e) m =>
-     (Tuple String String -> m (Maybe t))
+  :: forall m e req res c t
+   . ( MonadEff (buffer :: BUFFER | e) m
+     , Request req m
+     )
+  => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn { headers :: StrMap String | req } res { authentication :: Unit | c })
-     (Conn { headers :: StrMap String | req } res { authentication :: Maybe t | c })
+     (Conn req res { authentication :: Unit | c })
+     (Conn req res { authentication :: Maybe t | c })
      Unit
 withAuthentication mapper = do
   auth <- getAuth
@@ -49,7 +51,7 @@ withAuthentication mapper = do
         [username, password] -> Just (Tuple username password)
         _ -> Nothing
     getAuth = do
-      headers ← _.request.headers <$> getConn
+      { headers } <- getRequestData
       case StrMap.lookup "authorization" headers of
         Nothing -> ipure Nothing
         Just header -> do
@@ -63,32 +65,22 @@ withAuthentication mapper = do
     bind = ibind
 
 authenticated
-  :: forall m req res c rw b t.
-     (Monad m, Response b m String, ResponseWriter rw m b) =>
-     Realm
+  :: forall m req res c b t
+   . ( Monad m
+     , Response b m String
+     , ResponseWriter res m b
+     )
+  => Realm
   -> Middleware
       m
-      (Conn
-       req
-       { writer :: rw StatusLineOpen | res }
-       { authentication :: t | c })
-      (Conn
-       req
-       { writer :: rw ResponseEnded | res }
-       { authentication :: t | c })
+      (Conn req (res StatusLineOpen) { authentication :: t | c })
+      (Conn req (res ResponseEnded) { authentication :: t | c })
       Unit
   -> Middleware
      m
-     (Conn
-      req
-      { writer :: rw StatusLineOpen | res }
-      { authentication :: Maybe t | c })
-     (Conn
-      req
-      { writer :: rw ResponseEnded | res }
-      { authentication :: Maybe t | c })
+     (Conn req (res StatusLineOpen) { authentication :: Maybe t | c })
+     (Conn req (res ResponseEnded) { authentication :: Maybe t | c })
      Unit
-
 authenticated realm mw = do
   conn ← getConn
   case conn.components.authentication of

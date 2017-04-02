@@ -5,14 +5,14 @@ import Node.Buffer as Buffer
 import Control.IxMonad (ibind)
 import Control.Monad.Aff.Class (class MonadAff)
 import Control.Monad.Eff.Class (liftEff)
-import Data.Maybe (Maybe(Just))
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Middleware (evalMiddleware)
 import Hyper.Node.FileServer (fileServer)
 import Hyper.Node.Test (TestResponseBody(TestResponseBody))
-import Hyper.Response (headers, respond, writeStatus)
+import Hyper.Response (ResponseEnded, headers, respond, writeStatus)
 import Hyper.Status (statusNotFound, statusOK)
-import Hyper.Test.TestServer (testBody, TestResponse, testStatus, testServer, testHeaders, TestResponseWriter(..))
+import Hyper.Test.TestServer (TestRequest(..), TestResponse(..), defaultRequest, testBody, testHeaders, testServer, testStatus)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS (FS)
@@ -24,10 +24,10 @@ serveFilesAndGet
   :: forall m e.
      (MonadAff (fs :: FS, buffer :: BUFFER | e) m) =>
      String
-  -> m (TestResponse TestResponseBody)
+  -> m (TestResponse TestResponseBody ResponseEnded)
 serveFilesAndGet path =
-  { request: { url: path }
-  , response: { writer: TestResponseWriter }
+  { request: TestRequest (defaultRequest { url = path })
+  , response: TestResponse Nothing [] []
   , components: {}
   }
   # evalMiddleware app
