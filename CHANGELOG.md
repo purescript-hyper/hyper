@@ -1,5 +1,8 @@
 # Changelog
 
+* 0.6.0
+  - Include early support for cookies and sessions
+  - Add docs for new type-level routing API featuring the `Resource` construct
 * 0.5.0
   - Separate out
     [purescript-hyper-routing-server](https://github.com/owickstrom/purescript-hyper-routing-server)
