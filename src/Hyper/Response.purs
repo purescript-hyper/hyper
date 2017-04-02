@@ -101,12 +101,12 @@ redirect uri =
   writeStatus statusFound
   :*> writeHeader (Tuple "Location" uri)
 
-class Response b m r where
+class ResponseWritable b m r where
   toResponse :: forall i. r -> Middleware m i i b
 
 respond :: forall m r b req res c.
            ( Monad m
-           , Response b m r
+           , ResponseWritable b m r
            , ResponseWriter res m b
            ) =>
            r

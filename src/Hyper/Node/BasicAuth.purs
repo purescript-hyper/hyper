@@ -16,7 +16,7 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class Response, respond, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
+import Hyper.Response (class ResponseWritable, respond, class ResponseWriter, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
 import Hyper.Status (statusUnauthorized)
 import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
@@ -67,7 +67,7 @@ withAuthentication mapper = do
 authenticated
   :: forall m req res c b t
    . ( Monad m
-     , Response b m String
+     , ResponseWritable b m String
      , ResponseWriter res m b
      )
   => Realm

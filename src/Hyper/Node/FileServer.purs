@@ -11,7 +11,7 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
+import Hyper.Response (class ResponseWritable, class ResponseWriter, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (BUFFER, Buffer)
 import Node.FS (FS)
@@ -23,7 +23,7 @@ serveFile
   :: forall m e req res c b.
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
-     , Response b m Buffer
+     , ResponseWritable b m Buffer
      , ResponseWriter res m b
      ) =>
      FilePath
@@ -50,7 +50,7 @@ fileServer
      ( Monad m
      , MonadAff (fs :: FS, buffer :: BUFFER | e) m
      , Request req m
-     , Response b m Buffer
+     , ResponseWritable b m Buffer
      , ResponseWriter res m b
      ) =>
      FilePath

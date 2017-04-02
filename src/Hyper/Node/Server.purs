@@ -33,7 +33,7 @@ import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
 import Hyper.Request (class ReadableBody, class Request, RequestData)
-import Hyper.Response (class Response, class ResponseWriter, ResponseEnded, StatusLineOpen)
+import Hyper.Response (class ResponseWritable, class ResponseWriter, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
 import Node.Encoding (Encoding(..))
@@ -70,15 +70,15 @@ write :: forall m e. MonadAff e m => Buffer -> NodeResponseWriter m e
 write buffer = NodeResponseWriter $ \w ->
   liftAff (makeAff (\fail succeed -> void $ Stream.write w buffer (succeed unit)))
 
-instance stringNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter m e) m String where
+instance stringNodeResponseWriter :: (MonadAff e m) => ResponseWritable (NodeResponseWriter m e) m String where
   toResponse = ipure <<< writeString UTF8
 
-instance stringAndEncodingNodeResponseWriter :: (MonadAff e m) => Response (NodeResponseWriter m e) m (Tuple String Encoding) where
+instance stringAndEncodingNodeResponseWriter :: (MonadAff e m) => ResponseWritable (NodeResponseWriter m e) m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
     ipure (writeString encoding body)
 
 instance bufferNodeResponseWriter :: (MonadAff e m)
-                                  => Response (NodeResponseWriter m e) m Buffer where
+                                  => ResponseWritable (NodeResponseWriter m e) m Buffer where
   toResponse buf =
     ipure (write buf)
 

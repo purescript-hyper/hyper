@@ -23,7 +23,7 @@ import Hyper.Header (Header)
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class ReadableBody, class Request)
-import Hyper.Response (class Response, class ResponseWriter)
+import Hyper.Response (class ResponseWritable, class ResponseWriter)
 import Hyper.Status (Status)
 
 -- REQUEST
@@ -66,7 +66,7 @@ newtype StringBody = StringBody String
 
 derive instance newtypeStringBody :: Newtype StringBody _
 
-instance responseStringBody :: Monad m => Response StringBody m String where
+instance responseStringBody :: Monad m => ResponseWritable StringBody m String where
   toResponse = pure <<< StringBody
 
 instance semigroupStringBody :: Semigroup StringBody where
