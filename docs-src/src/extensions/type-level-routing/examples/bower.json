@@ -10,8 +10,8 @@
   "private": true,
   "dependencies": {
     "purescript-prelude": "^2.5.0",
-    "purescript-hyper": "^0.5.0",
+    "purescript-hyper": "^0.6.0",
     "purescript-hyper-routing": "^0.6.0",
-    "purescript-hyper-routing-server": "^0.6.0"
+    "purescript-hyper-routing-server": "^0.7.0"
   }
 }
