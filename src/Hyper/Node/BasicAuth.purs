@@ -23,9 +23,9 @@ import Node.Encoding (Encoding(ASCII, Base64))
 
 type Realm = String
 
-decodeBase64 ∷ ∀ m e c.
-  MonadEff (buffer ∷ BUFFER | e) m
-  ⇒ String
+decodeBase64 ∷ ∀ m e c
+  .  MonadEff (buffer ∷ BUFFER | e) m
+  => String
   → Middleware m c c String
 decodeBase64 encoded =
   liftEff (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
@@ -33,9 +33,8 @@ decodeBase64 encoded =
 
 withAuthentication
   :: forall m e req res c t
-   . ( MonadEff (buffer :: BUFFER | e) m
-     , Request req m
-     )
+  .  MonadEff (buffer :: BUFFER | e) m
+  => Request req m
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
@@ -66,10 +65,9 @@ withAuthentication mapper = do
 
 authenticated
   :: forall m req res c b t
-   . ( Monad m
-     , ResponseWritable b m String
-     , Response res m b
-     )
+  .  Monad m
+  => ResponseWritable b m String
+  => Response res m b
   => Realm
   -> Middleware
       m
@@ -85,13 +83,13 @@ authenticated realm mw = do
   conn ← getConn
   case conn.components.authentication of
     Nothing -> do
-      writeStatus statusUnauthorized
-      writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
-      closeHeaders
+      _ <- writeStatus statusUnauthorized
+      _ <- writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
+      _ <- closeHeaders
       respond "Please authenticate."
     Just auth -> do
-      modifyConn (setAuthentication auth)
-      mw
+      _ <- modifyConn (setAuthentication auth)
+      _ <- mw
       modifyConn (setAuthentication (Just auth))
   where
     bind = ibind

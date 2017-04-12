@@ -1,7 +1,7 @@
 module NodeReaderT where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.IxMonad (ibind, (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
@@ -26,8 +26,8 @@ main =
   let app = do
         config <- lift' ask
         writeStatus statusOK
-        closeHeaders
-        respond config.thingToSay
+          :*> closeHeaders
+          :*> respond config.thingToSay
         where bind = ibind
   in runServer' defaultOptionsWithLogging {} runAppM app
 -- end snippet main

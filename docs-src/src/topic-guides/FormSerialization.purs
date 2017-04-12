@@ -14,11 +14,9 @@ import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (maybe)
-import Data.StrMap (StrMap)
 import Hyper.Conn (Conn)
 import Hyper.Form (class FromForm, parseFromForm, required)
 import Hyper.Middleware (Middleware)
-import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, class Request, getRequestData)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
@@ -58,14 +56,13 @@ instance fromFormOrder :: FromForm Order where
 -- end snippet parsing
 
 onPost
-  :: forall m b req res c.
-     ( Monad m
-     , Request req m
-     , ReadableBody req m String
-     , Response res m b
-     , ResponseWritable b m String
-     , FromForm Order
-     )
+  :: forall m b req res c
+  .  Monad m
+  => Request req m
+  => ReadableBody req m String
+  => Response res m b
+  => ResponseWritable b m String
+  => FromForm Order
   => Middleware
      m
      (Conn req (res StatusLineOpen) c)
@@ -91,7 +88,7 @@ onPost =
                      <> show beers <> " beers coming up!\n")
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
 main =
   let
     router =

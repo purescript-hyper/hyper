@@ -18,12 +18,10 @@ withAuthorization a conn =
   conn { components = (conn.components { authorization = a }) }
 
 
-authorized
-  :: forall a m req res b c
-   . ( Monad m
-     , ResponseWritable b m String
-     , Response res m b
-     )
+authorized :: forall a m req res b c
+  .  Monad m
+  => ResponseWritable b m String
+  => Response res m b
   => (Conn req (res StatusLineOpen) { authorization :: Unit | c } -> m (Maybe a))
   -> Middleware
      m
@@ -40,11 +38,11 @@ authorized authorizer mw = do
   auth ← lift' (authorizer conn)
   case auth of
     Just a -> do
-      modifyConn (withAuthorization a)
-      mw
+      _ <- modifyConn (withAuthorization a)
+      _ <- mw
       modifyConn (withAuthorization unit)
     Nothing -> do
-      writeStatus statusForbidden
-      headers []
+      _ <- writeStatus statusForbidden
+      _ <- headers []
       respond "You are not authorized."
   where bind = ibind

@@ -1,7 +1,7 @@
 module Examples.StateT where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.IxMonad (ibind, (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
@@ -25,11 +25,11 @@ main =
       -- Our application just appends to the state in between
       -- some operations, then responds with the built up state...
       app = do
-        lift' (modify (flip append ["I"]))
-        writeStatus statusOK
-        lift' (modify (flip append ["have"]))
-        closeHeaders
-        lift' (modify (flip append ["state."]))
+        _ <- lift' (modify (flip append ["I"]))
+          :*> writeStatus statusOK
+          :*> lift' (modify (flip append ["have"]))
+          :*> closeHeaders
+          :*> lift' (modify (flip append ["state."]))
 
         msgs ← lift' get
         respond (joinWith " " msgs)

@@ -5,11 +5,13 @@
 module Examples.NodeStreamResponse where
 
 import Prelude
+import Control.Monad.Aff as Aff
 import Control.IxMonad ((:*>))
-import Control.Monad.Aff (later')
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
+import Data.Int (toNumber)
+import Data.Newtype (wrap)
 import Data.Traversable (traverse_)
 import Data.Tuple (Tuple(..))
 import Hyper.Middleware (Middleware, lift')
@@ -20,7 +22,7 @@ import Node.Encoding (Encoding(..))
 import Node.HTTP (HTTP)
 
 delay :: forall m e c. MonadAff e m => Int -> Middleware m c c Unit
-delay n = lift' (liftAff (later' n (pure unit)))
+delay n = lift' (liftAff (Aff.delay (wrap <<< toNumber $ n) *> pure unit))
 
 main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
 main =

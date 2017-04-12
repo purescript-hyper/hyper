@@ -78,16 +78,15 @@ splitPairs = split (Pattern "&")
              >>> map toTuple
              >>> sequence
 
-parseForm ∷ forall m req res c.
-            ( Monad m
-            , Request req m
-            , ReadableBody req m String
-            ) =>
-            Middleware
-            m
-            (Conn req res c)
-            (Conn req res c)
-            (Either String Form)
+parseForm ∷ forall m req res c
+  .  Monad m
+  => Request req m
+  => ReadableBody req m String
+  => Middleware
+      m
+      (Conn req res c)
+      (Conn req res c)
+      (Either String Form)
 parseForm = do
   conn <- getConn
   { headers } <- getRequestData
@@ -110,13 +109,11 @@ class FromForm a where
   fromForm ∷ Form → Either String a
 
 
-parseFromForm
-  ∷ forall m req res c a.
-    ( Monad m
-    , Request req m
-    , ReadableBody req m String
-    , FromForm a
-    )
+parseFromForm ∷ forall m req res c a
+  .  Monad m
+  => Request req m
+  => ReadableBody req m String
+  => FromForm a
   => Middleware
      m
      (Conn req res c)

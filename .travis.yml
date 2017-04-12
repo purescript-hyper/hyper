@@ -5,10 +5,10 @@ node_js:
 env:
   - PATH=$HOME/purescript:$PATH
 install:
-  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.10.7/linux64.tar.gz
+  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.11.3/linux64.tar.gz
   - tar -xvf $HOME/purescript.tar.gz -C $HOME/
   - chmod a+x $HOME/purescript
-  - npm install -g bower pulp
+  - npm install -g bower pulp@next
   - bower install
 script:
   - travis_wait pulp build

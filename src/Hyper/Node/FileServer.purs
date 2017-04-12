@@ -20,13 +20,12 @@ import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
 
 serveFile
-  :: forall m e req res c b.
-     ( Monad m
-     , MonadAff (fs :: FS, buffer :: BUFFER | e) m
-     , ResponseWritable b m Buffer
-     , Response res m b
-     ) =>
-     FilePath
+  :: forall m e req res c b
+  .  Monad m
+  => MonadAff (fs :: FS, buffer :: BUFFER | e) m
+  => ResponseWritable b m Buffer
+  => Response res m b
+  => FilePath
   -> Middleware
      m
      (Conn req (res StatusLineOpen) c)
@@ -35,25 +34,24 @@ serveFile
 serveFile path = do
   buf <- lift' (liftAff (readFile path))
   contentLength <- liftEff (Buffer.size buf)
-  writeStatus statusOK
-  headers [ Tuple "Content-Type" "*/*; charset=utf-8"
+  _ <- writeStatus statusOK
+  _ <- headers [ Tuple "Content-Type" "*/*; charset=utf-8"
           , Tuple "Content-Length" (show contentLength)
           ]
   response <- toResponse buf
-  send response
+  _ <- send response
   end
   where bind = ibind
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m e req res c b.
-     ( Monad m
-     , MonadAff (fs :: FS, buffer :: BUFFER | e) m
-     , Request req m
-     , ResponseWritable b m Buffer
-     , Response res m b
-     ) =>
-     FilePath
+  :: forall m e req res c b
+  .  Monad m
+  => MonadAff (fs :: FS, buffer :: BUFFER | e) m
+  => Request req m
+  => ResponseWritable b m Buffer
+  => Response res m b
+  => FilePath
   -> Middleware
      m
      (Conn req (res StatusLineOpen) c)

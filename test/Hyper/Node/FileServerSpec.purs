@@ -37,8 +37,8 @@ serveFilesAndGet path =
 
     on404 = do
       body <- liftEff (Buffer.fromString "Not Found" UTF8)
-      writeStatus statusNotFound
-      headers []
+      _ <- writeStatus statusNotFound
+      _ <- headers []
       respond body
       where bind = ibind
 

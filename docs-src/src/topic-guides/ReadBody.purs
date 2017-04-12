@@ -10,7 +10,6 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
-import Hyper.Middleware.Class (getConn)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, getRequestData, readBody)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
@@ -18,12 +17,11 @@ import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
 import Node.HTTP (HTTP)
 
 onPost
-  :: forall m b req res c.
-     ( Monad m
-     , ReadableBody req m String
-     , Response res m b
-     , ResponseWritable b m String
-     )
+  :: forall m b req res c
+  . Monad m
+  => ReadableBody req m String
+  => Response res m b
+  => ResponseWritable b m String
   => Middleware
      m
      (Conn req (res StatusLineOpen) c)
@@ -43,7 +41,7 @@ onPost =
       :*> respond ("You said: " <> msg)
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
 main =
   let
     router =
