@@ -1,7 +1,7 @@
 module NodeReaderT where
 
 import Prelude
-import Control.IxMonad (ibind, (:*>))
+import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
@@ -23,11 +23,10 @@ runAppM = flip runReaderT { thingToSay: "Hello, ReaderT!" }
 
 main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
 main =
-  let app = do
-        config <- lift' ask
-        writeStatus statusOK
+  let app =
+        lift' ask :>>= \config ->
+          writeStatus statusOK
           :*> closeHeaders
           :*> respond config.thingToSay
-        where bind = ibind
   in runServer' defaultOptionsWithLogging {} runAppM app
 -- end snippet main
