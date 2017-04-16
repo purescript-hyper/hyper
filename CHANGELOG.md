@@ -1,5 +1,7 @@
 # Changelog
 
+* 0.7.0
+  - PureScript 0.11.x compatibility (breaking changes!)
 * 0.6.0
   - Include early support for cookies and sessions
   - Add docs for new type-level routing API featuring the `Resource` construct
