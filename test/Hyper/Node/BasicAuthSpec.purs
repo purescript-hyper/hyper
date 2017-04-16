@@ -61,8 +61,8 @@ spec =
     describe "authenticated" do
       let respondUserName = do
             conn <- getConn
-            writeStatus statusOK
-            headers []
+            _ <- writeStatus statusOK
+            _ <- headers []
             respond (unwrap conn.components.authentication)
             where bind = ibind
 

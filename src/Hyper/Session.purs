@@ -41,9 +41,8 @@ type Sessions s = { key :: String, store :: s }
 
 currentSessionID
   :: forall m req res c store session
-   . ( Monad m
-     , SessionStore store m session
-     )
+  .  Monad m
+  => SessionStore store m session
   => Middleware
      m
      (Conn
@@ -73,9 +72,8 @@ currentSessionID =
 
 getSession
   :: forall m req res c store session
-   . ( Monad m
-     , SessionStore store m session
-     )
+  .  Monad m
+  => SessionStore store m session
   => Middleware
      m
      (Conn
@@ -103,10 +101,9 @@ getSession = do
 
 saveSession
   :: forall m req res c b store session
-   . ( Monad m
-     , Response res m b
-     , SessionStore store m session
-     )
+  .  Monad m
+  => Response res m b
+  => SessionStore store m session
   => session
   -> Middleware
      m
@@ -135,10 +132,9 @@ saveSession session = do
 
 deleteSession
   :: forall m req res c b store session
-   . ( Monad m
-     , Response res m b
-     , SessionStore store m session
-     )
+  .  Monad m
+  => Response res m b
+  => SessionStore store m session
   => Middleware
      m
      (Conn
@@ -152,6 +148,6 @@ deleteSession
      Unit
 deleteSession = do
   conn <- getConn
-  maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID
+  _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID
   -- TODO: Better delete?
   setCookie conn.components.sessions.key ""

@@ -61,11 +61,9 @@ parseCookies s =
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
-cookies
-  :: forall m req res c
-   . ( Monad m
-     , Request req m
-     )
+cookies :: forall m req res c
+  .  Monad m
+  => Request req m
   => Middleware
      m
      (Conn req res { cookies :: Unit | c})
@@ -78,11 +76,9 @@ cookies = do
   putConn conn { components { cookies = cookies' }}
   where bind = ibind
 
-setCookie
-  :: forall m req res c b
-   . ( Monad m
-     , Response res m b
-     )
+setCookie :: forall m req res c b
+  .  Monad m
+  => Response res m b
   => Name
   -> Value
   -> Middleware

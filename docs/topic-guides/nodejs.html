@@ -155,12 +155,11 @@ at the top-level to please the type checker.</p>
 
 <span class="nf">main</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">e</span><span class="o">.</span> <span class="kt">Eff</span> <span class="p">(</span><span class="n">console</span> <span class="ow">::</span> <span class="kt">CONSOLE</span><span class="p">,</span> <span class="n">http</span> <span class="ow">::</span> <span class="kt">HTTP</span> <span class="o">|</span> <span class="n">e</span><span class="p">)</span> <span class="kt">Unit</span>
 <span class="nf">main</span> <span class="ow">=</span>
-  <span class="kr">let</span> <span class="n">app</span> <span class="ow">=</span> <span class="kr">do</span>
-        <span class="n">config</span> <span class="ow">&lt;-</span> <span class="n">lift&#39;</span> <span class="n">ask</span>
-        <span class="n">writeStatus</span> <span class="n">statusOK</span>
-        <span class="n">closeHeaders</span>
-        <span class="n">respond</span> <span class="n">config</span><span class="o">.</span><span class="n">thingToSay</span>
-        <span class="kr">where</span> <span class="n">bind</span> <span class="ow">=</span> <span class="n">ibind</span>
+  <span class="kr">let</span> <span class="n">app</span> <span class="ow">=</span>
+        <span class="n">lift&#39;</span> <span class="n">ask</span> <span class="kt">:&gt;&gt;=</span> <span class="nf">\</span><span class="n">config</span> <span class="ow">-&gt;</span>
+          <span class="n">writeStatus</span> <span class="n">statusOK</span>
+          <span class="kt">:*&gt;</span> <span class="n">closeHeaders</span>
+          <span class="kt">:*&gt;</span> <span class="n">respond</span> <span class="n">config</span><span class="o">.</span><span class="n">thingToSay</span>
   <span class="kr">in</span> <span class="n">runServer&#39;</span> <span class="n">defaultOptionsWithLogging</span> <span class="p">{}</span> <span class="n">runAppM</span> <span class="n">app</span>
 </pre></div>
 </div>

@@ -40,7 +40,7 @@ type ResponseStateTransition m res from to =
 
 -- | The operations that a response writer, provided by the server backend,
 -- | must support.
-class Response (res :: * -> *) m b | res -> b where
+class Response (res :: Type -> Type) m b | res -> b where
   writeStatus
     :: Status
     -> ResponseStateTransition m res StatusLineOpen HeadersOpen
@@ -57,10 +57,9 @@ class Response (res :: * -> *) m b | res -> b where
 
 headers
   :: forall f m req res b c
-   . ( Foldable f
-     , Monad m
-     , Response res m b
-     )
+  .  Foldable f
+  => Monad m
+  => Response res m b
   => f Header
   -> Middleware
      m
@@ -73,9 +72,8 @@ headers hs =
 
 contentType
   :: forall m req res b c
-   . ( Monad m
-     , Response res m b
-     )
+  .  Monad m
+  => Response res m b
    => MediaType
    -> Middleware
        m
@@ -87,9 +85,8 @@ contentType mediaType =
 
 redirect
   :: forall m req res b c
-   . ( Monad m
-     , Response res m b
-     )
+  .  Monad m
+  => Response res m b
   => String
   -> Middleware
      m
@@ -105,10 +102,9 @@ class ResponseWritable b m r where
 
 respond
   :: forall m r b req res c
-   . ( Monad m
-     , ResponseWritable b m r
-     , Response res m b
-     )
+  .  Monad m
+  => ResponseWritable b m r
+  => Response res m b
   => r
   -> Middleware
      m

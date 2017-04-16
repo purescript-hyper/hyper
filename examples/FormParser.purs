@@ -23,7 +23,7 @@ import Text.Smolder.HTML (button, form, input, label, p)
 import Text.Smolder.Markup (text, (!))
 import Text.Smolder.Renderer.String (render)
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
 main =
   let
     -- A view function that renders the name form.

@@ -23,7 +23,7 @@ import Node.HTTP (HTTP)
 
 newtype MySession = MySession { userId :: Int }
 
-main :: forall e. Eff (err :: EXCEPTION, avar :: AVAR, console :: CONSOLE, http :: HTTP | e) Unit
+main :: forall e. Eff (exception :: EXCEPTION, avar :: AVAR, console :: CONSOLE, http :: HTTP | e) Unit
 main = void $ launchAff do
   store <- newInMemorySessionStore
   liftEff (runServer defaultOptionsWithLogging (components store) app)

@@ -39,10 +39,9 @@ import Text.Smolder.Renderer.String (render)
 -- Helper for responding with HTML.
 htmlWithStatus
   :: forall m req res b c
-   . ( Monad m
-     , Response res m b
-     , ResponseWritable b m String
-     )
+  .  Monad m
+  => Response res m b
+  => ResponseWritable b m String
   => Status
   -> Markup Unit
   -> Middleware
@@ -73,10 +72,9 @@ data Admin = Admin
 -- name if the user _is_ authenticated.
 profileHandler
   :: forall m req res b c
-   . ( Monad m
-     , Response res m b
-     , ResponseWritable b m String
-     )
+  .  Monad m
+  => Response res m b
+  => ResponseWritable b m String
   => Middleware
      m
      (Conn req (res StatusLineOpen) { authentication :: Maybe User | c })
@@ -108,10 +106,9 @@ profileHandler =
 -- as seen below.
 adminHandler
   :: forall m req res b c
-   . ( Monad m
-     , Response res m b
-     , ResponseWritable b m String
-     )
+  .  Monad m
+  => Response res m b
+  => ResponseWritable b m String
   => Middleware
      m
      (Conn req (res StatusLineOpen) { authorization :: Admin, authentication :: User | c })
@@ -158,11 +155,10 @@ getAdminRole conn =
 
 
 app :: forall m e req res b c
-     . ( MonadAff (buffer :: BUFFER | e) m
-       , Request req m
-       , Response res m b
-       , ResponseWritable b m String
-       )
+    .  MonadAff (buffer :: BUFFER | e) m
+    => Request req m
+    => Response res m b
+    => ResponseWritable b m String
     => Middleware
        m
        (Conn req
@@ -207,7 +203,7 @@ app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
           _, _ ->
             notFound
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, err :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     components = { authentication: unit
