@@ -9,7 +9,7 @@ print_row() {
 <tr>
   <td class="version">$1</td>
   <td class="formats">
-    <a href=\"docs/$1/\">HTML</a> |
+    <a href=\"docs/$1/index.html\">HTML</a> |
     <a href=\"docs/$1/hyper.pdf\">PDF</a>
   </td>
 </tr>
@@ -26,10 +26,9 @@ echo "
   <meta charset="UTF-8">
   <title>Hyper</title>
   <link rel="stylesheet" href="static/style.css">
-  <link rel="stylesheet" href="static/fira/fira.css">
-  <link rel="stylesheet" href="static/fira-code/fira_code.css">
   <link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="static/overrides.css">
+  <link href=\"https://fonts.googleapis.com/css?family=Fira+Mono|Fira+Sans:400,400i,600\" rel=\"stylesheet\">
   <style>
   #index {
     max-width: 700px;
@@ -77,7 +76,7 @@ echo "
     <h2>Documentation</h2>
     <p>
     Choose a version and a format of the documentation below, or just grab <a
-    href="docs/${latest}/">the latest</a>.
+    href="docs/${latest}/index.html">the latest</a>.
     </p>
 
     <table class=\"versions table table-striped\">
@@ -95,5 +94,25 @@ echo "
     </table>
   </div>
 </div>
+<footer class="footer" role="contentinfo">
+  <div class="footer-wrapper text-muted">
+    <a href="https://github.com/owickstrom/hyper">Source Code on GitHub</a>
+    &mdash;
+    &copy; Copyright 2016-2017 Oskar Wickström
+    &mdash;
+    <span class="license">
+      Licensed under
+      <a href="https://raw.githubusercontent.com/owickstrom/hyper/master/LICENSE">MPL-2.0</a>
+    </span>
+  </div>
+</footer>
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-42197774-3', 'auto');
+    ga('send', 'pageview');
+  </script>
 </body>
 </html>"

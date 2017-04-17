@@ -37,9 +37,9 @@ script:
 - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then export VERSION=pull-request-job-$TRAVIS_JOB_NUMBER;
   fi
 - if [[ "$TRAVIS_TAG" != "" ]]; then export VERSION=$TRAVIS_TAG; fi
-#- travis_wait pulp build
-#- travis_wait pulp test
-#- travis_wait make examples
+- travis_wait pulp build
+- travis_wait pulp test
+- travis_wait make examples
 - travis_wait make docs
 
 before_deploy: pip install --user awscli
@@ -54,10 +54,9 @@ deploy:
   region: eu-west-1
   skip_cleanup: true
   on:
-    #tags: true
-    branch: docs-deploy
-    #repo: owickstrom/hyper
-    #
+    tags: true
+    repo: owickstrom/hyper
+
 after_deploy:
    # regenerate and deploy the documentation index
   - make -C docs release-index
