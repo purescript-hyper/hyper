@@ -228,7 +228,7 @@ dummy:
 
 # CUSTOM STUFF:
 
-VERSION ?= $(shell ../bin/get_version.py ../project.clj)
+VERSION ?= $(shell git rev-parse --short HEAD)
 SOURCES = $(shell find src -type f -not -name '*.ttf')
 
 .PHONY: livehtml
@@ -240,3 +240,6 @@ release: clean html latexpdf
 	rm -rf target/release
 	cp -r target/html target/release
 	cp target/latex/hyper.pdf target/release/hyper.pdf
+
+deploy-release: release
+	aws s3 sync --region=eu-west-1 target/release s3://hyper.wickstrom.tech/docs/$(VERSION)
