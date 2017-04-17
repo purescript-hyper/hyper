@@ -4,7 +4,14 @@ import fileinput
 import semver
 
 
-def sort_versions(versions): return sorted(versions, cmp=semver.compare,
+def cmp_semver(a, b):
+    try:
+        return semver.compare(a, b)
+    except:
+        return 0
+
+
+def sort_versions(versions): return sorted(versions, cmp=cmp_semver,
                                            reverse=True)
 
 
