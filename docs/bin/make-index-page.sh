@@ -58,40 +58,42 @@ echo "
 <body>
 <div class="container" id="index">
   <div class="row">
-    <h1>
-      <img src="static/hyper@2x.png"
-            alt="Hyper"
-            width="300">
-    </h1>
-    <p class="rubric">
-    Type-safe, statically checked composition of HTTP servers
-    </p>
-    <p>
-    Hyper is an experimental middleware architecture for HTTP servers written in
-    PureScript. Its main focus is correctness and type-safety, using type-level
-    information to enforce correct composition and abstraction for web servers.
-    The Hyper project is also a breeding ground for higher-level web server
-    constructs, which tend to fall under the “framework” category.
-    </p>
-    <h2>Documentation</h2>
-    <p>
-    Choose a version and a format of the documentation below, or just grab <a
-    href="docs/${latest}/index.html">the latest</a>.
-    </p>
+    <div class="col-xs-12">
+      <h1>
+        <img src="static/hyper@2x.png"
+              alt="Hyper"
+              width="300">
+      </h1>
+      <p class="rubric">
+      Type-safe, statically checked composition of HTTP servers
+      </p>
+      <p>
+      Hyper is an experimental middleware architecture for HTTP servers written in
+      PureScript. Its main focus is correctness and type-safety, using type-level
+      information to enforce correct composition and abstraction for web servers.
+      The Hyper project is also a breeding ground for higher-level web server
+      constructs, which tend to fall under the “framework” category.
+      </p>
+      <h2>Documentation</h2>
+      <p>
+      Choose a version and a format of the documentation below, or just grab <a
+      href="docs/${latest}/index.html">the latest</a>.
+      </p>
 
-    <table class=\"versions table table-striped\">
-      <thead>
-        <tr><th>Version</th><th>Formats</th></tr>
-      </thead>
-        <tbody>"
+      <table class=\"versions table table-striped\">
+        <thead>
+          <tr><th>Version</th><th>Formats</th></tr>
+        </thead>
+          <tbody>"
 
-for version in $versions; do
-  print_row $version
-done
+  for version in $versions; do
+    print_row $version
+  done
 
-echo "
-      </tbody>
-    </table>
+  echo "
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 <footer class="footer" role="contentinfo">
