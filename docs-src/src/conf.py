@@ -43,7 +43,7 @@ def get_git_rev():
 def get_version():
     version_env = os.environ.get("VERSION")
     if version_env:
-        return "v{0}".format(version_env)
+        return version_env
     else:
         return get_git_rev()
 
