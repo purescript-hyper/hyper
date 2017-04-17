@@ -8,7 +8,7 @@ def cmp_semver(a, b):
     try:
         return semver.compare(a, b)
     except:
-        return 0
+        return cmp(a, b)
 
 
 def sort_versions(versions): return sorted(versions, cmp=cmp_semver,
