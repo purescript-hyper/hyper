@@ -11,9 +11,9 @@
 </p>
 
 <p align="center">
-<a href="http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html">Getting Started</a>
-| <a href="http://hyper.wickstrom.tech">Documentation</a> (also in <a href="https://owickstrom.github.io/hyper/hyper.pdf">PDF</a>)
-| <a href="http://hyper.wickstrom.tech/faq.html">FAQ</a>
+<a href="https://hyper.wickstrom.tech/docs/v0.7.2/tutorials/getting-started-with-hyper.html">Getting Started</a>
+| <a href="https://hyper.wickstrom.tech">Documentation</a>
+| <a href="https://hyper.wickstrom.tech/docs/v0.7.2/faq.html">FAQ</a>
 | <a href="examples/">Examples</a>
 </p>
 
@@ -22,13 +22,13 @@
 Hyper is an experimental middleware architecture for HTTP servers written in PureScript. Its main focus is correctness and type-safety, using type-level information to enforce correct composition and abstraction for web servers. The Hyper project is also a breeding ground for higher-level web server constructs, which tend to fall under the “framework” category.
 
 To learn
-more about Hyper, check out the [documentation](http://hyper.wickstrom.tech)
+more about Hyper, check out the [documentation](https://hyper.wickstrom.tech)
 and [the Getting Started
-tutorial](http://hyper.wickstrom.tech/tutorials/getting-started-with-hyper.html).
+tutorial](https://hyper.wickstrom.tech/docs/v0.7.2./tutorials/getting-started-with-hyper.html).
 
 <p align="right">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
-<a href="https://github.com/owickstrom/hyper/releases"><img alt="Latest release" src="http://img.shields.io/github/release/owickstrom/hyper.svg" /></a>
+<a href="https://github.com/owickstrom/hyper/releases"><img alt="Latest release" src="https://img.shields.io/github/release/owickstrom/hyper.svg" /></a>
 
 </p>
 
