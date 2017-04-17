@@ -12,9 +12,9 @@ in the PureScript documentation.
 
 .. note::
 
-   Hyper requires PureScript `version 0.10.6
+   Hyper 0.6.0 requires PureScript `version 0.10.6
    <https://github.com/purescript/purescript/releases/tag/v0.10.6>`__, or
-   higher.
+   higher. If you're using PureScript 0.11.x, upgrade to Hyper 0.7.x or higher.
 
 Start off by generating an empty project by entering the following commands in
 your terminal:
