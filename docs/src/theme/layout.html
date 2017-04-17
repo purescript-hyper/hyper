@@ -8,7 +8,7 @@
 {% if pagename == 'index' %}
 {% set title = 'Type-safe, statically checked composition of HTTP servers' %}
 {% endif %}
-<title>{{ title|striptags|e }} &mdash; {{ shorttitle }}</title>
+<title>{{ title|striptags|e }} &mdash; {{ shorttitle }} {{ version }}</title>
 {% endblock %}
 
 {% block extrahead %}
@@ -21,7 +21,7 @@
 
 <meta name="twitter:card" content="summary">
 <meta name="twitter:creator" content="owickstrom">
-<meta name="twitter:title" content="{{ title|striptags|e }} &mdash; {{ shorttitle }}">
+<meta name="twitter:title" content="{{ title|striptags|e }} &mdash; {{ shorttitle }} {{ version }}">
 <meta name="twitter:url" content="http://hyper.wickstrom.tech">
 <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
 <meta name="twitter:image:src" content="http://hyper.wickstrom.tech/_static/icon-large.png">
@@ -30,7 +30,7 @@
 <meta property="og:article:author" content="Oskar Wickström" />
 <meta property="og:article:section" content="Technology" />
 <meta property="og:article:keyword" content="http web purescript middleware routing type-safe" />
-<meta property="og:title" content="{{ title|striptags|e }} &mdash; {{ shorttitle }}" />
+<meta property="og:title" content="{{ title|striptags|e }} &mdash; {{ shorttitle }} {{ version }}" />
 <meta property="og:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://hyper.wickstrom.tech" />
@@ -144,7 +144,7 @@
 {%- block footer %}
 <footer class="footer" role="contentinfo">
   <div class="footer-wrapper text-muted">
-    <span class="version">{{ version }} &mdash;</span>
+    <span class="version">Hyper {{ version }} &mdash;</span>
     {%- if show_copyright %}
       {%- if hasdoc('copyright') %}
         {% trans path=pathto('copyright'), copyright=copyright|e %}&copy; <a href="{{ path }}">Copyright</a> {{ copyright }}{% endtrans %} &mdash;

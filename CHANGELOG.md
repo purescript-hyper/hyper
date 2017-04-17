@@ -1,5 +1,7 @@
 # Changelog
 
+* 0.7.2
+  - Improve docs template, and index mobile support
 * 0.7.1
   - Deploy documentation for each tagged release
   - HTTPS for documentation site

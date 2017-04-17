@@ -25,6 +25,30 @@ echo "
 <head>
   <meta charset="UTF-8">
   <title>Hyper</title>
+  <meta name="keywords" content="http web purescript middleware routing type-safe">
+  <meta name="description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="shortcut icon" href="static/favicon.png">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:creator" content="owickstrom">
+  <meta name="twitter:title" content="Hyper">
+  <meta name="twitter:url" content="http://hyper.wickstrom.tech">
+  <meta name="twitter:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta name="twitter:image:src" content="http://hyper.wickstrom.tech/static/icon-large.png">
+
+  <meta property="og:type" content="article" />
+  <meta property="og:article:author" content="Oskar Wickström" />
+  <meta property="og:article:section" content="Technology" />
+  <meta property="og:article:keyword" content="http web purescript middleware routing type-safe" />
+  <meta property="og:title" content="Hyper" />
+  <meta property="og:description" content="Hyper is an experimental middleware architecture for HTTP servers written in PureScript.">
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="http://hyper.wickstrom.tech" />
+  <meta property="og:image" content="http://hyper.wickstrom.tech/static/icon-large.png" />
+
   <link rel="stylesheet" href="static/style.css">
   <link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="static/overrides.css">
