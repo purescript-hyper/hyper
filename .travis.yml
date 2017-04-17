@@ -42,7 +42,6 @@ script:
 - travis_wait pulp test
 - travis_wait make examples
 - travis_wait make docs
-- if [[ "$TRAVIS_TAG" != "" ]]; then make deploy-docs; fi
 
 deploy:
 - provider: s3
