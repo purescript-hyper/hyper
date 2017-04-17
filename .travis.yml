@@ -31,7 +31,7 @@ install:
 - chmod a+x $HOME/purescript
 - npm install -g bower pulp@next
 - bower install
-- pip install --user -r docs-src/requirements.txt
+- pip install --user -r docs/requirements.txt
 
 script:
 - export VERSION=branch-job-$TRAVIS_JOB_NUMBER
@@ -47,7 +47,7 @@ deploy:
 - provider: s3
   access_key_id: "$AWS_ACCESS_KEY_ID"
   secret_access_key: "$AWS_ACCESS_KEY_SECRET"
-  local_dir: docs-src/target/release
+  local_dir: docs/target/release
   bucket: hyper.wickstrom.tech
   upload-dir: docs/$VERSION
   region: eu-west-1
