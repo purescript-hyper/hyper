@@ -1,6 +1,6 @@
 {% extends "sphinxdoc/layout.html" %}
 
-{% set css_files = css_files + ['_static/fira/fira.css', '_static/fira-code/fira_code.css', '_static/bootstrap/css/bootstrap.min.css', '_static/overrides.css'] %}
+{% set css_files = css_files + ['_static/bootstrap/css/bootstrap.min.css', '_static/overrides.css'] %}
 
 {%- from "relbar.html" import relbar_top with context %}
 
@@ -35,6 +35,8 @@
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://hyper.wickstrom.tech" />
 <meta property="og:image" content="http://hyper.wickstrom.tech/_static/icon-large.png" />
+
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono|Fira+Sans:400,400i,600" rel="stylesheet">
 {% endblock %}
 
 {% block header %}

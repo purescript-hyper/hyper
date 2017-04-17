@@ -42,7 +42,8 @@ script:
 - travis_wait pulp test
 - travis_wait make examples
 - travis_wait make docs
-- if [[ "$TRAVIS_TAG" != "" ]]; then travis_wait make -C docs release-index; fi
+  #- if [[ "$TRAVIS_TAG" != "" ]]; then travis_wait make -C docs release-index; fi
+- travis_wait make -C docs release-index
 
 deploy:
 - provider: s3
