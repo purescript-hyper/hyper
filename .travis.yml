@@ -57,6 +57,12 @@ deploy:
     branch: docs-deploy
     #repo: owickstrom/hyper
 
+after_deploy:
+   # regenerate and deploy the documentation index
+  - make -C docs release-index
+  # cache for one hour
+  - aws s3 cp --recursive --region eu-west-1 --cache-control max-age=3600,public docs/target/index s3://hyper.wickstrom.tech/
+
 cache:
   directories:
   - output

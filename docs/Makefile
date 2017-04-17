@@ -237,9 +237,26 @@ livehtml:
 
 .PHONY: release
 release: clean html latexpdf
-	rm -rf target/release
-	cp -r target/html target/release
-	cp target/latex/hyper.pdf target/release/hyper.pdf
+	rm -rf $(BUILDDIR)/release
+	cp -r $(BUILDDIR)/html $(BUILDDIR)/release
+	cp $(BUILDDIR)/latex/hyper.pdf $(BUILDDIR)/release/hyper.pdf
 
 deploy-release: release
 	aws s3 sync --region=eu-west-1 target/release s3://hyper.wickstrom.tech/docs/$(VERSION)
+
+.PHONY: $(BUILDDIR)/index/index.html
+$(BUILDDIR)/index/index.html: bin/make-index-page.sh html
+	mkdir -p $(BUILDDIR)/index
+	cp -r $(BUILDDIR)/html/_static/ $(BUILDDIR)/index/static
+	bin/make-index-page.sh > $@
+
+.PHONY: $(BUILDDIR)/index/latest/index.html
+$(BUILDDIR)/index/latest/index.html: bin/make-latest-page.sh
+	mkdir -p $(BUILDDIR)/index/latest
+	bin/make-latest-page.sh > $@
+
+$(BUILDDIR)/index/404.html: 404.html $(BUILDDIR)/index/index.html
+	cp $< $@
+
+.PHONY: release-index
+release-index: $(BUILDDIR)/index/index.html $(BUILDDIR)/index/404.html $(BUILDDIR)/index/latest/index.html
