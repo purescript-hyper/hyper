@@ -53,7 +53,7 @@ deploy:
   region: eu-west-1
   skip_cleanup: true
   on:
-    tags: true
+    #tags: true
     repo: owickstrom/hyper
 
 cache:
