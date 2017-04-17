@@ -52,9 +52,10 @@ deploy:
   upload-dir: docs/$VERSION
   region: eu-west-1
   skip_cleanup: true
-  on:
+  #on:
     #tags: true
-    repo: owickstrom/hyper
+    #branch: true
+    #repo: owickstrom/hyper
 
 cache:
   directories:
