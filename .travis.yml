@@ -42,8 +42,8 @@ script:
 - travis_wait pulp test
 - travis_wait make examples
 - travis_wait make docs
-  #- if [[ "$TRAVIS_TAG" != "" ]]; then travis_wait make -C docs release-index; fi
-- travis_wait make -C docs release-index
+
+before_deploy: pip install --user awscli
 
 deploy:
 - provider: s3
@@ -58,18 +58,13 @@ deploy:
     #tags: true
     branch: docs-deploy
     #repo: owickstrom/hyper
-- provider: s3
-  access_key_id: "$AWS_ACCESS_KEY_ID"
-  secret_access_key: "$AWS_ACCESS_KEY_SECRET"
-  local_dir: docs/target/index
-  bucket: hyper.wickstrom.tech
-  region: eu-west-1
-  skip_cleanup: true
-  cache_control: "max-age=3600"
-  on:
-    #tags: true
-    branch: docs-deploy
-    #repo: owickstrom/hyper
+    #
+after_deploy:
+   # regenerate and deploy the documentation index
+  - make -C docs release-index
+  # cache for one hour
+  - aws s3 cp --region eu-west-1 --cache-control max-age=3600,public docs/target/index/index.html s3://hyper.wickstrom.tech/
+  - aws s3 cp --region eu-west-1 --cache-control max-age=3600,public docs/target/index/latest/index.html s3://hyper.wickstrom.tech/latest/index.html
 
 cache:
   directories:
