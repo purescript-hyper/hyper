@@ -1,6 +1,11 @@
+VERSION ?= $(shell git rev-parse --short HEAD)
+
 .PHONY: docs
 docs:
 	make -C docs-src release
+
+deploy-docs: docs
+	aws s3 sync --region=eu-west-1 docs-src/target/release s3://hyper.wickstrom.tech/$(VERSION)
 
 .PHONY: examples
 examples:

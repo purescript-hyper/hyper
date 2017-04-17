@@ -237,10 +237,6 @@ livehtml:
 
 .PHONY: release
 release: clean html latexpdf
-	rm -r ../docs
-	cp -r target/html ../docs
-	echo "hyper.wickstrom.tech" > ../docs/CNAME
-	touch ../docs/.nojekyll
-	cp target/latex/hyper.pdf ../docs/hyper.pdf
-	echo "# THIS IS AUTO-GENERATED, DO NOT EDIT" > ../docs/README.md
-	echo "Instead edit the sources in [docs-src](../docs-src)." >> ../docs/README.md
+	rm -rf target/release
+	cp -r target/html target/release
+	cp target/latex/hyper.pdf target/release/hyper.pdf
