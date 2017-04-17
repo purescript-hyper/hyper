@@ -1,20 +1,69 @@
 language: node_js
+
 sudo: false
+
+addons:
+  apt:
+    packages:
+    - texlive
+    - texlive-fonts-recommended
+    - texlive-latex-extra
+    - texlive-fonts-extra
+    - dvipng
+    - texlive-latex-recommended
+    - latex-xcolor
+    - lmodern
+
 node_js:
-  - "5.5"
+- '5.5'
+
 env:
+  matrix:
   - PATH=$HOME/purescript:$PATH
+  global:
+  - secure: C+5OWpmsxi1Dl7rzoGywIbe4dBEKmKQ2LNglXgeU4pmyQxqfAI54rTt/xu0jy9A023ESOx54acscTWmUd9shgf9f+6p4nWj4/08MfzifuLcX16aqofb05ZctPlw9ZUwoLuYAph9/69jkWt8HMozQnB7vdjHGIeCkK7s8wFkrQQH6RFJVB3rgLWJm+A0Y6DbwHYfbNkXWFIe4kcy0VAc2+l4am6wvzMuxx8yhO2WL7ND0RUH7FjG6qMCDCxLSNbUiAuu37rxzDBeXKYSpoKU87KTGZ6aZ659k6q97kgNfA+MDDTRzNDAyMLUDE+FDeQeaDeXpRg0c52NaB3uVUIUODuWb3CmjMNoKpe5quJKNavszC3oEvFmByxgwHApvLaU31gv7ttiuOsIrk8lUi1WsBRWiQlBSGZvwxcZXV1Qf64nu85r5+qQWkq7VpHfI3SI75g35tRzdoKC3LuRvLOX5oAPjviqeLBsHRmAthc8Uz4jGIry3mjEZwPIcxMXQQhDlfzdyps775XhnylxpjP4X1TpudYhOBmsaaQbR3ur+zyhGelQJAKmZzAjziKsKRuAgOkBtK99H/eq+b42otzdcIZWXDglKbVqGIPdDLiOLWNUAutwei25aQzCZDvh+mZJLFLaxw8RnToZIal1lsoU8OGRFLz3Y+koy+lMsvS7tjlE=
+  - secure: cj6PvHHT+qyIuCT91U14MHpy/vv4kMhjMHeWxFnP/5k2aUMJkPwpEzb/2tunjQZFnzuSBkJxM9NTs9KO7hILM9B6EPlEBOqYuQFl/ep3SWfj4xj/6d85hMwgwZhFPjPRsV1mDeFweMgnkxrGaAtwRLUle5+qSlaBWy7CkSkDJFQX80BeLvd5h4Jdswcp0P/+NgjMy/tyUIlo2QUu8Tr7f/AMYQVY1gUbVxmwxQjKsbKs6s0RVEbRmRFj/kzTKARRYDLnuv4M3Uw5PTL7o7VWA4tlREH4xX2s5u6jptLS2vh/qFLsRkjv/Pcx2h+sAO+g+qU6nq1iHBgHBn8BMwR2T1xoS/MjZmyLDS1wbyouXHmS12xr1DKsLFquSdVZNOe8WMpQMOdw2Spf3siqsQe8zWGMcQvbloS/CntQyknm+VqJZsioHMELw44sApcbAJA8XymApA0x5816M4CurXuklTsgnGD31EdfoU+cWSjRUmhBeTZgt5kcaB+Y/g4F1+M8Zy1Njw7ifauf+koWTyYexzJ8Lv/oiYu1qhfELv9+blF+YSQRdGNkTVXByQVkKSUWiPqXeVeiZOxvzawtOlcqQjCuDOKLh2Hk0doRpt2i3xlSAu4BkeI0sj0eLK1PEWVxocYW3hg17ATnfynlFjkRsWLs5k6J7gCSQqx/oNzqPL8=
+
 install:
-  - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.11.3/linux64.tar.gz
-  - tar -xvf $HOME/purescript.tar.gz -C $HOME/
-  - chmod a+x $HOME/purescript
-  - npm install -g bower pulp@next
-  - bower install
+- wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.11.3/linux64.tar.gz
+- tar -xvf $HOME/purescript.tar.gz -C $HOME/
+- chmod a+x $HOME/purescript
+- npm install -g bower pulp@next
+- bower install
+- pip install --user -r docs/requirements.txt
+
 script:
-  - travis_wait pulp build
-  - travis_wait pulp test
-  - travis_wait make examples
+- export VERSION=branch-job-$TRAVIS_JOB_NUMBER
+- if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then export VERSION=pull-request-job-$TRAVIS_JOB_NUMBER;
+  fi
+- if [[ "$TRAVIS_TAG" != "" ]]; then export VERSION=$TRAVIS_TAG; fi
+- travis_wait pulp build
+- travis_wait pulp test
+- travis_wait make examples
+- travis_wait make docs
+
+before_deploy: pip install --user awscli
+
+deploy:
+- provider: s3
+  access_key_id: "$AWS_ACCESS_KEY_ID"
+  secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+  local_dir: docs/target/release
+  bucket: hyper.wickstrom.tech
+  upload-dir: docs/$VERSION
+  region: eu-west-1
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: owickstrom/hyper
+
+after_deploy:
+   # regenerate and deploy the documentation index
+  - make -C docs release-index
+  # cache for one hour
+  - aws s3 cp --region eu-west-1 --cache-control max-age=3600,public docs/target/index/index.html s3://hyper.wickstrom.tech/
+  - aws s3 cp --region eu-west-1 --cache-control max-age=3600,public docs/target/index/latest/index.html s3://hyper.wickstrom.tech/latest/index.html
 
 cache:
   directories:
-    - output
+  - output

@@ -1,6 +1,6 @@
 <div align="center">
 <h1>
-<img src="docs-src/src/_static/hyper@2x.png"
+<img src="docs/src/_static/hyper@2x.png"
       alt="Hyper"
       width="300">
 </h1>
@@ -74,7 +74,7 @@ make examples
 
 ### Building Documentation
 
-See [docs-src/README.md](docs-src/README.md) for prerequisites, setup, and
+See [docs/README.md](docs/README.md) for prerequisites, setup, and
 how to work with the documentation.
 
 Then, for the release build, run:

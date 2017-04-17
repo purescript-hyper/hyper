@@ -1,5 +1,9 @@
 # Changelog
 
+* 0.7.1
+  - Deploy documentation for each tagged release
+  - HTTPS for documentation site
+  - No built docs in git repository
 * 0.7.0
   - PureScript 0.11.x compatibility (breaking changes!)
 * 0.6.0

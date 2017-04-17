@@ -1,0 +1,94 @@
+html {
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  background: #fff;
+  font-family: 'Fira Sans', 'Helvetica Neue', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 auto;
+}
+
+code, pre {
+  font-family: 'Fira Mono', monospace;
+}
+
+code {
+  display: inline;
+  padding: 0px 2px;
+  background: #f0f0f0;
+  font-size: 100%;
+  color: inherit;
+}
+
+pre {
+  border: 0;
+  background: #fafafa;
+  border-left: 5px solid #ddd;
+  border-right: 5px solid #ddd;
+  padding: 1em;
+  margin: 1em 0;
+  font-size: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+}
+
+h1 {
+  margin: 1.5rem 0 1.5rem 0;
+  font-size: 200%;
+}
+h2 {
+  margin: 1.5em 0;
+  font-size: 125%;
+}
+h3, h4 {
+  margin: 1.5em 0;
+  font-size: 100%;
+}
+
+dt {
+  font-style: italic;
+  font-weight: 400;
+}
+dd {
+  padding-left: 2em;
+}
+
+.navbar-text.logo {
+  margin: 13px 15px 13px 0;
+}
+.navbar.navbar-inverse {
+  background: #333;
+}
+.navbar.navbar-inverse .navbar-form {
+  border: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+p {
+  margin-bottom: 1em;
+}
+
+blockquote {
+  border-left: 5px solid #ddd;
+  font-size: inherit;
+}
+
+@media screen and (max-width: 800px) {
+  body {
+    font-size: 14px;
+  }
+  pre {
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+}
