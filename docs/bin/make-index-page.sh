@@ -122,7 +122,7 @@ echo "
 </div>
 <footer class="footer" role="contentinfo">
   <div class="footer-wrapper text-muted">
-    <a href="https://github.com/owickstrom/hyper">Source Code on GitHub</a>
+    <a href="https://github.com/owickstrom/hyper">Hyper on GitHub</a>
     &mdash;
     &copy; Copyright 2016-2017 Oskar Wickström
     &mdash;
