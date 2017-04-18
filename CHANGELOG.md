@@ -1,5 +1,7 @@
 # Changelog
 
+* 0.7.3
+  - Link to external packages in extensions docs
 * 0.7.2
   - Improve docs template, and index mobile support
 * 0.7.1
