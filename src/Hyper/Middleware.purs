@@ -2,6 +2,7 @@ module Hyper.Middleware where
 
 import Prelude
 import Control.IxMonad (class IxMonad, ibind, ipure)
+import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Data.Tuple (Tuple(..), snd)
 import Hyper.Middleware.Class (class IxMonadMiddleware)
@@ -54,6 +55,11 @@ instance monadMiddleware :: (Monad m, Applicative m) => Monad (Middleware m i i)
 instance monadEffMiddleware :: MonadEff e m ⇒ MonadEff e (Middleware m i i) where
   liftEff e = Middleware $ \s -> do
     x <- liftEff e
+    pure (Tuple x s)
+
+instance monadAffMiddleware :: MonadAff e m ⇒ MonadAff e (Middleware m i i) where
+  liftAff e = Middleware $ \s -> do
+    x <- liftAff e
     pure (Tuple x s)
 
 -- TODO: Can this be written as an instance of MonadTrans? Can't get the type
