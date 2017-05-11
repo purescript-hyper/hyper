@@ -31,7 +31,8 @@
     "purescript-argonaut-codecs": "^3.0.0",
     "purescript-http-methods": "^3.0.0",
     "purescript-indexed-monad": "^0.2.0",
-    "purescript-smolder": "^7.0.0"
+    "purescript-smolder": "^7.0.0",
+    "purescript-aff": "^3.1.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
