@@ -14,6 +14,7 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, getRequestData, readBody)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
+import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
 onPost
@@ -41,7 +42,7 @@ onPost =
       :*> respond ("You said: " <> msg)
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     router =

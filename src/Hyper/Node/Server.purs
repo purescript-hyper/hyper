@@ -26,6 +26,7 @@ import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (Error, catchException, error)
 import Control.Monad.Error.Class (throwError)
+import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
@@ -91,15 +92,15 @@ readBodyAsBuffer (HttpRequest request _) = do
   let stream = HTTP.requestAsStream request
   completeBody <- makeVar
   chunks <- makeVar' []
-  e <- liftEff (catchException (pure <<< Just) (fillBody stream chunks completeBody *> pure Nothing))
-  case e of
-    Just err -> throwError err
-    Nothing -> takeVar completeBody
+  res <- liftEff $
+    catchException (pure <<< Left) (Right <$> fillBody stream chunks completeBody)
+  either throwError (const (takeVar completeBody)) res
   where
     fillBody stream chunks completeBody = do
-      Stream.onData stream \chunk -> void do
-        launchAff (modifyVar (_ <> [chunk]) chunks)
-      Stream.onEnd stream $ void (launchAff (takeVar chunks >>= concat' >>= putVar completeBody))
+      Stream.onData stream \chunk ->
+        void (launchAff (modifyVar (_ <> [chunk]) chunks))
+      Stream.onEnd stream $
+        void (launchAff (takeVar chunks >>= concat' >>= putVar completeBody))
     concat' = liftEff <<< Buffer.concat
 
 instance readableBodyHttpRequestString :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)

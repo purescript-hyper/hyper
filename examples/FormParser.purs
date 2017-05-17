@@ -18,12 +18,13 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (getRequestData)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
+import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Text.Smolder.HTML (button, form, input, label, p)
 import Text.Smolder.Markup (text, (!))
 import Text.Smolder.Renderer.String (render)
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     -- A view function that renders the name form.
