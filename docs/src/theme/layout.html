@@ -1,7 +1,5 @@
 {% extends "sphinxdoc/layout.html" %}
 
-{% set css_files = css_files + ['_static/bootstrap/css/bootstrap.min.css', '_static/overrides.css'] %}
-
 {%- from "relbar.html" import relbar_top with context %}
 
 {% block htmltitle %}
@@ -36,6 +34,8 @@
 <meta property="og:url" content="http://hyper.wickstrom.tech" />
 <meta property="og:image" content="http://hyper.wickstrom.tech/_static/icon-large.png" />
 
+<link rel="stylesheet" href="{{ pathto('_static/overrides.css', 1) }}">
+<link rel="stylesheet" href="{{ pathto('_static/bootstrap/css/bootstrap.min.css', 1) }}">
 <link href="https://fonts.googleapis.com/css?family=Fira+Mono|Fira+Sans:400,400i,600" rel="stylesheet">
 {% endblock %}
 

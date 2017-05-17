@@ -27,7 +27,6 @@
 # needs_sphinx = '1.0'
 
 import os
-import sys
 import subprocess
 from datetime import date
 
