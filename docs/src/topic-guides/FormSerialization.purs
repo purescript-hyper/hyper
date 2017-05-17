@@ -21,6 +21,7 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, class Request, getRequestData)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
+import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 
 -- start snippet datatypes
@@ -88,7 +89,7 @@ onPost =
                      <> show beers <> " beers coming up!\n")
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR | e) Unit
+main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
 main =
   let
     router =
