@@ -33,8 +33,8 @@ class Request req m where
 class Request req m <= BaseRequest req m
 
 -- | A ReadableBody instance reads the request body for a specific body
--- | reader type.
-class ReadableBody req m b | req -> b where
+-- | type.
+class ReadableBody req m b where
   readBody
     :: forall res c
      . Middleware

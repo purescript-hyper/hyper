@@ -14,6 +14,7 @@ import Prelude
 import Data.HTTP.Method as Method
 import Data.Int as Int
 import Data.StrMap as StrMap
+import Node.Buffer as Buffer
 import Node.HTTP as HTTP
 import Node.Stream as Stream
 import Control.IxMonad (ipure, (:*>), (:>>=))
@@ -32,10 +33,10 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
-import Hyper.Request (class ReadableBody, class Request, RequestData)
+import Hyper.Request (class ReadableBody, class Request, RequestData, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
-import Node.Buffer (Buffer)
+import Node.Buffer (BUFFER, Buffer)
 import Node.Encoding (Encoding(..))
 import Node.HTTP (HTTP)
 import Node.Stream (Writable)
@@ -82,30 +83,36 @@ instance bufferNodeResponse :: (MonadAff e m)
   toResponse buf =
     ipure (write buf)
 
-readBody
+readBodyAsBuffer
   :: forall e.
      HttpRequest
-  -> Aff (http :: HTTP, avar :: AVAR | e) String
-readBody (HttpRequest request _) = do
+  -> Aff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) Buffer
+readBodyAsBuffer (HttpRequest request _) = do
   let stream = HTTP.requestAsStream request
   completeBody <- makeVar
-  chunks <- makeVar' ""
+  chunks <- makeVar' []
   e <- liftEff (catchException (pure <<< Just) (fillBody stream chunks completeBody *> pure Nothing))
   case e of
     Just err -> throwError err
     Nothing -> takeVar completeBody
   where
     fillBody stream chunks completeBody = do
-      Stream.onDataString stream UTF8 \chunk -> void do
-        launchAff (modifyVar (_ <> chunk) chunks)
-      Stream.onEnd stream $ void (launchAff (takeVar chunks >>= putVar completeBody))
+      Stream.onData stream \chunk -> void do
+        launchAff (modifyVar (_ <> [chunk]) chunks)
+      Stream.onEnd stream $ void (launchAff (takeVar chunks >>= concat' >>= putVar completeBody))
+    concat' = liftEff <<< Buffer.concat
 
-instance requestBodyReaderReqestBody :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR | e) m)
-                                     => ReadableBody HttpRequest m String where
+instance readableBodyHttpRequestString :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)
+                                       => ReadableBody HttpRequest m String where
+  readBody =
+    readBody :>>= (liftEff <<< Buffer.toString UTF8)
+
+instance readableBodyHttpRequestBuffer :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)
+                                       => ReadableBody HttpRequest m Buffer where
   readBody =
     _.request <$> getConn :>>=
     case _ of
-      r -> lift' (liftAff (readBody r))
+      r -> liftAff (readBodyAsBuffer r)
 
 -- TODO: Make a newtype
 data HttpResponse state = HttpResponse HTTP.Response
