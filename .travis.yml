@@ -13,6 +13,7 @@ addons:
     - texlive-latex-recommended
     - latex-xcolor
     - lmodern
+    - latexmk
 
 node_js:
 - '5.5'
