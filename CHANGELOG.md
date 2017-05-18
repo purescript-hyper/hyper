@@ -1,5 +1,11 @@
 # Changelog
 
+* (coming release)
+  - Add `MonadAff` instance for `Middleware`
+  - Add Buffer instance for `ReadableBody`
+  - Add `Readable ()` instance for `StreamableBody`, a new type class for
+    streaming the request body, instead of reading the complete body as a
+    value.
 * 0.7.3
   - Link to external packages in extensions docs
 * 0.7.2
