@@ -41,6 +41,10 @@ spec =
       form <- runParseForm "foo=bar" Nothing
       form `shouldEqual` (Form [Tuple "foo" (Just "bar")])
 
+    it "handles percent-encoding" do
+      form <- runParseForm "foo=%62%61%72" Nothing
+      form `shouldEqual` (Form [Tuple "foo" (Just "bar")])
+
     it "parses multiple keys and values" do
       form <- runParseForm "foo=bar&baz=quux&a=1&b=2" Nothing
       form `shouldEqual` (Form [ Tuple "foo" (Just "bar")
