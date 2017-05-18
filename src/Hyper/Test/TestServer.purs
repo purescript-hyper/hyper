@@ -13,6 +13,7 @@ import Data.Foldable (fold)
 import Data.Function ((<<<))
 import Data.Functor (map)
 import Data.HTTP.Method (CustomMethod, Method(..))
+import Data.Lazy (defer)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
@@ -22,7 +23,7 @@ import Hyper.Conn (Conn)
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
-import Hyper.Request (class ReadableBody, class Request)
+import Hyper.Request (class ReadableBody, class Request, parseUrl)
 import Hyper.Response (class ResponseWritable, class Response)
 import Hyper.Status (Status)
 
@@ -55,6 +56,7 @@ instance requestTestRequest :: Monad m => Request TestRequest m where
   getRequestData =
     getConn :>>= \{ request: TestRequest r } ->
     ipure { url: r.url
+          , parsedUrl: defer \_ -> parseUrl r.url
           , contentLength: Just (String.length r.body)
           , method: r.method
           , headers: r.headers

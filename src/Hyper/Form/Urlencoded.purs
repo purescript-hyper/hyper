@@ -6,6 +6,7 @@ module Hyper.Form.Urlencoded
 
 import Prelude
 import Control.Monad.Error.Class (throwError)
+import Data.Array as Array
 import Data.Either (Either)
 import Data.Maybe (Maybe(Just, Nothing))
 import Data.String (split, joinWith, Pattern(Pattern))
@@ -26,6 +27,7 @@ toTuple kv =
 
 parseUrlencoded :: String → Either String (Array (Tuple String (Maybe String)))
 parseUrlencoded = split (Pattern "&")
+                  >>> Array.filter (_ /= "")
                   >>> map (split (Pattern "="))
                   >>> map toTuple
                   >>> sequence
