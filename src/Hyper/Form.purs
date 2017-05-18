@@ -23,11 +23,10 @@ import Data.MediaType.Common (applicationFormURLEncoded)
 import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.StrMap (lookup)
-import Data.String (split, joinWith, Pattern(Pattern))
-import Data.Traversable (sequence)
-import Data.Tuple (Tuple(Tuple))
-import Global (decodeURIComponent)
+import Data.String (Pattern(Pattern), split)
+import Data.Tuple (Tuple)
 import Hyper.Conn (Conn)
+import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, class ReadableBody, getRequestData, readBody)
@@ -60,24 +59,6 @@ parseContentMediaType = split (Pattern ";")
                         >>> head
                         >>> map MediaType
 
-
-toTuple :: Array String -> Either String (Tuple String (Maybe String))
-toTuple kv =
-  case kv of
-    [key] ->
-      pure (Tuple (decodeURIComponent key) Nothing)
-    [key, value] ->
-      pure (Tuple (decodeURIComponent key) (Just (decodeURIComponent value)))
-    parts ->
-      throwError ("Invalid form key-value pair: " <> joinWith " " parts)
-
-
-splitPairs :: String → Either String (Array (Tuple String (Maybe String)))
-splitPairs = split (Pattern "&")
-             >>> map (split (Pattern "="))
-             >>> map toTuple
-             >>> sequence
-
 parseForm ∷ forall m req res c
   .  Monad m
   => Request req m
@@ -95,7 +76,7 @@ parseForm = do
     Nothing ->
       ipure (Left "Missing or invalid content-type header.")
     Just mediaType | mediaType == applicationFormURLEncoded ->
-      ipure (Form <$> splitPairs body)
+      ipure (Form <$> parseUrlencoded body)
     Just mediaType ->
       ipure (Left ("Cannot parse media of type: " <> show mediaType))
   where bind = ibind
