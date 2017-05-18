@@ -84,23 +84,36 @@ instance bufferNodeResponse :: (MonadAff e m)
   toResponse buf =
     ipure (write buf)
 
+-- Helper function that reads a Stream into a Buffer, and throws error
+-- in `Aff` when failed.
 readBodyAsBuffer
   :: forall e.
      HttpRequest
   -> Aff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) Buffer
 readBodyAsBuffer (HttpRequest request _) = do
   let stream = HTTP.requestAsStream request
-  completeBody <- makeVar
+  bodyResult <- makeVar
   chunks <- makeVar' []
-  res <- liftEff $
-    catchException (pure <<< Left) (Right <$> fillBody stream chunks completeBody)
-  either throwError (const (takeVar completeBody)) res
+  fillResult <- liftEff $
+    catchException (pure <<< Left) (Right <$> fillBody stream chunks bodyResult)
+  -- Await the body, or an error.
+  body <- takeVar bodyResult
+  -- Return the body, if neither `fillResult` nor `body` is a `Left`.
+  either throwError pure (fillResult *> body)
   where
-    fillBody stream chunks completeBody = do
+    fillBody stream chunks bodyResult = do
+      -- Append all chunks to the body buffer.
       Stream.onData stream \chunk ->
         void (launchAff (modifyVar (_ <> [chunk]) chunks))
-      Stream.onEnd stream $
-        void (launchAff (takeVar chunks >>= concat' >>= putVar completeBody))
+      -- Complete with `Left` on error.
+      Stream.onError stream $
+        void <<< launchAff <<< putVar bodyResult <<< Left
+      -- Complete with `Right` on successful "end" event.
+      Stream.onEnd stream $ void $ launchAff $
+        takeVar chunks
+        >>= concat'
+        >>= (pure <<< Right)
+        >>= putVar bodyResult
     concat' = liftEff <<< Buffer.concat
 
 instance readableBodyHttpRequestString :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)
