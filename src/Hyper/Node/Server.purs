@@ -24,7 +24,7 @@ import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (Error, catchException, error)
+import Control.Monad.Eff.Exception (EXCEPTION, Error, catchException, error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.Maybe (Maybe(..))
@@ -34,13 +34,13 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
-import Hyper.Request (class ReadableBody, class Request, RequestData, readBody)
+import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (BUFFER, Buffer)
 import Node.Encoding (Encoding(..))
 import Node.HTTP (HTTP)
-import Node.Stream (Writable)
+import Node.Stream (Stream, Writable)
 
 
 data HttpRequest
@@ -127,6 +127,16 @@ instance readableBodyHttpRequestBuffer :: (Monad m, MonadAff (http :: HTTP, avar
     _.request <$> getConn :>>=
     case _ of
       r -> liftAff (readBodyAsBuffer r)
+
+instance streamableBodyHttpRequestReadable :: MonadAff (http :: HTTP | e) m
+                                           => StreamableBody
+                                              HttpRequest
+                                              m
+                                              (Stream (read :: Stream.Read) (http :: HTTP, exception :: EXCEPTION | e)) where
+  streamBody =
+    _.request <$> getConn :>>=
+    case _ of
+      HttpRequest request _ -> ipure (HTTP.requestAsStream request)
 
 -- TODO: Make a newtype
 data HttpResponse state = HttpResponse HTTP.Response
