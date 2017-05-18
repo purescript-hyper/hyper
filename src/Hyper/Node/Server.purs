@@ -27,6 +27,7 @@ import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, Error, catchException, error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
+import Data.Lazy (defer)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
@@ -34,7 +35,7 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Port (Port(..))
-import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, readBody)
+import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, parseUrl, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
 import Node.Buffer (BUFFER, Buffer)
@@ -245,6 +246,7 @@ mkHttpRequest request =
     headers = HTTP.requestHeaders request
     requestData =
       { url: HTTP.requestURL request
+      , parsedUrl: defer \_ -> parseUrl (HTTP.requestURL request)
       , headers: headers
       , method: Method.fromString (HTTP.requestMethod request)
       , contentLength: StrMap.lookup "content-length" headers
