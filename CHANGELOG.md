@@ -1,6 +1,6 @@
 # Changelog
 
-* (coming release)
+* 0.8.0
   - Add `MonadAff` instance for `Middleware`
   - Add Buffer instance for `ReadableBody`
   - Add `Readable ()` instance for `StreamableBody`, a new type class for
