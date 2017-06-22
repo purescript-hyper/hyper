@@ -11,9 +11,11 @@ module Hyper.Node.Server
        ) where
 
 import Prelude
+import Data.Array as Array
 import Data.HTTP.Method as Method
 import Data.Int as Int
 import Data.StrMap as StrMap
+import Data.String as String
 import Node.Buffer as Buffer
 import Node.HTTP as HTTP
 import Node.Stream as Stream
@@ -24,7 +26,7 @@ import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION, Error, catchException, error)
+import Control.Monad.Eff.Exception (EXCEPTION, Error, catchException)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.Lazy (defer)
@@ -61,13 +63,31 @@ newtype NodeResponse m e
   = NodeResponse (Writable () e -> m Unit)
 
 writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponse m e
-writeString enc str = NodeResponse $ \w -> liftAff (makeAff (writeAsAff w))
+writeString enc str =
+  NodeResponse $ \w -> liftAff (makeAff (writeChunk w 0))
   where
-    writeAsAff w fail succeed =
-      Stream.writeString w enc str (succeed unit) >>=
-      if _
-        then succeed unit
-        else fail (error "Failed to write string to response")
+    -- We operate on a (Array Char), instead of the String, to slice
+    -- it into chunks:
+    chars = String.toCharArray str
+    totalLength = Array.length chars
+    -- This function writes a chunk at the given offset, and recurses
+    -- if there are more chunks to be written.
+    writeChunk w offset fail succeed = do
+      -- We ignore the result of write as we cannot access the 'drain'
+      -- event anyway:
+      void $
+        Stream.writeString w enc (String.fromCharArray chunk) $
+        -- In the callback from `writeString`, we succeed the Aff
+        -- value if we have just written the last chunk, otherwise we
+        -- keep on writing chunks.
+        if isLastChunk
+          then succeed unit
+          else writeChunk w nextOffset fail succeed
+      where
+        chunkSize = 1024 * 8
+        nextOffset = min totalLength (offset + chunkSize)
+        isLastChunk = nextOffset == totalLength
+        chunk = Array.slice offset nextOffset chars
 
 write :: forall m e. MonadAff e m => Buffer -> NodeResponse m e
 write buffer = NodeResponse $ \w ->
