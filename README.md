@@ -24,7 +24,7 @@ Hyper is an experimental middleware architecture for HTTP servers written in Pur
 To learn
 more about Hyper, check out the [documentation](https://hyper.wickstrom.tech)
 and [the Getting Started
-tutorial](https://hyper.wickstrom.tech/docs/v0.7.2./tutorials/getting-started-with-hyper.html).
+tutorial](https://hyper.wickstrom.tech/docs/v0.7.2/tutorials/getting-started-with-hyper.html).
 
 <p align="right">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
