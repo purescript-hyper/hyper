@@ -8,8 +8,7 @@
 module Examples.AuthenticationAndAuthorization where
 
 import Prelude
-import Hyper.Node.BasicAuth as BasicAuth
-import Text.Smolder.HTML.Attributes as A
+
 import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Class (class MonadAff)
@@ -25,13 +24,15 @@ import Hyper.Authorization (authorized)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
-import Hyper.Node.Server (defaultOptions, runServer)
+import Hyper.Node.BasicAuth as BasicAuth
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Node.Buffer (BUFFER)
 import Node.HTTP (HTTP)
 import Text.Smolder.HTML (a, h1, li, p, section, ul)
+import Text.Smolder.HTML.Attributes as A
 import Text.Smolder.Markup (Markup, text, (!))
 import Text.Smolder.Renderer.String (render)
 
@@ -209,4 +210,4 @@ main =
     components = { authentication: unit
                  , authorization: unit
                  }
-  in runServer defaultOptions components app
+  in runServer defaultOptionsWithLogging components app

@@ -1,7 +1,7 @@
 module Examples.Authentication where
 
 import Prelude
-import Hyper.Node.BasicAuth as BasicAuth
+
 import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
@@ -10,7 +10,8 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Middleware.Class (getConn)
-import Hyper.Node.Server (runServer, defaultOptions)
+import Hyper.Node.BasicAuth as BasicAuth
+import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (BUFFER)
@@ -44,4 +45,4 @@ main =
       BasicAuth.withAuthentication userFromBasicAuth
       :*> BasicAuth.authenticated "Authentication Example" myProfilePage
     components = { authentication: unit }
-  in runServer defaultOptions components app
+  in runServer defaultOptionsWithLogging components app
