@@ -269,7 +269,7 @@ runServer'
 runServer' options components runM middleware = do
   server <- HTTP.createServer onRequest
   let listenOptions = { port: unwrap options.port
-                      , hostname: "0.0.0.0"
+                      , hostname: options.hostname
                       , backlog: Nothing
                       }
   HTTP.listen server listenOptions (options.onListening options.port)
