@@ -90,13 +90,14 @@ spec = do
               , millisecond : 0.0
               }
           attrs =
-            { expires: Just expires
-            , maxAge : maxAge 3600
-            , domain : Just "localhost"
-            , path : Just "/path"
-            , secure : true
+            { comment: Just "comment"
+            , domain: Just "localhost"
+            , expires: Just expires
             , httpOnly : true
+            , maxAge: maxAge 3600
+            , path : Just "/path"
             , sameSite : Just Strict
+            , secure : true
             }
         response <- { request: TestRequest defaultRequest
                     , response: TestResponse Nothing [] []
@@ -108,7 +109,7 @@ spec = do
           (testHeaders response)
           [(Tuple
             "Set-Cookie"
-            "foo=bar;HttpOnly;Secure;Expires=Fri, 04 Aug 2017 00:40:00 GMT;Max-Age=3600;Domain=localhost;Path=/path;SameSite=Strict")])
+            "foo=bar;HttpOnly;Secure;Comment=comment;Expires=Fri, 04 Aug 2017 00:40:00 GMT;Max-Age=3600;Domain=localhost;Path=/path;SameSite=Strict")])
 
       it "URL encodes cookie key" do
         response <- { request: TestRequest defaultRequest
