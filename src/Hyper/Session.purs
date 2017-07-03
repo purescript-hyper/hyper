@@ -20,7 +20,7 @@ import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.StrMap (StrMap)
 import Hyper.Conn (Conn)
-import Hyper.Cookies (defaultCookieAttributes, setCookie, SameSite(Lax))
+import Hyper.Cookies (defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response, HeadersOpen)
@@ -153,4 +153,4 @@ deleteSession = do
   conn <- getConn
   _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID
   -- TODO: Better delete?
-  setCookie conn.components.sessions.key "" defaultCookieAttributes
+  setCookie conn.components.sessions.key "" (defaultCookieAttributes { maxAge=maxAge 0 })
