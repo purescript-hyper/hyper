@@ -4,8 +4,7 @@ module Hyper.Node.Server
        , NodeResponse
        , writeString
        , write
-       , defaultOptions
-       , defaultOptionsWithLogging
+       , module Hyper.Node.Server.Options
        , runServer
        , runServer'
        ) where
@@ -23,8 +22,7 @@ import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeV
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION, Error, catchException, error)
+import Control.Monad.Eff.Exception (EXCEPTION, catchException, error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.Lazy (defer)
@@ -34,7 +32,8 @@ import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
-import Hyper.Port (Port(..))
+import Hyper.Node.Server.Options as Hyper.Node.Server.Options
+import Hyper.Node.Server.Options (Options)
 import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, parseUrl, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
@@ -210,35 +209,6 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
       :*> modifyConn (_ { response = HttpResponse r })
 
 
-type ServerOptions e =
-  { hostname ∷ String
-  , port ∷ Port
-  , onListening ∷ Port → Eff (http ∷ HTTP | e) Unit
-  , onRequestError ∷ Error → Eff (http ∷ HTTP | e) Unit
-  }
-
-
-defaultOptions ∷ ∀ e. ServerOptions e
-defaultOptions =
-  { hostname: "0.0.0.0"
-  , port: Port 3000
-  , onListening: const (pure unit)
-  , onRequestError: const (pure unit)
-  }
-
-
-defaultOptionsWithLogging ∷ ∀ e. ServerOptions (console ∷ CONSOLE | e)
-defaultOptionsWithLogging =
-  defaultOptions { onListening = onListening
-                 , onRequestError = onRequestError
-                 }
-  where
-    onListening (Port port) =
-      log ("Listening on http://localhost:" <> show port)
-    onRequestError err =
-      log ("Request failed: " <> show err)
-
-
 mkHttpRequest :: HTTP.Request -> HttpRequest
 mkHttpRequest request =
   HttpRequest request requestData
@@ -257,7 +227,7 @@ mkHttpRequest request =
 runServer'
   :: forall m e c c'
    . Functor m
-  => ServerOptions e
+  => Options e
   -> c
   -> (forall a. m a -> Aff (http :: HTTP | e) a)
   -> Middleware
@@ -269,10 +239,10 @@ runServer'
 runServer' options components runM middleware = do
   server <- HTTP.createServer onRequest
   let listenOptions = { port: unwrap options.port
-                      , hostname: options.hostname
+                      , hostname: unwrap options.hostname
                       , backlog: Nothing
                       }
-  HTTP.listen server listenOptions (options.onListening options.port)
+  HTTP.listen server listenOptions (options.onListening options.hostname options.port)
   where
     onRequest ∷ HTTP.Request → HTTP.Response → Eff (http :: HTTP | e) Unit
     onRequest request response =
@@ -285,7 +255,7 @@ runServer' options components runM middleware = do
 
 runServer
   :: forall e c c'.
-     ServerOptions e
+     Options e
   -> c
   -> Middleware
      (Aff (http :: HTTP | e))
