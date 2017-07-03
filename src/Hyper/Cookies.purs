@@ -93,29 +93,32 @@ maxAge a | a < 0 = Nothing
          | otherwise = Just (MaxAge a)
 
 type CookieAttributes =
-  { expires :: Maybe JSDate
-  , maxAge :: Maybe MaxAge
+  { comment :: Maybe String
   , domain :: Maybe String
-  , path :: Maybe String
-  , secure :: Boolean
+  , expires :: Maybe JSDate
   , httpOnly :: Boolean
+  , maxAge :: Maybe MaxAge
+  , path :: Maybe String
   , sameSite :: Maybe SameSite
+  , secure :: Boolean
   }
 
 defaultCookieAttributes :: CookieAttributes
 defaultCookieAttributes =
-  { expires: Nothing
-  , maxAge: Nothing
+  { comment: Nothing
   , domain: Nothing
-  , path: Nothing
-  , secure: false
+  , expires: Nothing
   , httpOnly: false
+  , maxAge: Nothing
+  , path: Nothing
   , sameSite: Nothing
+  , secure: false
   }
 
 setCookieHeaderValue :: Name -> Value -> CookieAttributes -> String
-setCookieHeaderValue key value { expires, path, maxAge: m, domain, secure, httpOnly, sameSite } =
-  [ (Tuple "Expires" <<< toUTCString) <$> expires
+setCookieHeaderValue key value { comment, expires, path, maxAge: m, domain, secure, httpOnly, sameSite } =
+  [ (Tuple "Comment" <<< encodeURIComponent) <$> comment
+  , (Tuple "Expires" <<< toUTCString) <$> expires
   , (Tuple "Max-Age" <<< show <<< unwrap) <$> m
   , Tuple "Domain" <$> domain
   , Tuple "Path" <$> path
