@@ -86,9 +86,9 @@ cookies = do
 
 data SameSite = Strict | Lax
 newtype MaxAge = MaxAge Int
-derive instance newtypeMaxAge ∷ Newtype MaxAge _
+derive instance newtypeMaxAge :: Newtype MaxAge _
 
-maxAge ∷ Int → Maybe MaxAge
+maxAge :: Int -> Maybe MaxAge
 maxAge a | a < 0 = Nothing
          | otherwise = Just (MaxAge a)
 
