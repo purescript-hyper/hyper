@@ -1,24 +1,32 @@
 module Hyper.Cookies
-       ( Name
+       ( cookies
+       , CookieAttributes
+       , SameSite(..)
+       , Name
+       , maxAge
+       , MaxAge
+       , defaultCookieAttributes
+       , setCookie
        , Value
        , Values
-       , cookies
-       , setCookie
        ) where
 
 import Prelude
-import Data.NonEmpty as NonEmpty
-import Data.StrMap as StrMap
+
 import Control.IxMonad (ibind)
 import Control.Monad.Error.Class (throwError)
-import Data.Array (filter, foldMap, uncons, (:))
+import Data.Array (catMaybes, cons, filter, foldMap, uncons, (:))
 import Data.Either (Either)
+import Data.JSDate (JSDate, toUTCString)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty (NonEmpty(NonEmpty), (:|))
+import Data.NonEmpty as NonEmpty
 import Data.StrMap (StrMap)
+import Data.StrMap as StrMap
 import Data.String (Pattern(..), joinWith, split, trim)
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), uncurry)
 import Global (encodeURIComponent, decodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
@@ -38,7 +46,7 @@ toPair kv =
     parts ->
       throwError ("Invalid cookie-pair: " <> joinWith " " parts)
 
-splitPairs :: String → Either String (Array (Tuple String (Array String)))
+splitPairs :: String -> Either String (Array (Tuple String (Array String)))
 splitPairs =
   split (Pattern ";")
   >>> map trim
@@ -76,15 +84,66 @@ cookies = do
   putConn conn { components { cookies = cookies' }}
   where bind = ibind
 
+data SameSite = Strict | Lax
+newtype MaxAge = MaxAge Int
+derive instance newtypeMaxAge ∷ Newtype MaxAge _
+
+maxAge ∷ Int → Maybe MaxAge
+maxAge a | a < 0 = Nothing
+         | otherwise = Just (MaxAge a)
+
+type CookieAttributes =
+  { expires :: Maybe JSDate
+  , maxAge :: Maybe MaxAge
+  , domain :: Maybe String
+  , path :: Maybe String
+  , secure :: Boolean
+  , httpOnly :: Boolean
+  , sameSite :: Maybe SameSite
+  }
+
+defaultCookieAttributes :: CookieAttributes
+defaultCookieAttributes =
+  { expires: Nothing
+  , maxAge: Nothing
+  , domain: Nothing
+  , path: Nothing
+  , secure: false
+  , httpOnly: false
+  , sameSite: Nothing
+  }
+
+setCookieHeaderValue :: Name -> Value -> CookieAttributes -> String
+setCookieHeaderValue key value { expires, path, maxAge: m, domain, secure, httpOnly, sameSite } =
+  [ (Tuple "Expires" <<< toUTCString) <$> expires
+  , (Tuple "Max-Age" <<< show <<< unwrap) <$> m
+  , Tuple "Domain" <$> domain
+  , Tuple "Path" <$> path
+  , Tuple "SameSite" <<< sameSiteSer <$> sameSite
+  ]
+  # map (uncurry assigment <$> _)
+  # cons (if secure then Just "Secure" else Nothing)
+  # cons (if httpOnly then Just "HttpOnly" else Nothing)
+  # catMaybes
+  # cons (assigment (encodeURIComponent key)  (encodeURIComponent value))
+  # joinWith ";"
+ where
+  assigment k v = k <> "=" <> v
+
+  sameSiteSer :: SameSite -> String
+  sameSiteSer Strict = "Strict"
+  sameSiteSer Lax = "Lax"
+
 setCookie :: forall m req res c b
   .  Monad m
   => Response res m b
   => Name
   -> Value
+  -> CookieAttributes
   -> Middleware
      m
      (Conn req (res HeadersOpen) c)
      (Conn req (res HeadersOpen) c)
      Unit
-setCookie key value =
-  writeHeader (Tuple "Set-Cookie" (encodeURIComponent key <> "=" <> encodeURIComponent value))
+setCookie key value attrs =
+  writeHeader (Tuple "Set-Cookie" (setCookieHeaderValue key value attrs))
