@@ -6,6 +6,7 @@ module Hyper.Cookies
        , maxAge
        , MaxAge
        , defaultCookieAttributes
+       , setCookieHeaderValue
        , setCookie
        , Value
        , Values
