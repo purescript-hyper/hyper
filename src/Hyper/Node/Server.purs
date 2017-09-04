@@ -17,7 +17,7 @@ import Node.Buffer as Buffer
 import Node.HTTP as HTTP
 import Node.Stream as Stream
 import Control.IxMonad (ipure, (:*>), (:>>=))
-import Control.Monad.Aff (Aff, launchAff, makeAff)
+import Control.Monad.Aff (Aff, launchAff, makeAff, runAff)
 import Control.Monad.Aff.AVar (putVar, takeVar, modifyVar, makeVar', AVAR, makeVar)
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
@@ -250,8 +250,7 @@ runServer' options components runM middleware = do
                  , response: HttpResponse response
                  , components: components
                  }
-      in catchException options.onRequestError (void (launchAff (runM (evalMiddleware middleware conn))))
-
+      in conn # evalMiddleware middleware # runM # runAff options.onRequestError (const $ pure unit) # void
 
 runServer
   :: forall e c c'.
