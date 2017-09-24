@@ -18,7 +18,6 @@ import Node.FS (FS)
 import Node.FS.Aff (readFile, stat, exists)
 import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
-import Data.Array (null)
 
 serveFile
   :: forall m e req res c b
@@ -40,7 +39,7 @@ serveFile path userProvidedHeaders = do
           , Tuple "Content-Length" (show contentLength)
           ]
   _ <- writeStatus statusOK
-  _ <- headers $ if null userProvidedHeaders then h else userProvidedHeaders
+  _ <- headers $ h <> userProvidedHeaders
   response <- toResponse buf
   _ <- send response
   end
