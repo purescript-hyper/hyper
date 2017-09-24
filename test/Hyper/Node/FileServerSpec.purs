@@ -33,7 +33,7 @@ serveFilesAndGet path =
   # evalMiddleware app
   # testServer
   where
-    app = fileServer "test/Hyper/Node/FileServerSpec" on404
+    app = fileServer "test/Hyper/Node/FileServerSpec" on404 []
 
     on404 = do
       body <- liftEff (Buffer.fromString "Not Found" UTF8)

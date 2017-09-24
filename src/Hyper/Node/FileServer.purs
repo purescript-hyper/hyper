@@ -18,6 +18,7 @@ import Node.FS (FS)
 import Node.FS.Aff (readFile, stat, exists)
 import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
+import Data.Array (null)
 
 serveFile
   :: forall m e req res c b
@@ -26,18 +27,20 @@ serveFile
   => ResponseWritable b m Buffer
   => Response res m b
   => FilePath
+  -> Array (Tuple String String)
   -> Middleware
      m
      (Conn req (res StatusLineOpen) c)
      (Conn req (res ResponseEnded) c)
      Unit
-serveFile path = do
+serveFile path userProvidedHeaders = do
   buf <- lift' (liftAff (readFile path))
   contentLength <- liftEff (Buffer.size buf)
-  _ <- writeStatus statusOK
-  _ <- headers [ Tuple "Content-Type" "*/*; charset=utf-8"
+  let h = [ Tuple "Content-Type" "*/*; charset=utf-8"
           , Tuple "Content-Length" (show contentLength)
           ]
+  _ <- writeStatus statusOK
+  _ <- headers $ if null userProvidedHeaders then h else userProvidedHeaders
   response <- toResponse buf
   _ <- send response
   end
@@ -57,18 +60,19 @@ fileServer
      (Conn req (res StatusLineOpen) c)
      (Conn req (res ResponseEnded) c)
      Unit
+  -> Array (Tuple String String)
   -> Middleware
      m
      (Conn req (res StatusLineOpen) c)
      (Conn req (res ResponseEnded) c)
      Unit
-fileServer dir on404 = do
+fileServer dir on404 headers = do
   conn ← getConn
   { url } <- getRequestData
   serve (Path.concat [dir, url])
   where
     serveStats absolutePath stats
-      | isFile stats = serveFile absolutePath
+      | isFile stats = serveFile absolutePath headers
       | isDirectory stats = serve (Path.concat [absolutePath, "index.html"])
       | otherwise = on404
 
