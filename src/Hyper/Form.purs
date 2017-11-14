@@ -38,6 +38,7 @@ derive instance genericForm :: Generic Form
 derive newtype instance eqForm :: Eq Form
 derive newtype instance ordForm :: Ord Form
 derive newtype instance showForm :: Show Form
+derive newtype instance semigroupForm :: Semigroup Form
 derive newtype instance monoidForm :: Monoid Form
 
 
