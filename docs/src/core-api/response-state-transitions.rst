@@ -36,7 +36,7 @@ response as being ready to write the body (``BodyOpen``).
        Unit
 
 To be used in combination with ``headers``, the ``respond`` function
-takes some ``ResponseWritable m r b``, and gives back a middleware that, given
+takes some ``ResponseWritable b m r``, and gives back a middleware that, given
 a connection *where all headers have been written*, writes a response, and
 *marks the state of the response as ended*.
 
