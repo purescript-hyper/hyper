@@ -3,7 +3,7 @@ module Hyper.Node.Session.InMemory where
 import Prelude
 
 import Control.Monad.Aff (Aff)
-import Control.Monad.Aff.AVar (AVAR, AVar, makeVar, putVar, readVar)
+import Control.Monad.Aff.AVar (AVAR, AVar, makeVar, putVar, readVar, takeVar)
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Aff.Console (CONSOLE, log)
 import Data.Map (Map)
@@ -31,12 +31,12 @@ instance sessionStoreInMemorySessionStore :: ( Monad m
   put (InMemorySessionStore var) id session = do
     liftAff do
       log ("Saving session: " <> unwrap id)
-      Map.insert id session <$> readVar var >>= flip putVar var
+      Map.insert id session <$> takeVar var >>= flip putVar var
 
   delete (InMemorySessionStore var) id = do
     liftAff do
       log ("Deleting session: " <> unwrap id)
-      Map.delete id <$> readVar var >>= flip putVar var
+      Map.delete id <$> takeVar var >>= flip putVar var
 
 newInMemorySessionStore
   :: forall e session
