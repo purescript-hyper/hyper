@@ -32,7 +32,9 @@
     "purescript-http-methods": "^3.0.0",
     "purescript-indexed-monad": "^0.3.0",
     "purescript-smolder": "^7.0.0",
-    "purescript-aff": "^4.0.0"
+    "purescript-aff": "^4.0.0",
+    "purescript-random": "^3.0.0",
+    "purescript-refs": "^3.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
