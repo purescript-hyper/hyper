@@ -17,7 +17,7 @@ import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, makeVar, putVar, takeVar)
 import Control.Monad.Aff.Class (class MonadAff, liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Exception (EXCEPTION, catchException, error)
+import Control.Monad.Eff.Exception (EXCEPTION, catchException)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method as Method
@@ -61,14 +61,9 @@ newtype NodeResponse m e
   = NodeResponse (Writable () e -> m Unit)
 
 writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponse m e
-writeString enc str = NodeResponse $ \w -> liftAff (makeAff (writeAsAff w))
-  where
-    writeAsAff w k = do
-      Stream.writeString w enc str (k (pure unit)) >>=
-      if _
-        then k (pure unit)
-        else k (throwError (error "Failed to write string to response"))
-      pure nonCanceler
+writeString enc str = NodeResponse $ \w ->
+  liftAff (makeAff (\k -> Stream.writeString w enc str (k (pure unit))
+                          *> pure nonCanceler))
 
 write :: forall m e. MonadAff e m => Buffer -> NodeResponse m e
 write buffer = NodeResponse $ \w ->
