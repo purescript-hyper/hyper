@@ -23,20 +23,22 @@
     "purescript-transformers": "^3.2.0",
     "purescript-node-http": "^4.0.0",
     "purescript-media-types": "^3.0.0",
-    "purescript-node-fs-aff": "^4.0.0",
+    "purescript-node-fs-aff": "^5.0.0",
     "purescript-generics-rep": "^5.0.0",
     "purescript-proxy": "^2.0.0",
     "purescript-argonaut": "^3.0.0",
     "purescript-arrays": "^4.0.1",
     "purescript-argonaut-codecs": "^3.0.0",
     "purescript-http-methods": "^3.0.0",
-    "purescript-indexed-monad": "^0.2.0",
+    "purescript-indexed-monad": "^0.3.0",
     "purescript-smolder": "^7.0.0",
-    "purescript-aff": "^3.1.0"
+    "purescript-aff": "^4.0.0",
+    "purescript-random": "^3.0.0",
+    "purescript-refs": "^3.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
-    "purescript-spec": "^0.13.0",
-    "purescript-spec-discovery": "^0.5.0"
+    "purescript-spec": "^2.0.0",
+    "purescript-spec-discovery": "^2.0.0"
   }
 }

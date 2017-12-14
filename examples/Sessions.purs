@@ -3,12 +3,13 @@ module Examples.Sessions where
 import Prelude
 import Control.IxMonad ((:*>), (:>>=))
 import Control.Monad.Aff (launchAff)
-import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Aff.Console (log)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Control.Monad.Eff.Exception (EXCEPTION)
+import Control.Monad.Eff.Random (RANDOM)
+import Control.Monad.Eff.Ref (REF)
 import Data.Maybe (Maybe(..))
 import Data.MediaType.Common (textHTML)
 import Hyper.Cookies (cookies)
@@ -23,9 +24,9 @@ import Node.HTTP (HTTP)
 
 newtype MySession = MySession { userId :: Int }
 
-main :: forall e. Eff (exception :: EXCEPTION, avar :: AVAR, console :: CONSOLE, http :: HTTP | e) Unit
+main :: forall e. Eff (exception :: EXCEPTION, ref :: REF, console :: CONSOLE, http :: HTTP, random ::RANDOM | e) Unit
 main = void $ launchAff do
-  store <- newInMemorySessionStore
+  store <- liftEff newInMemorySessionStore
   liftEff (runServer defaultOptionsWithLogging (components store) app)
   where
     components store =
