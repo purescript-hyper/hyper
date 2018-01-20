@@ -36,6 +36,7 @@ instance sessionStoreInMemorySessionStore :: ( Monad m
     liftEff do
       log ("Saving session: " <> unwrap id)
       modifyRef var $ Map.insert id session
+      pure id
 
   delete (InMemorySessionStore var) id = do
     liftEff do
