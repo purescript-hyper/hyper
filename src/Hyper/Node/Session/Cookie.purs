@@ -26,8 +26,8 @@ mkSecret = do
   cipherKey <- liftEff randString
   pure $ { hmacKey, cipherKey }
 
-newtype CookieStore = CookieStore Key
-derive instance newtypeCookieStore :: Newtype CookieStore _
+newtype CookieStore session = CookieStore Key
+derive instance newtypeCookieStore :: Newtype (CookieStore session) _
 
 encrypt :: forall e m. MonadEff (crypto :: CRYPTO, buffer :: BUFFER | e) m => Key -> String -> m String
 encrypt { cipherKey, hmacKey } text = do
@@ -53,7 +53,7 @@ instance sessionStoreCookieStore ::
   , Monad m
   , MonadEff (buffer :: BUFFER, crypto :: CRYPTO | e) m
   ) =>
-  SessionStore CookieStore m session where
+  SessionStore (CookieStore session) m session where
   newSessionID _ = pure $ SessionID "new-id"
   get store id = do
     text <- decrypt (unwrap store) $ unwrap id
