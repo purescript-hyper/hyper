@@ -11,16 +11,16 @@ module Hyper.Session
        ) where
 
 import Prelude
-import Data.NonEmpty as NonEmpty
-import Data.StrMap as StrMap
-import Hyper.Cookies as Cookies
 import Control.IxMonad (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
+import Data.NonEmpty as NonEmpty
 import Data.StrMap (StrMap)
+import Data.StrMap as StrMap
 import Hyper.Conn (Conn)
 import Hyper.Cookies (setCookie)
+import Hyper.Cookies as Cookies
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response, HeadersOpen)
@@ -34,7 +34,7 @@ derive instance newtypeSessionID :: Newtype SessionID _
 class SessionStore store m session | store -> m, store -> session where
   newSessionID :: store -> m SessionID
   get :: store -> SessionID -> m (Maybe session)
-  put :: store -> SessionID -> session -> m Unit
+  put :: store -> SessionID -> session -> m SessionID
   delete :: store -> SessionID -> m Unit
 
 type Sessions s = { key :: String, store :: s }
@@ -125,8 +125,8 @@ saveSession session = do
         | unwrap id' /= "" -> ipure id'
         | otherwise -> lift' (newSessionID conn.components.sessions.store)
       Nothing -> lift' (newSessionID conn.components.sessions.store)
-  lift' (put conn.components.sessions.store sessionId session)
-  setCookie conn.components.sessions.key (unwrap sessionId)
+  sessionId' <- lift' (put conn.components.sessions.store sessionId session)
+  setCookie conn.components.sessions.key (unwrap sessionId')
   where
     bind = ibind
 
@@ -148,6 +148,6 @@ deleteSession
      Unit
 deleteSession = do
   conn <- getConn
-  _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID
+  _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) =<< currentSessionID
   -- TODO: Better delete?
   setCookie conn.components.sessions.key ""
