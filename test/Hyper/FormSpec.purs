@@ -1,6 +1,7 @@
 module Hyper.FormSpec where
 
 import Prelude
+
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff.Exception (error)
 import Control.Monad.Error.Class (throwError)
@@ -10,6 +11,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.StrMap (singleton)
 import Data.Tuple (Tuple(Tuple), fst)
 import Hyper.Form (Form(Form), parseForm)
+import Hyper.Form.Urlencoded (defaultOptions) as Urlencoded
 import Hyper.Middleware (runMiddleware)
 import Hyper.Test.TestServer (TestRequest(TestRequest))
 import Test.Spec (Spec, it, describe)
@@ -59,7 +61,7 @@ spec =
   where
     runParseForm body contentType =
       runMiddleware
-      parseForm
+      (parseForm Urlencoded.defaultOptions)
       { request: TestRequest { method: Left GET
                              , body: body
                              , url: ""

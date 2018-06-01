@@ -3,16 +3,11 @@ module Hyper.Form
        , optional
        , required
        , parseForm
-       , fromForm
-       , toForm
-       , class FromForm
-       , class ToForm
-       , parseFromForm
        ) where
 
 import Prelude
-import Data.Tuple as Tuple
-import Control.IxMonad (ibind, ipure, (:>>=))
+
+import Control.IxMonad (ibind, ipure)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
 import Data.Either (Either(..))
@@ -25,7 +20,9 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.StrMap (lookup)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple)
+import Data.Tuple as Tuple
 import Hyper.Conn (Conn)
+import Hyper.Form.Urlencoded (Options) as Urlencoded
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
@@ -64,12 +61,13 @@ parseForm ∷ forall m req res c
   .  Monad m
   => Request req m
   => ReadableBody req m String
-  => Middleware
+  => Urlencoded.Options
+  -> Middleware
       m
       (Conn req res c)
       (Conn req res c)
       (Either String Form)
-parseForm = do
+parseForm opts = do
   conn <- getConn
   { headers } <- getRequestData
   body <- readBody
@@ -77,32 +75,8 @@ parseForm = do
     Nothing ->
       ipure (Left "Missing or invalid content-type header.")
     Just mediaType | mediaType == applicationFormURLEncoded ->
-      ipure (Form <$> parseUrlencoded body)
+      ipure (Form <$> parseUrlencoded opts body)
     Just mediaType ->
       ipure (Left ("Cannot parse media of type: " <> show mediaType))
   where bind = ibind
 
-
-class ToForm a where
-  toForm ∷ a → Form
-
-
-class FromForm a where
-  fromForm ∷ Form → Either String a
-
-
-parseFromForm ∷ forall m req res c a
-  .  Monad m
-  => Request req m
-  => ReadableBody req m String
-  => FromForm a
-  => Middleware
-     m
-     (Conn req res c)
-     (Conn req res c)
-     (Either String a)
-parseFromForm =
-  parseForm :>>=
-  case _ of
-    Left err -> ipure (Left err)
-    Right form -> ipure (fromForm form)
