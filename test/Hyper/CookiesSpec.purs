@@ -1,15 +1,17 @@
 module Hyper.CookiesSpec where
 
 import Prelude
-import Data.Set as Set
-import Data.StrMap as StrMap
+
 import Control.Alternative (empty)
 import Data.Array ((:))
 import Data.Either (Either(..), either, isLeft)
+import Data.JSDate (jsdate)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (fromNonEmpty, (:|))
+import Data.Set as Set
+import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
-import Hyper.Cookies (cookies, setCookie)
+import Hyper.Cookies (SameSite(..), cookies, defaultCookieAttributes, maxAge, setCookie)
 import Hyper.Middleware (evalMiddleware)
 import Hyper.Test.TestServer (TestRequest(..), TestResponse(..), defaultRequest, testHeaders, testServer)
 import Node.Buffer (BUFFER)
@@ -71,16 +73,50 @@ spec = do
                     , response: TestResponse Nothing [] []
                     , components: {}
                     }
-                    # evalMiddleware (setCookie "foo" "bar")
+                    # evalMiddleware (setCookie "foo" "bar" defaultCookieAttributes)
                     # testServer
         testHeaders response `shouldEqual` [Tuple "Set-Cookie" "foo=bar"]
+
+      it "sets cookie with attributes" do
+        let
+          expires =
+            jsdate
+              { year : 2017.0
+              , month : 7.0
+              , day : 4.0
+              , hour : 0.0
+              , minute : 40.0
+              , second : 0.0
+              , millisecond : 0.0
+              }
+          attrs =
+            { comment: Just "comment"
+            , domain: Just "localhost"
+            , expires: Just expires
+            , httpOnly : true
+            , maxAge: maxAge 3600
+            , path : Just "/path"
+            , sameSite : Just Strict
+            , secure : true
+            }
+        response <- { request: TestRequest defaultRequest
+                    , response: TestResponse Nothing [] []
+                    , components: {}
+                    }
+                    # evalMiddleware (setCookie "foo" "bar" attrs)
+                    # testServer
+        (shouldEqual
+          (testHeaders response)
+          [(Tuple
+            "Set-Cookie"
+            "foo=bar;HttpOnly;Secure;Comment=comment;Expires=Fri, 04 Aug 2017 00:40:00 GMT;Max-Age=3600;Domain=localhost;Path=/path;SameSite=Strict")])
 
       it "URL encodes cookie key" do
         response <- { request: TestRequest defaultRequest
                     , response: TestResponse Nothing [] []
                     , components: {}
                     }
-                    # evalMiddleware (setCookie "&stuff!we like" "bar")
+                    # evalMiddleware (setCookie "&stuff!we like" "bar" defaultCookieAttributes)
                     # testServer
         testHeaders response `shouldEqual` [Tuple "Set-Cookie" "%26stuff!we%20like=bar"]
 
@@ -89,7 +125,7 @@ spec = do
                     , response: TestResponse Nothing [] []
                     , components: {}
                     }
-                    # evalMiddleware (setCookie "yeah" "=& ?%")
+                    # evalMiddleware (setCookie "yeah" "=& ?%" defaultCookieAttributes)
                     # testServer
         testHeaders response `shouldEqual` [Tuple "Set-Cookie" "yeah=%3D%26%20%3F%25"]
 
