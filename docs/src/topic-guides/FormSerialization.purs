@@ -1,7 +1,7 @@
 module FormSerialization where
 
 import Prelude
-import Data.Int as Int
+
 import Control.IxMonad ((:>>=), (:*>))
 import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
@@ -13,9 +13,11 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (Method(..))
+import Data.Int as Int
 import Data.Maybe (maybe)
 import Hyper.Conn (Conn)
-import Hyper.Form (class FromForm, parseFromForm, required)
+import Hyper.Form (Form(..), parseForm, required)
+import Hyper.Form.Urlencoded (defaultOptions)
 import Hyper.Middleware (Middleware)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, class Request, getRequestData)
@@ -35,25 +37,25 @@ newtype Order = Order { beers :: Int, meal :: MealType }
 -- end snippet datatypes
 
 -- start snippet parsing
-instance fromFormOrder :: FromForm Order where
-  fromForm form = do
-    beers <- required "beers" form >>= parseBeers
-    meal <- required "meal" form >>= parseMealType
-    pure (Order { beers: beers, meal: meal })
-    where
-      parseBeers s =
-        maybe
-        (throwError ("Invalid number: " <> s))
-        pure
-        (Int.fromString s)
+parseOrder :: Form -> Either String Order
+parseOrder form = do
+  beers <- required "beers" form >>= parseBeers
+  meal <- required "meal" form >>= parseMealType
+  pure (Order { beers: beers, meal: meal })
+  where
+    parseBeers s =
+      maybe
+      (throwError ("Invalid number: " <> s))
+      pure
+      (Int.fromString s)
 
-      parseMealType =
-        case _ of
-          "Vegan" -> pure Vegan
-          "Vegetarian" -> pure Vegetarian
-          "Omnivore" -> pure Omnivore
-          "Carnivore" -> pure Carnivore
-          s -> throwError ("Invalid meal type: " <> s)
+    parseMealType =
+      case _ of
+        "Vegan" -> pure Vegan
+        "Vegetarian" -> pure Vegetarian
+        "Omnivore" -> pure Omnivore
+        "Carnivore" -> pure Carnivore
+        s -> throwError ("Invalid meal type: " <> s)
 -- end snippet parsing
 
 onPost
@@ -63,7 +65,6 @@ onPost
   => ReadableBody req m String
   => Response res m b
   => ResponseWritable b m String
-  => FromForm Order
   => Middleware
      m
      (Conn req (res StatusLineOpen) c)
@@ -71,8 +72,8 @@ onPost
      Unit
 -- start snippet onPost
 onPost =
-  parseFromForm :>>=
-  case _ of
+  parseForm defaultOptions :>>=
+  (_ >>= parseOrder) >>> case _ of
     Left err ->
       writeStatus statusBadRequest
       :*> closeHeaders

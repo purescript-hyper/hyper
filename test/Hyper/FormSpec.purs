@@ -28,11 +28,11 @@ spec :: forall e. Spec e Unit
 spec =
   describe "Hyper.Form" do
     it "parses key without value" do
-      form <- runParseForm "foo" Nothing
+      form <- runParseForm "foo" id
       form `shouldEqual` (Form [Tuple "foo" Nothing])
 
     it "parses multiple keys without values" do
-      form <- runParseForm "foo&foo&bar&foo" Nothing
+      form <- runParseForm "foo&foo&bar&foo" id
       form `shouldEqual` (Form [ Tuple "foo" Nothing
                                , Tuple "foo" Nothing
                                , Tuple "bar" Nothing
@@ -40,15 +40,19 @@ spec =
                                ])
 
     it "parses key and value" do
-      form <- runParseForm "foo=bar" Nothing
+      form <- runParseForm "foo=bar" id
       form `shouldEqual` (Form [Tuple "foo" (Just "bar")])
 
     it "handles percent-encoding" do
-      form <- runParseForm "foo=%62%61%72" Nothing
+      form <- runParseForm "foo=%62%61%72" id
       form `shouldEqual` (Form [Tuple "foo" (Just "bar")])
 
+    it "handles plus replacing" do
+      form <- runParseForm "foo=b+r" _{ replacePlus = true }
+      form `shouldEqual` (Form [Tuple "foo" (Just "b r")])
+
     it "parses multiple keys and values" do
-      form <- runParseForm "foo=bar&baz=quux&a=1&b=2" Nothing
+      form <- runParseForm "foo=bar&baz=quux&a=1&b=2" id
       form `shouldEqual` (Form [ Tuple "foo" (Just "bar")
                                , Tuple "baz" (Just "quux")
                                , Tuple "a" (Just "1")
@@ -56,12 +60,12 @@ spec =
                                ])
 
     it "fails to parse request body as a form when invalid" $ expectError $
-      runParseForm "foo=bar=baz" Nothing
+      runParseForm "foo=bar=baz" id
 
   where
-    runParseForm body contentType =
+    runParseForm body opts =
       runMiddleware
-      (parseForm Urlencoded.defaultOptions)
+      (parseForm Urlencoded.defaultOptions { replacePlus = replacePlus })
       { request: TestRequest { method: Left GET
                              , body: body
                              , url: ""
@@ -76,3 +80,5 @@ spec =
       }
       # map fst
       >>= liftEither
+      where
+      { replacePlus, contentType } = opts { contentType: Nothing, replacePlus: false }
