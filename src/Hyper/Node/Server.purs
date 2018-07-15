@@ -28,6 +28,7 @@ import Data.Newtype (unwrap)
 import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
 import Hyper.Conn (Conn)
+import Hyper.Form.Urlencoded (Options) as Urlencoded
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Node.Server.Options (Options)
@@ -210,14 +211,14 @@ instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
       :*> modifyConn (_ { response = HttpResponse r })
 
 
-mkHttpRequest :: HTTP.Request -> HttpRequest
-mkHttpRequest request =
+mkHttpRequest :: Urlencoded.Options -> HTTP.Request -> HttpRequest
+mkHttpRequest opts request =
   HttpRequest request requestData
   where
     headers = HTTP.requestHeaders request
     requestData =
       { url: HTTP.requestURL request
-      , parsedUrl: defer \_ -> parseUrl (HTTP.requestURL request)
+      , parsedUrl: defer \_ -> parseUrl opts (HTTP.requestURL request)
       , headers: headers
       , method: Method.fromString (HTTP.requestMethod request)
       , contentLength: StrMap.lookup "content-length" headers
@@ -247,7 +248,7 @@ runServer' options components runM middleware = do
   where
     onRequest ∷ HTTP.Request → HTTP.Response → Eff (http :: HTTP | e) Unit
     onRequest request response =
-      let conn = { request: mkHttpRequest request
+      let conn = { request: mkHttpRequest {replacePlus: options.replacePlus} request
                  , response: HttpResponse response
                  , components: components
                  }

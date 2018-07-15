@@ -24,6 +24,7 @@ type Options e =
   , port :: Port
   , onListening :: Hostname -> Port -> Eff (http :: HTTP | e) Unit
   , onRequestError :: Error -> Eff (http :: HTTP | e) Unit
+  , replacePlus :: Boolean
   }
 
 
@@ -33,6 +34,7 @@ defaultOptions =
   , port: Port 3000
   , onListening: const (const (pure unit))
   , onRequestError: const (pure unit)
+  , replacePlus: true
   }
 
 

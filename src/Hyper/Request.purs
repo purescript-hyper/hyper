@@ -12,16 +12,18 @@ module Hyper.Request
   ) where
 
 import Prelude
+
 import Data.Array as Array
-import Data.String as String
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Lazy (Lazy)
 import Data.Maybe (Maybe, fromMaybe)
 import Data.StrMap (StrMap)
+import Data.String as String
 import Data.Tuple (Tuple)
 import Hyper.Conn (Conn)
+import Hyper.Form.Urlencoded (Options) as Urlencoded
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 
@@ -38,14 +40,14 @@ type ParsedUrl =
   , query :: Either String (Array (Tuple String (Maybe String)))
   }
 
-parseUrl :: String -> ParsedUrl
-parseUrl url =
+parseUrl :: Urlencoded.Options -> String -> ParsedUrl
+parseUrl opts url =
   let
     idx = fromMaybe (String.length url) $ String.indexOf (String.Pattern "?") url
     rawPath = String.take idx url
     rawQuery = String.drop (idx + 1) url
     path = Array.filter (_ /= "") $ String.split (String.Pattern "/") rawPath
-    query = lmap (const rawQuery) $ parseUrlencoded rawQuery
+    query = lmap (const rawQuery) $ parseUrlencoded opts rawQuery
   in
     {path, query}
 

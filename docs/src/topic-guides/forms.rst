@@ -1,11 +1,13 @@
 *****
-Forms
+Parsing incomming data
 *****
 
-When working with form data, we often want to serialize and deserialize
-forms as custom data types, instead of working with the key-value pairs
-directly. The ``ToForm`` and ``FromForm`` type classes abstracts
-serialization and deserialization to form data, respectively.
+Hyper doesn't provide any built in validation framework, but it makes
+it quite easy for you to do the job by providing simple data type `Hyper.Form.Form`
+which represent incomming `GET` or `POST` data. There is also some plumbing
+implemented for parsing incomming urlencoded data into `Form` value.
+
+Let's look at simple example in which we are going to do some simple validation of incoming data.
 
 We first declare our data types, and some instance which we will need
 later.
@@ -15,18 +17,19 @@ later.
    :start-after: start snippet datatypes
    :end-before: end snippet datatypes
 
-In this example we will only deserialize forms, and thus we only need
-the ``FromForm`` instance.
+In this example we use really simple approach to validation which only reports first encountered
+error:
 
 .. literalinclude:: FormSerialization.purs
    :language: haskell
    :start-after: start snippet parsing
    :end-before: end snippet parsing
 
-Now we are ready to write our handler. We use ``parseFromForm`` to get a
-value of type ``Either String Order``, where the ``String`` explains
-parsing errors. By pattern matching using record field puns, we extract
-the ``beers`` and ``meal`` values, and respond based on those values.
+Now we are ready to write our handler. We use ``parseOrder`` to get a
+value of type ``Either String Order`` from ``Either String Form``,
+where the ``String`` explains parsing errors. By pattern matching using
+record field puns, we extract the ``beers`` and ``meal`` values, and respond
+based on those values.
 
 .. literalinclude:: FormSerialization.purs
    :language: haskell

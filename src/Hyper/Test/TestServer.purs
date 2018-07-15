@@ -1,7 +1,5 @@
 module Hyper.Test.TestServer where
 
-import Data.String as String
-import Data.StrMap as StrMap
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
 import Control.IxMonad (ipure, (:*>), (:>>=))
@@ -19,7 +17,10 @@ import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
 import Data.StrMap (StrMap)
+import Data.StrMap as StrMap
+import Data.String as String
 import Hyper.Conn (Conn)
+import Hyper.Form.Urlencoded (defaultOptions) as Urlencoded
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
@@ -56,7 +57,7 @@ instance requestTestRequest :: Monad m => Request TestRequest m where
   getRequestData =
     getConn :>>= \{ request: TestRequest r } ->
     ipure { url: r.url
-          , parsedUrl: defer \_ -> parseUrl r.url
+          , parsedUrl: defer \_ -> parseUrl Urlencoded.defaultOptions r.url
           , contentLength: Just (String.length r.body)
           , method: r.method
           , headers: r.headers
