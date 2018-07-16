@@ -1,22 +1,26 @@
 module Hyper.Status where
 
+import Prelude
+
 import Data.Eq (class Eq)
-import Data.Generic (class Generic, gCompare, gEq, gShow)
-import Data.Newtype (class Newtype)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Ord (class Ord)
 import Data.Show (class Show)
+import Record.Extra (compareRecord)
 
 newtype Status = Status { code :: Int, reasonPhrase :: String }
 
 status :: Int -> String -> Status
 status code reasonPhrase = Status { code: code, reasonPhrase: reasonPhrase }
 
-derive instance genericStatus :: Generic Status
 derive instance newtypeStatus :: Newtype Status _
-
-instance eqStatus :: Eq Status where eq = gEq
-instance ordStatus :: Ord Status where compare = gCompare
-instance showStatus :: Show Status where show = gShow
+derive instance genericStatus :: Generic Status _
+derive newtype instance eqStatus :: Eq Status
+instance ordStatus :: Ord Status where
+  compare s1 s2 = compareRecord (unwrap s1) (unwrap s2)
+instance showStatus :: Show Status where show = genericShow
 
 statusOK :: Status
 statusOK = status 200 "OK"

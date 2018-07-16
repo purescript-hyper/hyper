@@ -23,12 +23,12 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty (NonEmpty(NonEmpty), (:|))
 import Data.NonEmpty as NonEmpty
-import Data.StrMap (StrMap)
-import Data.StrMap as StrMap
 import Data.String (Pattern(..), joinWith, split, trim)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..), uncurry)
-import Global (encodeURIComponent, decodeURIComponent)
+import Foreign.Object (Object)
+import Foreign.Object as Object
+import Global.Unsafe (unsafeEncodeURIComponent, unsafeDecodeURIComponent)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
@@ -43,7 +43,7 @@ toPair :: Array String -> Either String (Tuple String (Array String))
 toPair kv =
   case kv of
     [key, value] ->
-      pure (Tuple (decodeURIComponent key) [decodeURIComponent value])
+      pure (Tuple (unsafeDecodeURIComponent key) [unsafeDecodeURIComponent value])
     parts ->
       throwError ("Invalid cookie-pair: " <> joinWith " " parts)
 
@@ -56,11 +56,11 @@ splitPairs =
   >>> map toPair
   >>> sequence
 
-parseCookies :: String -> Either String (StrMap Values)
+parseCookies :: String -> Either String (Object Values)
 parseCookies s =
   splitPairs s
   # map (foldMap toCookieMap)
-  # map (StrMap.fromFoldableWith combineCookies)
+  # map (Object.fromFoldableWith combineCookies)
   where
     toCookieMap (Tuple name values) =
       case uncons values of
@@ -76,12 +76,12 @@ cookies :: forall m req res c
   => Middleware
      m
      (Conn req res { cookies :: Unit | c})
-     (Conn req res { cookies :: Either String (StrMap Values) | c})
+     (Conn req res { cookies :: Either String (Object Values) | c})
      Unit
 cookies = do
   conn <- getConn
   { headers } <- getRequestData
-  let cookies' = maybe (pure StrMap.empty) parseCookies (StrMap.lookup "cookie" headers)
+  let cookies' = maybe (pure Object.empty) parseCookies (Object.lookup "cookie" headers)
   putConn conn { components { cookies = cookies' }}
   where bind = ibind
 
@@ -118,7 +118,7 @@ defaultCookieAttributes =
 
 setCookieHeaderValue :: Name -> Value -> CookieAttributes -> String
 setCookieHeaderValue key value { comment, expires, path, maxAge: m, domain, secure, httpOnly, sameSite } =
-  [ (Tuple "Comment" <<< encodeURIComponent) <$> comment
+  [ (Tuple "Comment" <<< unsafeEncodeURIComponent) <$> comment
   , (Tuple "Expires" <<< toUTCString) <$> expires
   , (Tuple "Max-Age" <<< show <<< unwrap) <$> m
   , Tuple "Domain" <$> domain
@@ -129,7 +129,7 @@ setCookieHeaderValue key value { comment, expires, path, maxAge: m, domain, secu
   # cons (if secure then Just "Secure" else Nothing)
   # cons (if httpOnly then Just "HttpOnly" else Nothing)
   # catMaybes
-  # cons (assigment (encodeURIComponent key)  (encodeURIComponent value))
+  # cons (assigment (unsafeEncodeURIComponent key)  (unsafeEncodeURIComponent value))
   # joinWith ";"
  where
   assigment k v = k <> "=" <> v

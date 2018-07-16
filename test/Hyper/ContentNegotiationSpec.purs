@@ -13,7 +13,7 @@ import Hyper.ContentNegotiation (AcceptEntry(..), AcceptHeader(..), AcceptParams
 import Test.Spec (Spec, describe, it, pending)
 import Test.Spec.Assertions (shouldEqual)
 
-spec :: forall e. Spec e Unit
+spec :: Spec Unit
 spec = do
   describe "Hyper.ContentNegotiation" do
     describe "parseAcceptHeader" $

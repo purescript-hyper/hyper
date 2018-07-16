@@ -2,37 +2,36 @@ module Hyper.Node.Assertions where
 
 import Prelude
 import Node.Buffer as Buffer
-import Control.Monad.Aff (Aff)
-import Control.Monad.Eff.Class (liftEff)
+import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Hyper.Node.Test (TestResponseBody(TestResponseBody))
 import Hyper.Test.TestServer (TestResponse, testBody)
-import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(UTF8))
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.String (shouldContain)
 
 assertBody
   :: forall e state
-   . (String -> String -> Aff (buffer :: BUFFER | e) Unit)
+   . (String -> String -> Aff Unit)
   -> TestResponse TestResponseBody state
   -> String
-  -> Aff (buffer :: BUFFER | e) Unit
+  -> Aff Unit
 assertBody assertion response expected =
   case testBody response of
     TestResponseBody chunks -> do
-      body <- liftEff (Buffer.concat chunks >>= Buffer.toString UTF8)
+      body <- liftEffect (Buffer.concat chunks >>= Buffer.toString UTF8)
       body `assertion` expected
 
 bodyShouldEqual
-  :: forall e state
+  :: forall state
    . TestResponse TestResponseBody state
   -> String
-  -> Aff (buffer :: BUFFER | e) Unit
+  -> Aff Unit
 bodyShouldEqual = assertBody shouldEqual
 
 bodyShouldContain
-  :: forall e state
+  :: forall state
    . TestResponse TestResponseBody state
   -> String
-  -> Aff (buffer :: BUFFER | e) Unit
+  -> Aff Unit
 bodyShouldContain = assertBody shouldContain

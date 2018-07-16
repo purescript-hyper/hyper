@@ -17,16 +17,18 @@ module Hyper.ContentNegotiation
        ) where
 
 import Prelude
-import Data.Array as Array
-import Data.Int as Int
-import Data.List as List
-import Data.Map as Map
+
 import Control.Monad.Error.Class (throwError)
 import Data.Array (uncons)
+import Data.Array as Array
 import Data.Either (Either)
-import Data.Generic (class Generic, gShow)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
+import Data.Int as Int
+import Data.List as List
 import Data.List.NonEmpty (NonEmptyList, toList, head)
 import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.MediaType (MediaType(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -39,15 +41,15 @@ data MediaRangeType
   | Wildcard
 
 derive instance eqMediaRangeType :: Eq MediaRangeType
-derive instance genericMediaRangeType :: Generic MediaRangeType
-instance showMediaRangeType :: Show MediaRangeType where show = gShow
+derive instance genericMediaRangeType :: Generic MediaRangeType _
+instance showMediaRangeType :: Show MediaRangeType where show = genericShow
 
 -- TODO: Support for parameters
 data MediaRange = MediaRange MediaRangeType MediaRangeType
 
 derive instance eqMediaRange :: Eq MediaRange
-derive instance genericMediaRange :: Generic MediaRange
-instance showMediaRange :: Show MediaRange where show = gShow
+derive instance genericMediaRange :: Generic MediaRange _
+instance showMediaRange :: Show MediaRange where show = genericShow
 
 -- TODO: Add support for accept-extension
 type Q = Number

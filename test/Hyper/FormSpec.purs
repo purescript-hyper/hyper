@@ -1,14 +1,14 @@
 module Hyper.FormSpec where
 
 import Prelude
-import Control.Monad.Aff (Aff)
-import Control.Monad.Eff.Exception (error)
+import Effect.Aff (Aff)
+import Effect.Exception (error)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.StrMap (singleton)
 import Data.Tuple (Tuple(Tuple), fst)
+import Foreign.Object (singleton)
 import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware (runMiddleware)
 import Hyper.Test.TestServer (TestRequest(TestRequest))
@@ -16,13 +16,13 @@ import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.Aff (expectError)
 
-liftEither ∷ ∀ e a. Either String a → Aff e a
+liftEither ∷ ∀ a. Either String a → Aff a
 liftEither e =
   case e of
     Left err → throwError (error err)
     Right x → pure x
 
-spec :: forall e. Spec e Unit
+spec :: Spec Unit
 spec =
   describe "Hyper.Form" do
     it "parses key without value" do

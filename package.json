@@ -15,5 +15,9 @@
   },
   "author": "oskar.wickstrom@gmail.com",
   "license": "MPL-2.0",
-  "homepage": "http://hyper.wickstrom.tech"
+  "homepage": "http://hyper.wickstrom.tech",
+  "dependencies": {
+    "bower-dependency-tree": "^0.1.2",
+    "pulp": "^12.3.0"
+  }
 }

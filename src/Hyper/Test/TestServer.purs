@@ -1,7 +1,6 @@
 module Hyper.Test.TestServer where
 
 import Data.String as String
-import Data.StrMap as StrMap
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
 import Control.IxMonad (ipure, (:*>), (:>>=))
@@ -18,7 +17,8 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
-import Data.StrMap (StrMap)
+import Foreign.Object as Object
+import Foreign.Object (Object)
 import Hyper.Conn (Conn)
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
@@ -33,19 +33,19 @@ newtype TestRequest
   = TestRequest { url :: String
                 , method :: Either Method CustomMethod
                 , body :: String
-                , headers :: StrMap String
+                , headers :: Object String
                 }
 
 defaultRequest :: { url :: String
                   , method :: Either Method CustomMethod
                   , body :: String
-                  , headers :: StrMap String
+                  , headers :: Object String
                   }
 defaultRequest =
   { url: ""
   , method: Left GET
   , body: ""
-  , headers: StrMap.empty
+  , headers: Object.empty
   }
 
 instance readableBodyStringBody :: Monad m

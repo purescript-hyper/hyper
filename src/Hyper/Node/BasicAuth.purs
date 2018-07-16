@@ -1,16 +1,16 @@
 module Hyper.Node.BasicAuth where
 
-import Data.StrMap as StrMap
 import Node.Buffer as Buffer
 import Control.IxMonad (ibind, ipure)
 import Control.Monad (class Monad, (>>=))
-import Control.Monad.Eff.Class (liftEff, class MonadEff)
+import Effect.Class (liftEffect, class MonadEffect)
 import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid ((<>))
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
+import Foreign.Object as Object
 import Hyper.Authentication (setAuthentication)
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
@@ -18,22 +18,21 @@ import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWritable, respond, class Response, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
 import Hyper.Status (statusUnauthorized)
-import Node.Buffer (BUFFER)
 import Node.Encoding (Encoding(ASCII, Base64))
 
 type Realm = String
 
 decodeBase64 ∷ ∀ m e c
-  .  MonadEff (buffer ∷ BUFFER | e) m
+  .  MonadEffect m
   => String
   → Middleware m c c String
 decodeBase64 encoded =
-  liftEff (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
+  liftEffect (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
 
 
 withAuthentication
   :: forall m e req res c t
-  .  MonadEff (buffer :: BUFFER | e) m
+  .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
   -> Middleware
@@ -51,7 +50,7 @@ withAuthentication mapper = do
         _ -> Nothing
     getAuth = do
       { headers } <- getRequestData
-      case StrMap.lookup "authorization" headers of
+      case Object.lookup "authorization" headers of
         Nothing -> ipure Nothing
         Just header -> do
           case split (Pattern " ") header of

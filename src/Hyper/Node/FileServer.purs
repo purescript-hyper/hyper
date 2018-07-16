@@ -3,8 +3,8 @@ module Hyper.Node.FileServer (fileServer) where
 import Prelude
 
 import Control.IxMonad (ibind, (:>>=))
-import Control.Monad.Aff.Class (liftAff, class MonadAff)
-import Control.Monad.Eff.Class (liftEff)
+import Effect.Aff.Class (liftAff, class MonadAff)
+import Effect.Class (liftEffect)
 import Data.Array (last)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (maybe)
@@ -16,9 +16,8 @@ import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
-import Node.Buffer (BUFFER, Buffer)
+import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
-import Node.FS (FS)
 import Node.FS.Aff (readFile, stat, exists)
 import Node.FS.Stats (isDirectory, isFile)
 import Node.Path (FilePath)
@@ -116,7 +115,7 @@ htaccess = fromFoldable $
 serveFile
   :: forall m e req res c b
   .  Monad m
-  => MonadAff (fs :: FS, buffer :: BUFFER | e) m
+  => MonadAff m
   => ResponseWritable b m Buffer
   => Response res m b
   => FilePath
@@ -128,9 +127,9 @@ serveFile
 serveFile path = do
   let
     ext = last $ split (Pattern ".") path
-    contentType = maybe "*/*" id (ext >>= flip lookup htaccess)
+    contentType = maybe "*/*" identity (ext >>= flip lookup htaccess)
   buf <- lift' (liftAff (readFile path))
-  contentLength <- liftEff (Buffer.size buf)
+  contentLength <- liftEffect (Buffer.size buf)
   _ <- writeStatus statusOK
   _ <- headers [ Tuple "Content-Type" (contentType <> "; charset=utf-8")
           , Tuple "Content-Length" (show contentLength)
@@ -144,7 +143,7 @@ serveFile path = do
 fileServer
   :: forall m e req res c b
   .  Monad m
-  => MonadAff (fs :: FS, buffer :: BUFFER | e) m
+  => MonadAff m
   => Request req m
   => ResponseWritable b m Buffer
   => Response res m b

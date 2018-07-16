@@ -6,11 +6,10 @@ module Hyper.Node.Server.Options
        , Port(..)
        ) where
 
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (Error)
+import Effect (Effect)
+import Effect.Console (log)
+import Effect.Exception (Error)
 import Data.Newtype (class Newtype)
-import Node.HTTP (HTTP)
 import Prelude
 
 newtype Hostname = Hostname String
@@ -19,15 +18,15 @@ derive instance newtypeHostname :: Newtype Hostname _
 newtype Port = Port Int
 derive instance newtypePort :: Newtype Port _
 
-type Options e =
+type Options =
   { hostname :: Hostname
   , port :: Port
-  , onListening :: Hostname -> Port -> Eff (http :: HTTP | e) Unit
-  , onRequestError :: Error -> Eff (http :: HTTP | e) Unit
+  , onListening :: Hostname -> Port -> Effect Unit
+  , onRequestError :: Error -> Effect Unit
   }
 
 
-defaultOptions :: forall e. Options e
+defaultOptions :: Options
 defaultOptions =
   { hostname: Hostname "0.0.0.0"
   , port: Port 3000
@@ -36,7 +35,7 @@ defaultOptions =
   }
 
 
-defaultOptionsWithLogging :: forall e. Options (console :: CONSOLE | e)
+defaultOptionsWithLogging :: Options
 defaultOptionsWithLogging =
   defaultOptions { onListening = onListening
                  , onRequestError = onRequestError

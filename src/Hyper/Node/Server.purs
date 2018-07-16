@@ -12,12 +12,12 @@ module Hyper.Node.Server
 import Prelude
 
 import Control.IxMonad (ipure, (:*>), (:>>=))
-import Control.Monad.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
-import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, makeVar, putVar, takeVar)
-import Control.Monad.Aff.Class (class MonadAff, liftAff)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Exception (EXCEPTION, catchException)
+import Effect.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
+import Effect.Aff.AVar (empty, new, put, take)
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Exception (catchException)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method as Method
@@ -25,8 +25,8 @@ import Data.Int as Int
 import Data.Lazy (defer)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
-import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
+import Foreign.Object as Object
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
@@ -35,10 +35,9 @@ import Hyper.Node.Server.Options as Hyper.Node.Server.Options
 import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, parseUrl, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
-import Node.Buffer (BUFFER, Buffer)
+import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
 import Node.Encoding (Encoding(..))
-import Node.HTTP (HTTP)
 import Node.HTTP as HTTP
 import Node.Stream (Stream, Writable)
 import Node.Stream as Stream
@@ -57,28 +56,28 @@ instance requestHttpRequest :: Monad m => Request HttpRequest m where
 
 -- A limited version of Writable () e, with which you can only write, not end,
 -- the Stream.
-newtype NodeResponse m e
-  = NodeResponse (Writable () e -> m Unit)
+newtype NodeResponse m
+  = NodeResponse (Writable () -> m Unit)
 
-writeString :: forall m e. MonadAff e m => Encoding -> String -> NodeResponse m e
+writeString :: forall e m. MonadAff m => Encoding -> String -> NodeResponse m
 writeString enc str = NodeResponse $ \w ->
   liftAff (makeAff (\k -> Stream.writeString w enc str (k (pure unit))
                           *> pure nonCanceler))
 
-write :: forall m e. MonadAff e m => Buffer -> NodeResponse m e
+write :: forall m. MonadAff m => Buffer -> NodeResponse m
 write buffer = NodeResponse $ \w ->
   liftAff (makeAff (\k -> Stream.write w buffer (k (pure unit))
                           *> pure nonCanceler))
 
-instance stringNodeResponse :: (MonadAff e m) => ResponseWritable (NodeResponse m e) m String where
+instance stringNodeResponse :: MonadAff m => ResponseWritable (NodeResponse m) m String where
   toResponse = ipure <<< writeString UTF8
 
-instance stringAndEncodingNodeResponse :: (MonadAff e m) => ResponseWritable (NodeResponse m e) m (Tuple String Encoding) where
+instance stringAndEncodingNodeResponse :: MonadAff m => ResponseWritable (NodeResponse m) m (Tuple String Encoding) where
   toResponse (Tuple body encoding) =
     ipure (writeString encoding body)
 
-instance bufferNodeResponse :: (MonadAff e m)
-                                  => ResponseWritable (NodeResponse m e) m Buffer where
+instance bufferNodeResponse :: MonadAff m
+                                  => ResponseWritable (NodeResponse m) m Buffer where
   toResponse buf =
     ipure (write buf)
 
@@ -87,15 +86,15 @@ instance bufferNodeResponse :: (MonadAff e m)
 readBodyAsBuffer
   :: forall e.
      HttpRequest
-  -> Aff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) Buffer
+  -> Aff Buffer
 readBodyAsBuffer (HttpRequest request _) = do
   let stream = HTTP.requestAsStream request
-  bodyResult <- makeEmptyVar
-  chunks <- makeVar []
-  fillResult <- liftEff $
+  bodyResult <- empty
+  chunks <- new []
+  fillResult <- liftEffect $
     catchException (pure <<< Left) (Right <$> fillBody stream chunks bodyResult)
   -- Await the body, or an error.
-  body <- takeVar bodyResult
+  body <- take bodyResult
   -- Return the body, if neither `fillResult` nor `body` is a `Left`.
   either throwError pure (fillResult *> body)
   where
@@ -103,37 +102,37 @@ readBodyAsBuffer (HttpRequest request _) = do
       -- Append all chunks to the body buffer.
       Stream.onData stream \chunk ->
         let modification = do
-              v <- takeVar chunks
-              putVar (v <> [chunk]) chunks
+              v <- take chunks
+              put (v <> [chunk]) chunks
         in void (launchAff modification)
       -- Complete with `Left` on error.
       Stream.onError stream $
-        launchAff_ <<< flip putVar bodyResult <<< Left
+        launchAff_ <<< flip put bodyResult <<< Left
       -- Complete with `Right` on successful "end" event.
       Stream.onEnd stream $ void $ launchAff $
-        takeVar chunks
+        take chunks
         >>= concat'
         >>= (pure <<< Right)
-        >>= flip putVar bodyResult
-    concat' = liftEff <<< Buffer.concat
+        >>= flip put bodyResult
+    concat' = liftEffect <<< Buffer.concat
 
-instance readableBodyHttpRequestString :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)
+instance readableBodyHttpRequestString :: (Monad m, MonadAff m)
                                        => ReadableBody HttpRequest m String where
   readBody =
-    readBody :>>= (liftEff <<< Buffer.toString UTF8)
+    readBody :>>= (liftEffect <<< Buffer.toString UTF8)
 
-instance readableBodyHttpRequestBuffer :: (Monad m, MonadAff (http :: HTTP, avar :: AVAR, buffer :: BUFFER | e) m)
+instance readableBodyHttpRequestBuffer :: (Monad m, MonadAff m)
                                        => ReadableBody HttpRequest m Buffer where
   readBody =
     _.request <$> getConn :>>=
     case _ of
       r -> liftAff (readBodyAsBuffer r)
 
-instance streamableBodyHttpRequestReadable :: MonadAff (http :: HTTP | e) m
+instance streamableBodyHttpRequestReadable :: MonadAff m
                                            => StreamableBody
                                               HttpRequest
                                               m
-                                              (Stream (read :: Stream.Read) (http :: HTTP, exception :: EXCEPTION | e)) where
+                                              (Stream (read :: Stream.Read)) where
   streamBody =
     _.request <$> getConn :>>=
     case _ of
@@ -142,49 +141,49 @@ instance streamableBodyHttpRequestReadable :: MonadAff (http :: HTTP | e) m
 -- TODO: Make a newtype
 data HttpResponse state = HttpResponse HTTP.Response
 
-getWriter ∷ ∀ req res c m rw.
-            Monad m ⇒
+getWriter :: forall req res c m rw.
+            Monad m =>
             Middleware
             m
-            (Conn req { writer ∷ rw | res } c)
-            (Conn req { writer ∷ rw | res } c)
+            (Conn req { writer :: rw | res } c)
+            (Conn req { writer :: rw | res } c)
             rw
 getWriter = _.response.writer <$> getConn
 
-setStatus ∷ ∀ req res c m e.
-            MonadEff (http ∷ HTTP | e) m
-          ⇒ Status
-          → HTTP.Response
-          → Middleware m (Conn req res c) (Conn req res c) Unit
-setStatus (Status { code, reasonPhrase }) r = liftEff do
+setStatus :: forall req res c m e.
+            MonadEffect m
+          => Status
+          -> HTTP.Response
+          -> Middleware m (Conn req res c) (Conn req res c) Unit
+setStatus (Status { code, reasonPhrase }) r = liftEffect do
   HTTP.setStatusCode r code
   HTTP.setStatusMessage r reasonPhrase
 
-writeHeader' ∷ ∀ req res c m e.
-               MonadEff (http ∷ HTTP | e) m
-             ⇒ (Tuple String String)
-             → HTTP.Response
-             → Middleware m (Conn req res c) (Conn req res c) Unit
+writeHeader' :: forall req res c m e.
+               MonadEffect m
+             => (Tuple String String)
+             -> HTTP.Response
+             -> Middleware m (Conn req res c) (Conn req res c) Unit
 writeHeader' (Tuple name value) r =
-  liftEff $ HTTP.setHeader r name value
+  liftEffect $ HTTP.setHeader r name value
 
-writeResponse ∷ ∀ req res c m e.
-                MonadAff (http ∷ HTTP | e) m
-             ⇒ HTTP.Response
-             → NodeResponse m (http :: HTTP | e)
-             → Middleware m (Conn req res c) (Conn req res c) Unit
+writeResponse :: forall req res c m.
+                MonadAff m
+             => HTTP.Response
+             -> NodeResponse m
+             -> Middleware m (Conn req res c) (Conn req res c) Unit
 writeResponse r (NodeResponse f) =
   lift' (f (HTTP.responseAsStream r))
 
-endResponse ∷ ∀ req res c m e.
-              MonadEff (http ∷ HTTP | e) m
-            ⇒ HTTP.Response
-            → Middleware m (Conn req res c) (Conn req res c) Unit
+endResponse :: forall req res c m e.
+              MonadEffect m
+            => HTTP.Response
+            -> Middleware m (Conn req res c) (Conn req res c) Unit
 endResponse r =
-  liftEff (Stream.end (HTTP.responseAsStream r) (pure unit))
+  liftEffect (Stream.end (HTTP.responseAsStream r) (pure unit))
 
-instance responseWriterHttpResponse :: MonadAff (http ∷ HTTP | e) m
-                                    => Response HttpResponse m (NodeResponse m (http :: HTTP | e)) where
+instance responseWriterHttpResponse :: MonadAff m
+                                    => Response HttpResponse m (NodeResponse m) where
   writeStatus status =
     getConn :>>= \{ response: HttpResponse r } ->
       setStatus status r
@@ -220,23 +219,23 @@ mkHttpRequest request =
       , parsedUrl: defer \_ -> parseUrl (HTTP.requestURL request)
       , headers: headers
       , method: Method.fromString (HTTP.requestMethod request)
-      , contentLength: StrMap.lookup "content-length" headers
+      , contentLength: Object.lookup "content-length" headers
                       >>= Int.fromString
       }
 
 
 runServer'
-  :: forall m e c c'
+  :: forall m c c'
    . Functor m
-  => Options e
+  => Options
   -> c
-  -> (forall a. m a -> Aff (http :: HTTP | e) a)
+  -> (forall a. m a -> Aff a)
   -> Middleware
      m
      (Conn HttpRequest (HttpResponse StatusLineOpen) c)
      (Conn HttpRequest (HttpResponse ResponseEnded) c')
      Unit
-  -> Eff (http :: HTTP | e) Unit
+  -> Effect Unit
 runServer' options components runM middleware = do
   server <- HTTP.createServer onRequest
   let listenOptions = { port: unwrap options.port
@@ -245,7 +244,7 @@ runServer' options components runM middleware = do
                       }
   HTTP.listen server listenOptions (options.onListening options.hostname options.port)
   where
-    onRequest ∷ HTTP.Request → HTTP.Response → Eff (http :: HTTP | e) Unit
+    onRequest :: HTTP.Request -> HTTP.Response -> Effect Unit
     onRequest request response =
       let conn = { request: mkHttpRequest request
                  , response: HttpResponse response
@@ -260,15 +259,15 @@ runServer' options components runM middleware = do
          # runM
          # runAff_ callback
 
-runServer
-  :: forall e c c'.
-     Options e
-  -> c
-  -> Middleware
-     (Aff (http :: HTTP | e))
-     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
-     (Conn HttpRequest (HttpResponse ResponseEnded) c')
-     Unit
-  -> Eff (http :: HTTP | e) Unit
+-- runServer
+--   :: forall e c c'.
+--      Options e
+--   -> c
+--   -> Middleware
+--      Aff
+--      (Conn HttpRequest (HttpResponse StatusLineOpen) c)
+--      (Conn HttpRequest (HttpResponse ResponseEnded) c')
+--      Unit
+--   -> Effect Unit
 runServer options components middleware =
-  runServer' options components id middleware
+  runServer' options components identity middleware
