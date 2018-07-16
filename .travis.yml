@@ -26,10 +26,7 @@ env:
   - secure: "K3g58P0HUnRLIa2te30XL8xmyzuvimzG0z5R4C2+fku/gC6kkYs2MT/Cc3MFYHt9FPGGOTfys3UR0aPkq2bSL+Y5WXbjutY9PNqsvA2MqMLxdpZirTW6N6yP2l/ilMnPnJUNxScnErqvk4JKvdybYrAxYRA1mC2x3UknCL7uFLowFB/GU/XyTBY3mhu5uIB5I//Lr/oKMxT1M98hA4T5WHbLEE6K5ozypbsX5yU8OOgf6+ZZO9YegBS7vD9zlZNZivObfX+N0tmWkGLp+1WZiI5x0BaYuNU2oFq+hQie/tHAQTvcmKfprreRPGr1R95878G8OpVuoVLX3yXEfznfV62RYJodHsOUDFOMRXbgoBPRGK3GsCts8UaOg0efG4Y67pbMYgXHROtrLxlBfZasrcu6Odh+ZlmV4eraMi6muJWkRwga03i7BtwiP3Aw47+ycoMympupRyDlzk9HCO7ZyhYXsN25RCOsY6HQ6U6k9WvG421KPEPGz5g4hBuVqq5svA8wAdT3XUGIkYkfPmSi2SK2xEDJhz/g5E5HazM8lbmZfFYCB8fthz3XuRuiQqHQov3VrBPMWYa4VxMsvbc2NFc+4DwenE6PaOBwrwcH1zdtlWZB4YpyCZPeXFrQwm5uvm3I3YKijBb4sNjzLCeUSR7QkuMiYa/sE/tb1yYPhFc="
 
 install:
-- wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/v0.11.7/linux64.tar.gz
-- tar -xvf $HOME/purescript.tar.gz -C $HOME/
-- chmod a+x $HOME/purescript
-- npm install -g bower pulp@12.0.1
+- npm install -g bower pulp@12.0.1 "slamdata/node-purescript#0.12"
 - bower install
 - pip install --user -r docs/requirements.txt
 
