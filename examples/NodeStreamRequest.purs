@@ -15,32 +15,28 @@ import Prelude
 import Node.Buffer as Buffer
 import Node.Stream as Stream
 import Control.IxMonad (ibind, (:>>=))
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (class MonadEff, liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION, catchException, message)
+import Effect (Effect)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Console (log)
+import Effect.Exception (catchException, message)
 import Data.Either (Either(..), either)
 import Data.HTTP.Method (Method(..))
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (getRequestData, streamBody)
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusMethodNotAllowed, statusOK)
-import Node.Buffer (BUFFER)
-import Node.HTTP (HTTP)
-
-type ExampleEffects e = (http :: HTTP, console :: CONSOLE, buffer :: BUFFER | e)
 
 logRequestBodyChunks
-  :: forall m e
-   . MonadEff (ExampleEffects e) m
-  => Stream.Readable () (ExampleEffects (exception :: EXCEPTION | e))
+  :: forall m
+   . MonadEffect m
+  => Stream.Readable ()
   -> m Unit
 logRequestBodyChunks body =
   Stream.onData body (Buffer.size >=> (log <<< ("Got chunk of size: " <> _) <<< show))
   # catchException (log <<< ("Error: " <> _) <<< message)
-  # liftEff
+  # liftEffect
 
-main :: forall e. Eff (ExampleEffects e) Unit
+main :: Effect Unit
 main =
   let
     app =

@@ -5,11 +5,10 @@
 module Examples.NodeStreamResponse where
 
 import Prelude
-import Control.Monad.Aff as Aff
 import Control.IxMonad ((:*>))
-import Control.Monad.Aff.Class (class MonadAff, liftAff)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE)
+import Effect.Aff as Aff
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect (Effect)
 import Data.Int (toNumber)
 import Data.Newtype (wrap)
 import Data.Traversable (traverse_)
@@ -19,12 +18,11 @@ import Hyper.Node.Server (defaultOptions, runServer, writeString)
 import Hyper.Response (closeHeaders, end, send, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Encoding (Encoding(..))
-import Node.HTTP (HTTP)
 
-delay :: forall m e c. MonadAff e m => Int -> Middleware m c c Unit
+delay :: forall m c. MonadAff m => Int -> Middleware m c c Unit
 delay n = lift' (liftAff (Aff.delay (wrap <<< toNumber $ n) *> pure unit))
 
-main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
+main :: Effect Unit
 main =
   let
     -- These messages are streamed one at a time, regardless of their individual

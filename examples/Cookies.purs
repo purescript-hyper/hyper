@@ -2,15 +2,13 @@ module Examples.Cookies where
 
 import Prelude
 import Control.IxMonad ((:*>))
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE)
+import Effect (Effect)
 import Hyper.Cookies (cookies)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusOK)
-import Node.HTTP (HTTP)
 
-main :: forall e. Eff (console :: CONSOLE, http :: HTTP | e) Unit
+main :: Effect Unit
 main =
   let app = cookies
             :*> writeStatus statusOK

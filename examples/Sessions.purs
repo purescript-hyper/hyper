@@ -2,14 +2,10 @@ module Examples.Sessions where
 
 import Prelude
 import Control.IxMonad ((:*>), (:>>=))
-import Control.Monad.Aff (launchAff)
-import Control.Monad.Aff.Console (log)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Eff.Random (RANDOM)
-import Control.Monad.Eff.Ref (REF)
+import Effect.Aff (launchAff)
+import Effect (Effect)
+import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
 import Data.Maybe (Maybe(..))
 import Data.MediaType.Common (textHTML)
 import Hyper.Cookies (cookies)
@@ -20,14 +16,13 @@ import Hyper.Request (getRequestData)
 import Hyper.Response (closeHeaders, contentType, end, redirect, respond, writeStatus)
 import Hyper.Session (deleteSession, getSession, saveSession)
 import Hyper.Status (statusNotFound, statusOK)
-import Node.HTTP (HTTP)
 
 newtype MySession = MySession { userId :: Int }
 
-main :: forall e. Eff (exception :: EXCEPTION, ref :: REF, console :: CONSOLE, http :: HTTP, random ::RANDOM | e) Unit
+main :: forall e. Effect Unit
 main = void $ launchAff do
-  store <- liftEff newInMemorySessionStore
-  liftEff (runServer defaultOptionsWithLogging (components store) app)
+  store <- liftEffect newInMemorySessionStore
+  liftEffect (runServer defaultOptionsWithLogging (components store) app)
   where
     components store =
       { sessions: { key: "my-session"
