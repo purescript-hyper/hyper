@@ -16,15 +16,14 @@ import Control.IxMonad (ibind, ipure, (:>>=))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
 import Data.Either (Either(..))
-import Data.Generic (class Generic)
 import Data.Maybe (Maybe(Just, Nothing), maybe)
 import Data.MediaType (MediaType(MediaType))
 import Data.MediaType.Common (applicationFormURLEncoded)
 import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype, unwrap)
-import Data.StrMap (lookup)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple)
+import Foreign.Object (lookup)
 import Hyper.Conn (Conn)
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
@@ -34,7 +33,6 @@ import Hyper.Request (class Request, class ReadableBody, getRequestData, readBod
 newtype Form = Form (Array (Tuple String (Maybe String)))
 
 derive instance newtypeForm :: Newtype Form _
-derive instance genericForm :: Generic Form
 derive newtype instance eqForm :: Eq Form
 derive newtype instance ordForm :: Ord Form
 derive newtype instance showForm :: Show Form
@@ -46,7 +44,7 @@ optional :: String -> Form -> Maybe String
 optional key = do
   unwrap
   >>> Tuple.lookup key
-  >>> flip bind id
+  >>> flip bind identity
 
 
 required :: String -> Form -> Either String String

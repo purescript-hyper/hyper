@@ -19,7 +19,7 @@ import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Lazy (Lazy)
 import Data.Maybe (Maybe, fromMaybe)
-import Data.StrMap (StrMap)
+import Foreign.Object (Object)
 import Data.Tuple (Tuple)
 import Hyper.Conn (Conn)
 import Hyper.Form.Urlencoded (parseUrlencoded)
@@ -29,7 +29,7 @@ type RequestData =
   { url :: String
   , parsedUrl :: Lazy ParsedUrl
   , contentLength :: Maybe Int
-  , headers :: StrMap String
+  , headers :: Object String
   , method :: Either Method CustomMethod
   }
 

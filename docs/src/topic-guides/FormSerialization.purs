@@ -3,10 +3,7 @@ module FormSerialization where
 import Prelude
 import Data.Int as Int
 import Control.IxMonad ((:>>=), (:*>))
-import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
+import Effect (Effect)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
@@ -21,8 +18,6 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, class Request, getRequestData)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
-import Node.Buffer (BUFFER)
-import Node.HTTP (HTTP)
 
 -- start snippet datatypes
 data MealType = Vegan | Vegetarian | Omnivore | Carnivore
@@ -89,7 +84,7 @@ onPost =
                      <> show beers <> " beers coming up!\n")
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: Effect Unit
 main =
   let
     router =

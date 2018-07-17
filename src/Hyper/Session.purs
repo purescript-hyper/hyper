@@ -12,13 +12,13 @@ module Hyper.Session
 
 import Prelude
 import Data.NonEmpty as NonEmpty
-import Data.StrMap as StrMap
+import Foreign.Object as Object
+import Foreign.Object (Object)
 import Hyper.Cookies as Cookies
 import Control.IxMonad (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Data.StrMap (StrMap)
 import Hyper.Conn (Conn)
 import Hyper.Cookies (defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
 import Hyper.Middleware (Middleware, lift')
@@ -49,14 +49,14 @@ currentSessionID
       req
       res
       { sessions :: Sessions store
-      , cookies :: Either String (StrMap Cookies.Values)
+      , cookies :: Either String (Object Cookies.Values)
       | c
       })
      (Conn
       req
       res
       { sessions :: Sessions store
-      , cookies :: Either String (StrMap Cookies.Values)
+      , cookies :: Either String (Object Cookies.Values)
       | c
       })
      (Maybe SessionID)
@@ -66,7 +66,7 @@ currentSessionID =
     Left err ->
       ipure Nothing
     Right cookies ->
-      StrMap.lookup conn.components.sessions.key cookies
+      Object.lookup conn.components.sessions.key cookies
       # map (SessionID <<< NonEmpty.head)
       # pure
 
@@ -80,14 +80,14 @@ getSession
       req
       res
       { sessions :: Sessions store
-      , cookies :: Either String (StrMap Cookies.Values)
+      , cookies :: Either String (Object Cookies.Values)
       | c
       })
      (Conn
       req
       res
       { sessions :: Sessions store
-      , cookies :: Either String (StrMap Cookies.Values)
+      , cookies :: Either String (Object Cookies.Values)
       | c
       })
      (Maybe session)
@@ -110,11 +110,11 @@ saveSession
      (Conn
       req
       (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
+      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      (Conn
       req
       (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
+      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      Unit
 saveSession session = do
   conn <- getConn
@@ -143,11 +143,11 @@ deleteSession
      (Conn
       req
       (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
+      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      (Conn
       req
       (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (StrMap Cookies.Values) | c})
+      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      Unit
 deleteSession = do
   conn <- getConn

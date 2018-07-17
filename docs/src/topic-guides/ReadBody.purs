@@ -2,10 +2,7 @@ module ReadBody where
 
 import Prelude
 import Control.IxMonad ((:>>=), (:*>))
-import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
+import Effect (Effect)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Hyper.Conn (Conn)
@@ -14,8 +11,6 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class ReadableBody, getRequestData, readBody)
 import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
-import Node.Buffer (BUFFER)
-import Node.HTTP (HTTP)
 
 onPost
   :: forall m b req res c
@@ -42,7 +37,7 @@ onPost =
       :*> respond ("You said: " <> msg)
 -- end snippet onPost
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: Effect Unit
 main =
   let
     router =

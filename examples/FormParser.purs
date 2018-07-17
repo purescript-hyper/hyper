@@ -3,11 +3,9 @@ module Examples.FormParser where
 import Prelude
 import Text.Smolder.HTML.Attributes as A
 import Control.IxMonad ((:>>=), (:*>))
-import Control.Monad.Aff.AVar (AVAR)
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log, CONSOLE)
-import Control.Monad.Eff.Exception (EXCEPTION)
+import Effect (Effect)
+import Effect.Class (liftEffect)
+import Effect.Console (log)
 import Data.Either (Either(Right, Left))
 import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(Nothing, Just))
@@ -18,13 +16,11 @@ import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (getRequestData)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed, statusOK)
-import Node.Buffer (BUFFER)
-import Node.HTTP (HTTP)
 import Text.Smolder.HTML (button, form, input, label, p)
 import Text.Smolder.Markup (text, (!))
 import Text.Smolder.Renderer.String (render)
 
-main :: forall e. Eff (http :: HTTP, console :: CONSOLE, exception :: EXCEPTION, avar :: AVAR, buffer :: BUFFER | e) Unit
+main :: Effect Unit
 main =
   let
     -- A view function that renders the name form.
@@ -53,7 +49,7 @@ main =
       parseForm :>>=
       case _ of
         Left err -> do
-          liftEff (log err)
+          liftEffect (log err)
           :*> htmlWithStatus
               statusBadRequest
               (p (text "Bad request, invalid form."))

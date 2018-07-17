@@ -9,16 +9,15 @@ import Data.JSDate (jsdate)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty (fromNonEmpty, (:|))
 import Data.Set as Set
-import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
+import Foreign.Object as Object
 import Hyper.Cookies (SameSite(..), cookies, defaultCookieAttributes, maxAge, setCookie)
 import Hyper.Middleware (evalMiddleware)
 import Hyper.Test.TestServer (TestRequest(..), TestResponse(..), defaultRequest, testHeaders, testServer)
-import Node.Buffer (BUFFER)
 import Test.Spec (it, Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-spec :: forall e. Spec (buffer :: BUFFER | e) Unit
+spec :: Spec Unit
 spec = do
 
   describe "Hyper.Node.Cookies" do
@@ -29,19 +28,19 @@ spec = do
         response <- parseCookies ""
         response.components.cookies
           `shouldEqual`
-          Right StrMap.empty
+          Right Object.empty
 
       it "parses a single cookie" do
         response <- parseCookies "foo=1"
         response.components.cookies
           `shouldEqual`
-          Right (StrMap.singleton "foo" ("1" :| empty))
+          Right (Object.singleton "foo" ("1" :| empty))
 
       it "parses multiple cookies" do
         response <- parseCookies "foo=1;bar=2;baz=3"
         response.components.cookies
           `shouldEqual`
-          Right (StrMap.fromFoldable
+          Right (Object.fromFoldable
                  [ Tuple "foo" ("1" :| empty)
                  , Tuple "bar" ("2" :| empty)
                  , Tuple "baz" ("3" :| empty)
@@ -56,7 +55,7 @@ spec = do
         conn <- parseCookies "     ;  ;foo=3; ; ; ;;;"
         conn.components.cookies
           `shouldEqual`
-          Right (StrMap.singleton "foo" ("3" :| empty))
+          Right (Object.singleton "foo" ("3" :| empty))
 
       it "fails on invalid pairs" do
         conn <- parseCookies "foo"
@@ -132,7 +131,7 @@ spec = do
   where
     parseCookies s =
       { request: TestRequest
-                 (defaultRequest { headers = StrMap.singleton "cookie" s })
+                 (defaultRequest { headers = Object.singleton "cookie" s })
       , response: {}
       , components: { cookies: unit }
       }
@@ -140,8 +139,8 @@ spec = do
 
     cookieValues key =
       _.components.cookies
-      >>> either (const StrMap.empty) id
-      >>> StrMap.lookup key
+      >>> either (const Object.empty) identity
+      >>> Object.lookup key
       >>> map (fromNonEmpty (:))
       >>> map Set.fromFoldable
 

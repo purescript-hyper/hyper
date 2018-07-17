@@ -8,7 +8,7 @@ import Hyper.Request (parseUrl)
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
 
-spec :: forall e. Spec e Unit
+spec :: Spec Unit
 spec =
   describe "Hyper.Request" do
     it "parses the root URL" do

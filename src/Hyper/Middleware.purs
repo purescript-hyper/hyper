@@ -2,8 +2,8 @@ module Hyper.Middleware where
 
 import Prelude
 import Control.IxMonad (class IxMonad, ibind, ipure)
-import Control.Monad.Aff.Class (class MonadAff, liftAff)
-import Control.Monad.Eff.Class (class MonadEff, liftEff)
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect, liftEffect)
 import Data.Tuple (Tuple(..), snd)
 import Hyper.Middleware.Class (class IxMonadMiddleware)
 
@@ -52,12 +52,12 @@ instance bindMiddleware :: Monad m ⇒ Bind (Middleware m i i) where
 
 instance monadMiddleware :: (Monad m, Applicative m) => Monad (Middleware m i i)
 
-instance monadEffMiddleware :: MonadEff e m ⇒ MonadEff e (Middleware m i i) where
-  liftEff e = Middleware $ \s -> do
-    x <- liftEff e
+instance monadEffMiddleware :: MonadEffect m ⇒ MonadEffect (Middleware m i i) where
+  liftEffect e = Middleware $ \s -> do
+    x <- liftEffect e
     pure (Tuple x s)
 
-instance monadAffMiddleware :: MonadAff e m ⇒ MonadAff e (Middleware m i i) where
+instance monadAffMiddleware :: MonadAff m ⇒ MonadAff (Middleware m i i) where
   liftAff e = Middleware $ \s -> do
     x <- liftAff e
     pure (Tuple x s)
