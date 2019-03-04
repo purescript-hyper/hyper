@@ -1,7 +1,7 @@
 module Hyper.Node.BasicAuth where
 
 import Node.Buffer as Buffer
-import Control.IxMonad (ibind, ipure)
+import Control.Monad.Indexed (ibind, ipure)
 import Control.Monad (class Monad, (>>=))
 import Effect.Class (liftEffect, class MonadEffect)
 import Data.Functor ((<$>))

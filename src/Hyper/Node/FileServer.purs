@@ -2,7 +2,7 @@ module Hyper.Node.FileServer (fileServer) where
 
 import Prelude
 
-import Control.IxMonad (ibind, (:>>=))
+import Control.Monad.Indexed (ibind, (:>>=))
 import Effect.Aff.Class (liftAff, class MonadAff)
 import Effect.Class (liftEffect)
 import Data.Array (last)

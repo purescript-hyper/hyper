@@ -11,7 +11,7 @@ module Hyper.Node.Server
 
 import Prelude
 
-import Control.IxMonad (ipure, (:*>), (:>>=))
+import Control.Monad.Indexed (ipure, (:*>), (:>>=))
 import Effect.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
 import Effect.Aff.AVar (empty, new, put, take)
 import Effect.Aff.Class (class MonadAff, liftAff)

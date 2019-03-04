@@ -1,6 +1,6 @@
 module Hyper.Authorization where
 
-import Control.IxMonad (ibind)
+import Control.Monad.Indexed (ibind)
 import Control.Monad (class Monad)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Unit (unit, Unit)

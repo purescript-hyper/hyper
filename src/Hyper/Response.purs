@@ -1,7 +1,7 @@
 module Hyper.Response where
 
 import Prelude
-import Control.IxMonad ((:>>=), (:*>))
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Data.Foldable (class Foldable, traverse_)
 import Data.MediaType (MediaType)
 import Data.Newtype (unwrap)

@@ -12,7 +12,7 @@ module Hyper.Form
 
 import Prelude
 import Data.Tuple as Tuple
-import Control.IxMonad (ibind, ipure, (:>>=))
+import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Control.Monad.Error.Class (throwError)
 import Data.Array (head)
 import Data.Either (Either(..))

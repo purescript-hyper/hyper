@@ -25,7 +25,7 @@
     "purescript-foldable-traversable": "^4.0.0",
     "purescript-generics-rep": "^6.0.0",
     "purescript-http-methods": "^4.0.1",
-    "purescript-indexed-monad": "https://github.com/lambdaterms-forks/purescript-indexed-monad.git#d037d70e8d44851f56d6162345b0b0aa2d514bfa",
+    "purescript-indexed-monad": "^1.0.0",
     "purescript-media-types": "^4.0.1",
     "purescript-node-fs-aff": "^6.0.0",
     "purescript-node-http": "^5.0.0",
@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0",
-    "purescript-spec": "^3.0.0",
-    "purescript-spec-discovery": "https://github.com/owickstrom/purescript-spec-discovery.git#a1a8dfd5fadb3f00199d68d20af4bbf56a048c6e"
+    "purescript-spec": "^3.1.0",
+    "purescript-spec-discovery": "^3.1.0"
   }
 }

@@ -1,7 +1,7 @@
 module Hyper.Node.BasicAuthSpec where
 
 import Prelude
-import Control.IxMonad (ibind)
+import Control.Monad.Indexed (ibind)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Newtype (unwrap, class Newtype)
 import Data.Tuple (fst, Tuple(Tuple))
