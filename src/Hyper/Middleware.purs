@@ -1,7 +1,7 @@
 module Hyper.Middleware where
 
 import Prelude
-import Control.IxMonad (class IxMonad, ibind, ipure)
+import Control.Monad.Indexed (class IxApplicative, class IxApply, class IxBind, class IxFunctor, class IxMonad, (:>=>), ibind, ipure)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Data.Tuple (Tuple(..), snd)
@@ -22,20 +22,36 @@ instance ixMonadMiddlewareMiddleware :: Applicative m ⇒ IxMonadMiddleware (Mid
   getConn = Middleware $ \c -> pure (Tuple c c)
   putConn c = Middleware $ \_ -> pure (Tuple unit c)
 
-instance ixMonadMiddleware :: Monad m ⇒ IxMonad (Middleware m) where
+instance ixApplicativeMiddleware :: Monad m ⇒ IxApplicative (Middleware m) where
   ipure x = Middleware $ \s -> pure (Tuple x s)
+
+instance ixBindMiddleware :: Monad m ⇒ IxBind (Middleware m) where
   ibind (Middleware ma) f =
     Middleware $ \s ->
       ma s >>= \(Tuple x s') ->
       case f x of
         Middleware a -> a s'
 
+instance ixApplyMiddleware :: Monad m ⇒ IxApply (Middleware m) where
+  iapply f a =
+    Middleware $ \s ->
+      runMiddleware f s >>= \(Tuple f' s') ->
+      runMiddleware a s' >>= \(Tuple a' s'') ->
+      pure (Tuple (f' a') s'')
+
+instance ixFunctorMiddleware :: Monad m ⇒ IxFunctor (Middleware m) where
+  imap f a =
+    Middleware $ \s ->
+      runMiddleware a s >>= \(Tuple a' s') ->
+      pure (Tuple (f a') s')
+
+instance ixMonadMiddleware :: Monad m ⇒ IxMonad (Middleware m)
+
 instance functorMiddleware :: Monad m => Functor (Middleware m i i) where
   map f a =
     Middleware $ \s ->
       runMiddleware a s >>= \(Tuple a' s') ->
       pure (Tuple (f a') s')
-
 
 instance applyMiddleware :: Monad m => Apply (Middleware m i i) where
   apply f a =

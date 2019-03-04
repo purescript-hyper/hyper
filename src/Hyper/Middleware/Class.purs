@@ -1,6 +1,6 @@
 module Hyper.Middleware.Class where
 
-import Control.IxMonad (class IxMonad, (:>>=))
+import Control.Monad.Indexed (class IxMonad, (:>>=))
 import Data.Unit (Unit)
 
 class IxMonadMiddleware m where

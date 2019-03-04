@@ -15,7 +15,7 @@ import Data.NonEmpty as NonEmpty
 import Foreign.Object as Object
 import Foreign.Object (Object)
 import Hyper.Cookies as Cookies
-import Control.IxMonad (ibind, ipure, (:>>=))
+import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)

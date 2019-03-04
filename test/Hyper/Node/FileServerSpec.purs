@@ -2,7 +2,7 @@ module Hyper.Node.FileServerSpec where
 
 import Prelude
 import Node.Buffer as Buffer
-import Control.IxMonad (ibind)
+import Control.Monad.Indexed (ibind)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Data.Maybe (Maybe(..))

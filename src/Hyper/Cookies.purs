@@ -14,7 +14,7 @@ module Hyper.Cookies
 
 import Prelude
 
-import Control.IxMonad (ibind)
+import Control.Monad.Indexed (ibind)
 import Control.Monad.Error.Class (throwError)
 import Data.Array (catMaybes, cons, filter, foldMap, uncons, (:))
 import Data.Either (Either)

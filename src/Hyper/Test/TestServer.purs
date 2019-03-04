@@ -3,7 +3,7 @@ module Hyper.Test.TestServer where
 import Data.String as String
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
-import Control.IxMonad (ipure, (:*>), (:>>=))
+import Control.Monad.Indexed (ipure, (:*>), (:>>=))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
