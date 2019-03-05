@@ -2,7 +2,7 @@ module Examples.FileServer where
 
 import Prelude
 
-import Control.IxMonad ((:*>))
+import Control.Monad.Indexed ((:*>))
 import Effect (Effect)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Node.FileServer (fileServer)

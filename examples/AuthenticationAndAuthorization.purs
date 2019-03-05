@@ -9,7 +9,7 @@ module Examples.AuthenticationAndAuthorization where
 
 import Prelude
 
-import Control.IxMonad ((:>>=), (:*>))
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Effect.Aff.Class (class MonadAff)
 import Effect (Effect)
 import Data.Either (Either(..))

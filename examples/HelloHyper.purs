@@ -1,7 +1,7 @@
 module Examples.HelloHyper where
 
 import Prelude
-import Control.IxMonad ((:*>))
+import Control.Monad.Indexed ((:*>))
 import Effect (Effect)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Response (closeHeaders, respond, writeStatus)
