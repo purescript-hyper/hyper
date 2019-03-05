@@ -5,7 +5,7 @@
 module Examples.NodeStreamResponse where
 
 import Prelude
-import Control.IxMonad ((:*>))
+import Control.Monad.Indexed ((:*>))
 import Effect.Aff as Aff
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect (Effect)

@@ -14,7 +14,7 @@ module Examples.NodeStreamRequest where
 import Prelude
 import Node.Buffer as Buffer
 import Node.Stream as Stream
-import Control.IxMonad (ibind, (:>>=))
+import Control.Monad.Indexed (ibind, (:>>=))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)

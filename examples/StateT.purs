@@ -1,7 +1,7 @@
 module Examples.StateT where
 
 import Prelude
-import Control.IxMonad (ibind, (:*>))
+import Control.Monad.Indexed (ibind, (:*>))
 import Effect.Aff (Aff)
 import Effect (Effect)
 import Control.Monad.State (evalStateT, get, modify)

@@ -1,7 +1,7 @@
 module Examples.Sessions where
 
 import Prelude
-import Control.IxMonad ((:*>), (:>>=))
+import Control.Monad.Indexed ((:*>), (:>>=))
 import Effect.Aff (launchAff)
 import Effect (Effect)
 import Effect.Class (liftEffect)

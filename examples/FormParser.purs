@@ -2,7 +2,7 @@ module Examples.FormParser where
 
 import Prelude
 import Text.Smolder.HTML.Attributes as A
-import Control.IxMonad ((:>>=), (:*>))
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Effect (Effect)
 import Effect.Class (liftEffect)
 import Effect.Console (log)

@@ -1,7 +1,7 @@
 module Examples.Cookies where
 
 import Prelude
-import Control.IxMonad ((:*>))
+import Control.Monad.Indexed ((:*>))
 import Effect (Effect)
 import Hyper.Cookies (cookies)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
