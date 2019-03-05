@@ -1,7 +1,7 @@
 module NodeReaderT where
 
 import Prelude
-import Control.IxMonad ((:>>=), (:*>))
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Effect.Aff (Aff)
 import Effect (Effect)
 import Control.Monad.Reader (ReaderT, ask, runReaderT)

@@ -2,7 +2,7 @@ module FormSerialization where
 
 import Prelude
 import Data.Int as Int
-import Control.IxMonad ((:>>=), (:*>))
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Effect (Effect)
 import Control.Monad.Error.Class (throwError)
 import Data.Either (Either(..))
