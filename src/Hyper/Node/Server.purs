@@ -31,7 +31,13 @@ import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Node.Server.Options (Options)
-import Hyper.Node.Server.Options as Hyper.Node.Server.Options
+import Hyper.Node.Server.Options
+  ( Hostname(..)
+  , Options
+  , Port(..)
+  , defaultOptions
+  , defaultOptionsWithLogging
+  ) as Hyper.Node.Server.Options
 import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, parseUrl, readBody)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
 import Hyper.Status (Status(..))
@@ -59,7 +65,7 @@ instance requestHttpRequest :: Monad m => Request HttpRequest m where
 newtype NodeResponse m
   = NodeResponse (Writable () -> m Unit)
 
-writeString :: forall e m. MonadAff m => Encoding -> String -> NodeResponse m
+writeString :: forall m. MonadAff m => Encoding -> String -> NodeResponse m
 writeString enc str = NodeResponse $ \w ->
   liftAff (makeAff (\k -> Stream.writeString w enc str (k (pure unit))
                           *> pure nonCanceler))
@@ -84,8 +90,7 @@ instance bufferNodeResponse :: MonadAff m
 -- Helper function that reads a Stream into a Buffer, and throws error
 -- in `Aff` when failed.
 readBodyAsBuffer
-  :: forall e.
-     HttpRequest
+  :: HttpRequest
   -> Aff Buffer
 readBodyAsBuffer (HttpRequest request _) = do
   let stream = HTTP.requestAsStream request
@@ -150,7 +155,7 @@ getWriter :: forall req res c m rw.
             rw
 getWriter = _.response.writer <$> getConn
 
-setStatus :: forall req res c m e.
+setStatus :: forall req res c m.
             MonadEffect m
           => Status
           -> HTTP.Response
@@ -159,7 +164,7 @@ setStatus (Status { code, reasonPhrase }) r = liftEffect do
   HTTP.setStatusCode r code
   HTTP.setStatusMessage r reasonPhrase
 
-writeHeader' :: forall req res c m e.
+writeHeader' :: forall req res c m.
                MonadEffect m
              => (Tuple String String)
              -> HTTP.Response
@@ -175,7 +180,7 @@ writeResponse :: forall req res c m.
 writeResponse r (NodeResponse f) =
   lift' (f (HTTP.responseAsStream r))
 
-endResponse :: forall req res c m e.
+endResponse :: forall req res c m.
               MonadEffect m
             => HTTP.Response
             -> Middleware m (Conn req res c) (Conn req res c) Unit
@@ -259,15 +264,15 @@ runServer' options components runM middleware = do
          # runM
          # runAff_ callback
 
--- runServer
---   :: forall e c c'.
---      Options e
---   -> c
---   -> Middleware
---      Aff
---      (Conn HttpRequest (HttpResponse StatusLineOpen) c)
---      (Conn HttpRequest (HttpResponse ResponseEnded) c')
---      Unit
---   -> Effect Unit
+runServer
+  :: forall c c'.
+     Options
+  -> c
+  -> Middleware
+     Aff
+     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
+     (Conn HttpRequest (HttpResponse ResponseEnded) c')
+     Unit
+  -> Effect Unit
 runServer options components middleware =
   runServer' options components identity middleware

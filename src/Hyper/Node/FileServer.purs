@@ -113,7 +113,7 @@ htaccess = fromFoldable $
   ]
 
 serveFile
-  :: forall m e req res c b
+  :: forall m req res c b
   .  Monad m
   => MonadAff m
   => ResponseWritable b m Buffer
@@ -141,7 +141,7 @@ serveFile path = do
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m e req res c b
+  :: forall m req res c b
   .  Monad m
   => MonadAff m
   => Request req m

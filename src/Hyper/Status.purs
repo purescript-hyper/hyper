@@ -2,12 +2,9 @@ module Hyper.Status where
 
 import Prelude
 
-import Data.Eq (class Eq)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Ord (class Ord)
-import Data.Show (class Show)
 import Record.Extra (compareRecord)
 
 newtype Status = Status { code :: Int, reasonPhrase :: String }
