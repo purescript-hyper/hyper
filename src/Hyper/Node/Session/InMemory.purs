@@ -13,7 +13,7 @@ import Hyper.Session (class SessionStore, SessionID(..))
 
 data InMemorySessionStore session = InMemorySessionStore (Ref (Map SessionID session))
 
-foreign import generatedSessionID ::forall eff. Effect String
+foreign import generatedSessionID :: Effect String
 
 instance sessionStoreInMemorySessionStore :: ( Monad m
                                              , MonadEffect m
@@ -42,6 +42,6 @@ instance sessionStoreInMemorySessionStore :: ( Monad m
       flip modify_ var $ Map.delete id
 
 newInMemorySessionStore
-  :: forall e session
+  :: forall session
    . Effect (InMemorySessionStore session)
 newInMemorySessionStore = InMemorySessionStore <$> new Map.empty

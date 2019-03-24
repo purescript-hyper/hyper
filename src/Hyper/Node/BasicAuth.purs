@@ -22,7 +22,7 @@ import Node.Encoding (Encoding(ASCII, Base64))
 
 type Realm = String
 
-decodeBase64 ∷ ∀ m e c
+decodeBase64 ∷ ∀ m c
   .  MonadEffect m
   => String
   → Middleware m c c String
@@ -31,7 +31,7 @@ decodeBase64 encoded =
 
 
 withAuthentication
-  :: forall m e req res c t
+  :: forall m req res c t
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))

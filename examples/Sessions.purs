@@ -19,7 +19,7 @@ import Hyper.Status (statusNotFound, statusOK)
 
 newtype MySession = MySession { userId :: Int }
 
-main :: forall e. Effect Unit
+main :: Effect Unit
 main = void $ launchAff do
   store <- liftEffect newInMemorySessionStore
   liftEffect (runServer defaultOptionsWithLogging (components store) app)
