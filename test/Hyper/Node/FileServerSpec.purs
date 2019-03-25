@@ -19,7 +19,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.String (shouldContain)
 
 serveFilesAndGet
-  :: forall m e.
+  :: forall m.
      (MonadAff m) =>
      String
   -> m (TestResponse TestResponseBody ResponseEnded)

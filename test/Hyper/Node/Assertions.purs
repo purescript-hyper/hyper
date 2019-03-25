@@ -11,7 +11,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Assertions.String (shouldContain)
 
 assertBody
-  :: forall e state
+  :: forall state
    . (String -> String -> Aff Unit)
   -> TestResponse TestResponseBody state
   -> String
