@@ -28,7 +28,7 @@ tutorial](https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-wit
 
 <p align="right">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
-<a href="https://github.com/owickstrom/hyper/releases"><img alt="Latest release" src="https://img.shields.io/github/release/owickstrom/hyper.svg" /></a>
+<a href="https://github.com/owickstrom/hyper/tags"><img alt="Latest tag" src="https://img.shields.io/github/tag/owickstrom/hyper.svg" /></a>
 
 </p>
 
