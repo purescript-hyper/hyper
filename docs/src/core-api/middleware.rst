@@ -40,15 +40,13 @@ If you want to feed the return value of one middleware into another, use
 
     getUser :>>= renderUser
 
-You can also rebind the *do block* syntax to use ``ibind`` instead of
-regular ``bind``.
+The *qualified do* syntax allows you to use ``ibind`` implicitly
+instead of the regular ``bind``.
 
 .. code-block:: haskell
 
-    do
+    Middleware.do
       user <- getUser
       writeStatus statusOK
       closeHeaders
       respond ("User: " <> user.name)
-      where bind = ibind
-
