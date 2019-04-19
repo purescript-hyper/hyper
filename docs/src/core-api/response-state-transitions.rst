@@ -4,14 +4,14 @@ Response State Transitions
 
 The ``response`` field in the Conn is a value provided by the server backend.
 Middleware often constrain the ``response`` field to be a value implementing the
-``Response`` type class. This makes it possible to use response writing
+``Response`` type class. This makes it possible to use response-writing
 operations without depending on a specific server backend.
 
 The state of a response is tracked in its last type parameter. This state
 tracking, and the type-indexed middleware using the response, guarantee
 correctness in response handling, preventing incorrect ordering of headers and
 body writes, incomplete responses, or other such mistakes. Let us have a look
-at the type signatures of some of response writing functions in
+at the type signatures of some of response-writing functions in
 ``Hyper.Response``.
 
 We see that ``headers`` takes a foldable collection of headers, and
