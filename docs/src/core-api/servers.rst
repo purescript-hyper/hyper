@@ -2,7 +2,7 @@
 Servers
 *******
 
-Although Hyper middleware can applied directly to Conn values using
+Although Hyper middleware can be applied directly to Conn values using
 ``runMiddleware``, you likely want a *server* to run your middleware.
 Hyper tries to be as open as possible when it comes to servers -- your
 application, and the middleware it depends on, should not be tied to a
