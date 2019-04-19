@@ -12,8 +12,8 @@ in the PureScript documentation.
 
 .. note::
 
-   Hyper 0.9.0 requires PureScript `version 0.12.2`
-   <https://github.com/purescript/purescript/releases/tag/v0.12.2>`__, or
+   Hyper 0.9.0 requires PureScript `version 0.12.2
+   <https://github.com/purescript/purescript/releases/tag/v0.12.2>`__ or
    higher.
 
 Start off by generating an empty project by entering the following commands in
