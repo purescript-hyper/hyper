@@ -1,4 +1,11 @@
-module Hyper.Middleware where
+module Hyper.Middleware
+  ( module QualifiedDo
+  , Middleware(..)
+  , evalMiddleware
+  , hoistMiddleware
+  , runMiddleware
+  , lift'
+  ) where
 
 import Prelude
 import Control.Monad.Indexed (class IxApplicative, class IxApply, class IxBind, class IxFunctor, class IxMonad, ibind, ipure)
@@ -6,6 +13,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Data.Tuple (Tuple(..), snd)
 import Hyper.Middleware.Class (class IxMonadMiddleware)
+import Hyper.Middleware.QualifiedDo (bind, discard) as QualifiedDo
 
 newtype Middleware m i o a = Middleware (i -> m (Tuple a o))
 
