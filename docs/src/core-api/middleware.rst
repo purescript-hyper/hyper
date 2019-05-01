@@ -23,8 +23,8 @@ middleware.
 
 Middleware are composed using ``ibind``, the indexed monadic version of
 ``bind``. The simplest way of composing middleware is by chaining them
-with ``:*>``, from ``Control.IxMonad``. See
-`haskell-indexed-monad <https://pursuit.haskell.org/packages/haskell-indexed-monad/0.1.1>`__
+with ``:*>``, from ``Control.Monad.Indexed``. See
+`purescript-indexed-monad <https://pursuit.purescript.org/packages/purescript-indexed-monad/1.0.0>`__
 for more information.
 
 .. code-block:: haskell
@@ -34,21 +34,19 @@ for more information.
     :*> respond "We're composing middleware!"
 
 If you want to feed the return value of one middleware into another, use
-``:>>=``, the infix operator alias for ``mbind``.
+``:>>=``, the infix operator alias for ``ibind``.
 
 .. code-block:: haskell
 
     getUser :>>= renderUser
 
-You can also rebind the *do block* syntax to use ``ibind`` instead of
-regular ``bind``.
+The *qualified do* syntax allows you to use ``ibind`` implicitly
+instead of the regular ``bind``.
 
 .. code-block:: haskell
 
-    do
+    Middleware.do
       user <- getUser
       writeStatus statusOK
       closeHeaders
       respond ("User: " <> user.name)
-      where bind = ibind
-
