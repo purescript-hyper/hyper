@@ -260,3 +260,6 @@ $(BUILDDIR)/index/404.html: 404.html $(BUILDDIR)/index/index.html
 
 .PHONY: release-index
 release-index: $(BUILDDIR)/index/index.html $(BUILDDIR)/index/404.html $(BUILDDIR)/index/latest/index.html
+
+deploy-release-index: release-index
+	aws s3 cp --region=eu-west-1 target/index/index.html s3://hyper.wickstrom.tech/index.html

@@ -16,7 +16,7 @@ print_row() {
 "
 }
 
-versions=$(aws s3 ls hyper.wickstrom.tech/docs/ | awk '{print $2}' | sed 's/\///' | $DIR/sort_by_semver.py)
+versions=$(aws s3 ls --region=eu-west-1 hyper.wickstrom.tech/docs/ | awk '{print $2}' | sed 's/\///' | $DIR/sort_by_semver.py)
 latest=$(echo $versions | head -n 1)
 
 echo "

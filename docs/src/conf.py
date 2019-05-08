@@ -37,7 +37,7 @@ from datetime import date
 # The short X.Y version.
 
 def get_git_rev():
-    return subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().strip()
+    return str(subprocess.Popen("git rev-parse --short HEAD", shell=True, stdout=subprocess.PIPE).stdout.read().strip())
 
 def get_version():
     version_env = os.environ.get("VERSION")
