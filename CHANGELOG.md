@@ -1,5 +1,8 @@
 # Changelog
 
+* 0.9.1
+  - Remove redundant ```purescript-argonaut-*``` dependencies to
+    resolve version conflicts. #76
 * 0.9.0
   - Node server changes:
     - Move ```ServerOptions``` from ```Hyper.Node.Server``` to
