@@ -13,30 +13,35 @@
     "url": "git://github.com/owickstrom/hyper.git"
   },
   "dependencies": {
-    "purescript-aff": "^5.0.1",
+    "purescript-aff": "^5.1.1",
     "purescript-avar": "^3.0.0",
-    "purescript-argonaut": "^5.0.0",
-    "purescript-arrays": "^5.0.0",
-    "purescript-control": "^4.0.0",
-    "purescript-effect": "^2.0.0",
-    "purescript-foldable-traversable": "^4.0.0",
-    "purescript-generics-rep": "^6.0.0",
-    "purescript-http-methods": "^4.0.1",
+    "purescript-argonaut": "^6.0.0",
+    "purescript-arrays": "^5.3.0",
+    "purescript-control": "^4.1.0",
+    "purescript-effect": "^2.0.1",
+    "purescript-foldable-traversable": "^4.1.1",
+    "purescript-generics-rep": "^6.1.1",
+    "purescript-http-methods": "^4.0.2",
     "purescript-indexed-monad": "^1.0.0",
     "purescript-media-types": "^4.0.1",
     "purescript-node-fs-aff": "^6.0.0",
-    "purescript-node-http": "^5.0.0",
-    "purescript-ordered-collections": "^1.0.0",
+    "purescript-node-http": "^5.0.1",
+    "purescript-ordered-collections": "^1.6.1",
     "purescript-proxy": "^3.0.0",
     "purescript-random": "^4.0.0",
-    "purescript-smolder": "^11.0.0",
-    "purescript-strings": "^4.0.0",
-    "purescript-transformers": "^4.1.0",
-    "purescript-record-extra": "^1.0.0"
+    "purescript-smolder": "^12.0.0",
+    "purescript-strings": "^4.0.1",
+    "purescript-transformers": "^4.2.0",
+    "purescript-record-extra": "^3.0.0",
+    "purescript-typelevel-prelude": "^5.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0",
-    "purescript-spec": "^3.1.0",
-    "purescript-spec-discovery": "^3.1.0"
+    "purescript-spec": "^4.0.0",
+    "purescript-spec-discovery": "^4.0.0"
+  },
+  "resolutions": {
+    "purescript-spec": "^4.0.0",
+    "purescript-typelevel-prelude": "^5.0.0"
   }
 }

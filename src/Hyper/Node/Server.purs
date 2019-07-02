@@ -56,8 +56,8 @@ data HttpRequest
 instance requestHttpRequest :: Monad m => Request HttpRequest m where
   getRequestData = do
     getConn :>>=
-    case _ of
-      { request: HttpRequest _ d } -> ipure d
+      case _ of
+        { request: HttpRequest _ d } -> ipure d
 
 
 -- A limited version of Writable () e, with which you can only write, not end,
