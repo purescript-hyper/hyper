@@ -14,7 +14,7 @@ import Hyper.Middleware (runMiddleware)
 import Hyper.Test.TestServer (TestRequest(TestRequest))
 import Test.Spec (Spec, it, describe)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Assertions.Aff (expectError)
+import Test.Spec.Assertions (expectError)
 
 liftEither ∷ ∀ a. Either String a → Aff a
 liftEither e =
