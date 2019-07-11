@@ -34,30 +34,46 @@ tutorial](https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-wit
 
 <hr>
 
-## Prerequisites
+## Development Setup
 
-* PureScript 0.10.6 or higher
+### Prerequisites
+
+* PureScript 0.13.0 or higher
 * NodeJS
-* Bower
-* Pulp
+* A package manager and build tool
+  - Bower + Pulp
+  - Spago
 
-## Build
+### Build
 
 Install dependencies and build:
 
+Bower + Pulp:
 ```bash
 bower install
 pulp build
 ```
 
-### Running Tests
+Spago:
+```bash
+spago build
+```
 
+### Run Tests
+
+Pulp:
 ```bash
 pulp test
 ```
 
-### Running Examples
+Spago:
+```bash
+spago test
+```
 
+### Run Examples
+
+Pulp:
 ```bash
 # general format:
 pulp run -I examples --main Examples.<example-name>
@@ -66,7 +82,16 @@ pulp run -I examples --main Examples.<example-name>
 pulp run -I examples --main Examples.HelloHyper
 ```
 
-### Building all Examples
+Spago:
+```bash
+# general format:
+spago run -p examples/<example-name>.purs -m Examples.<example-name>
+
+# for instance to run HelloHyper:
+spago run -p examples/HelloHyper.purs -m Examples.HelloHyper
+```
+
+### Build All Examples
 
 ```bash
 make examples
