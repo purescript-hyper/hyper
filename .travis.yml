@@ -36,10 +36,10 @@ script:
 - if [[ "$TRAVIS_PULL_REQUEST" != "false" ]]; then export VERSION=pull-request-job-$TRAVIS_JOB_NUMBER;
   fi
 - if [[ "$TRAVIS_TAG" != "" ]]; then export VERSION=$TRAVIS_TAG; fi
+- pulp build
+- rm -rf bower_components output
 - spago build
 - spago test
-- rm -rf .spago output
-- pulp build
 - make examples
 - make docs
 
