@@ -40,49 +40,24 @@ tutorial](https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-wit
 
 * PureScript 0.13.0 or higher
 * NodeJS
-* A package manager and build tool
-  - Bower + Pulp
-  - Spago
+* [Spago](https://github.com/spacchetti/spago)
 
 ### Build
 
 Install dependencies and build:
 
-Bower + Pulp:
-```bash
-bower install
-pulp build
-```
-
-Spago:
 ```bash
 spago build
 ```
 
 ### Run Tests
 
-Pulp:
-```bash
-pulp test
-```
-
-Spago:
 ```bash
 spago test
 ```
 
 ### Run Examples
 
-Pulp:
-```bash
-# general format:
-pulp run -I examples --main Examples.<example-name>
-
-# for instance to run HelloHyper:
-pulp run -I examples --main Examples.HelloHyper
-```
-
-Spago:
 ```bash
 # general format:
 spago run -p examples/<example-name>.purs -m Examples.<example-name>
