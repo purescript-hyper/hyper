@@ -1,5 +1,8 @@
 # Changelog
 
+* 0.10.0
+  - Updates for PureScript 0.13
+  - Migration to Spago as primary package manager / build tool
 * 0.9.1
   - Remove redundant ```purescript-argonaut-*``` dependencies to
     resolve version conflicts. #76
