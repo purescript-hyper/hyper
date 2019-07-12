@@ -10,5 +10,5 @@ examples:
 	# repository instead.
 	# make -C docs/src/extensions/type-level-routing/examples build
 	#
-	pulp build -I docs/src/topic-guides
-	pulp build -I examples
+	spago build -p docs/src/topic-guides/**/*.purs
+	spago build -p examples/**/*.purs
