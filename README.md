@@ -26,10 +26,10 @@ more about Hyper, check out the [documentation](https://hyper.wickstrom.tech)
 and [the Getting Started
 tutorial](https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-with-hyper.html).
 
-<p align="right">
+<p align="center">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
-<a href="https://github.com/owickstrom/hyper/tags"><img alt="Latest tag" src="https://img.shields.io/github/tag/owickstrom/hyper.svg" /></a>
-
+<a href="https://pursuit.purescript.org/packages/purescript-hyper"><img alt="purescript-hyper on Pursuit" src="https://pursuit.purescript.org/packages/purescript-hyper/badge" /></a>
+<a href="https://github.com/purescript/package-sets"><img alt="Hyper in package-sets" src="https://img.shields.io/endpoint.svg?url=https://package-sets-badge-0lf69kxs4fbd.runkit.sh/hyper" /></a>
 </p>
 
 <hr>
