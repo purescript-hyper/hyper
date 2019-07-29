@@ -124,7 +124,7 @@ readBodyAsBuffer (HttpRequest request _) = do
 instance readableBodyHttpRequestString :: (Monad m, MonadAff m)
                                        => ReadableBody HttpRequest m String where
   readBody =
-    readBody :>>= (liftEffect <<< Buffer.toString UTF8)
+    readBody :>>= (\(buffer :: Buffer) -> liftEffect $ Buffer.toString UTF8 buffer)
 
 instance readableBodyHttpRequestBuffer :: (Monad m, MonadAff m)
                                        => ReadableBody HttpRequest m Buffer where
