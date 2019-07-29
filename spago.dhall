@@ -1,4 +1,6 @@
-{ name =
+{ sources =
+    [ "src/**/*.purs", "test/**/*.purs" ]
+, name =
     "hyper"
 , dependencies =
     [ "aff"
@@ -13,6 +15,7 @@
     , "http-methods"
     , "indexed-monad"
     , "media-types"
+    , "node-buffer"
     , "node-fs-aff"
     , "node-http"
     , "ordered-collections"
