@@ -6,3 +6,4 @@
 /src/.webpack.js
 /.psc-ide-port
 /.spago
+/generated-docs/
