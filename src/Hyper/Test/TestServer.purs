@@ -80,29 +80,29 @@ instance monoidStringBody :: Monoid StringBody where
 
 -- RESPONSE
 
-data TestResponse b (state :: ResponseState)
+data TestResponse b (resState :: ResponseState)
   = TestResponse (Maybe Status) (Array Header) (Array b)
 
-testStatus :: forall b state. TestResponse b state → Maybe Status
+testStatus :: forall b resState. TestResponse b resState → Maybe Status
 testStatus (TestResponse status _ _) = status
 
-testHeaders :: forall b state. TestResponse b state → Array Header
+testHeaders :: forall b resState. TestResponse b resState → Array Header
 testHeaders (TestResponse _ headers _) = headers
 
-testBodyChunks :: forall b state. TestResponse b state → Array b
+testBodyChunks :: forall b resState. TestResponse b resState → Array b
 testBodyChunks (TestResponse _ _ body) = body
 
-testBody :: forall b state. Monoid b => TestResponse b state → b
+testBody :: forall b resState. Monoid b => TestResponse b resState → b
 testBody (TestResponse _ _ body) = fold body
 
-instance semigroupTestResponse :: Semigroup (TestResponse b state) where
+instance semigroupTestResponse :: Semigroup (TestResponse b resState) where
   append (TestResponse status headers bodyChunks) (TestResponse status' headers' bodyChunks') =
     TestResponse (status <|> status') (headers <> headers') (bodyChunks <> bodyChunks')
 
-instance monoidTestResponse :: Monoid (TestResponse b state) where
+instance monoidTestResponse :: Monoid (TestResponse b resState) where
   mempty = TestResponse Nothing [] []
 
-testStringBody :: forall state. TestResponse StringBody state → String
+testStringBody :: forall resState. TestResponse StringBody resState → String
 testStringBody (TestResponse _ _ chunks) = fold (map unwrap chunks)
 
 
@@ -110,10 +110,10 @@ testStringBody (TestResponse _ _ chunks) = fold (map unwrap chunks)
 
 
 testServer
-  :: forall m a b state
+  :: forall m a b resState
    . Monad m
-   => WriterT (TestResponse b state) m a
-   -> m (TestResponse b state)
+   => WriterT (TestResponse b resState) m a
+   -> m (TestResponse b resState)
 testServer = execWriterT <<< void
 
 
@@ -125,7 +125,7 @@ resetResponse conn@{ response: TestResponse status headers body } =
   conn { response = TestResponse status headers body }
 
 instance responseWriterTestResponse :: ( Monad m
-                                       , MonadTell (TestResponse b state) m
+                                       , MonadTell (TestResponse b resState) m
                                        ) =>
                                        Response
                                        (TestResponse b)

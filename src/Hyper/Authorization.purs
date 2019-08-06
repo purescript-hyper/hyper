@@ -10,10 +10,10 @@ import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Response (class ResponseWritable, respond, headers, writeStatus, class Response)
 import Hyper.Status (statusForbidden)
 
-withAuthorization :: forall a b req (res :: ResponseState -> Type) c (state :: ResponseState).
+withAuthorization :: forall a b req (res :: ResponseState -> Type) c (resState :: ResponseState).
                      b
-                  -> Conn req res state { authorization :: a | c }
-                  -> Conn req res state { authorization :: b | c }
+                  -> Conn req res resState { authorization :: a | c }
+                  -> Conn req res resState { authorization :: b | c }
 withAuthorization a conn =
   conn { components = (conn.components { authorization = a }) }
 

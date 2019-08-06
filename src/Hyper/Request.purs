@@ -52,11 +52,11 @@ parseUrl url =
 
 class Request req m where
   getRequestData
-    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
+    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
      . Middleware
        m
-       (Conn req res state comp)
-       (Conn req res state comp)
+       (Conn req res resState comp)
+       (Conn req res resState comp)
        RequestData
 
 class Request req m <= BaseRequest req m
@@ -66,11 +66,11 @@ class Request req m <= BaseRequest req m
 -- | [StreamableBody](#streamablebody) class.
 class ReadableBody req m b where
   readBody
-    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
+    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
      . Middleware
        m
-       (Conn req res state comp)
-       (Conn req res state comp)
+       (Conn req res resState comp)
+       (Conn req res resState comp)
        b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
@@ -78,9 +78,9 @@ class ReadableBody req m b where
 -- | streaming, see the [ReadableBody](#readablebody) class.
 class StreamableBody req m stream | req -> stream where
   streamBody
-    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
+    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
      . Middleware
        m
-       (Conn req res state comp)
-       (Conn req res state comp)
+       (Conn req res resState comp)
+       (Conn req res resState comp)
        stream

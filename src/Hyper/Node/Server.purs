@@ -137,17 +137,17 @@ instance streamableBodyHttpRequestReadable :: MonadAff m
     case _ of
       HttpRequest request _ -> ipure (HTTP.requestAsStream request)
 
-newtype HttpResponse (state :: ResponseState) = HttpResponse HTTP.Response
+newtype HttpResponse (resState :: ResponseState) = HttpResponse HTTP.Response
 
-newtype WriterResponse rw r (state :: ResponseState) =
+newtype WriterResponse rw r (resState :: ResponseState) =
   WriterResponse { writer :: rw | r }
 
-getWriter :: forall req c m rw r (state :: ResponseState).
+getWriter :: forall req c m rw r (resState :: ResponseState).
             Monad m =>
             Middleware
             m
-            (Conn req (WriterResponse rw r) state c)
-            (Conn req (WriterResponse rw r) state c)
+            (Conn req (WriterResponse rw r) resState c)
+            (Conn req (WriterResponse rw r) resState c)
             rw
 getWriter = getConn <#> \{ response: WriterResponse rec } -> rec.writer
 
@@ -156,7 +156,7 @@ getWriter = getConn <#> \{ response: WriterResponse rec } -> rec.writer
 -- | the Node server's implementation of the `Response`
 -- | type class' function: `writeStatus`.
 -- |
--- | The ending response state should be `HeadersOpen`. However,
+-- | The ending response resState should be `HeadersOpen`. However,
 -- | if the second ResponseState is not StatusLineOpen,
 -- | then we are forced to define the Middleware's instance
 -- | of `MonadEffect` as

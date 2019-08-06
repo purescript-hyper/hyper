@@ -1,10 +1,24 @@
 module Hyper.Conn where
 
--- | Defines the states of an HTTP response stream. It tracks whether or not
+-- | Defines the resStates of an HTTP request stream. It tracks whether or not
+-- | some content has already been read from an HTTP request stream.
+-- |
+-- | Proper order of computations:
+-- | HeadersReadable -> BodyReadable -> RequestEnded
+foreign import kind RequestState
+
+foreign import data HeadersReadable :: RequestState
+
+foreign import data BodyReadable :: RequestState
+
+foreign import data RequestRead :: RequestState
+
+
+-- | Defines the resStates of an HTTP response stream. It tracks whether or not
 -- | some content has already been written to an HTTP response stream.
 -- |
 -- | Proper order of computations. Items marked with an asterisk indicate that
--- | transitioning back to the same state is valid:
+-- | transitioning back to the same resState is valid:
 -- | StatusLineOpen -> HeadersOpen* -> BodyOpen* -> ResponseEnded
 foreign import kind ResponseState
 
@@ -27,8 +41,10 @@ foreign import data ResponseEnded :: ResponseState
 
 -- | A `Conn` models the entirety of an HTTP connection, containing the fields
 -- | `request`, `response`, and the extensibility point `components`.
-type Conn request response (responseState :: ResponseState) components =
-  { request :: request
+type Conn (request :: RequestState -> Type) (requestState :: RequestState)
+          (response :: ResponseState -> Type) (responseState :: ResponseState)
+          components =
+  { request :: request requestState
   , response :: response responseState
   , components :: components
   }

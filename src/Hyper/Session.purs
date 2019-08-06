@@ -46,13 +46,13 @@ type SESSION_COOKIE_ROWS store compRows =
     )
 
 currentSessionID
-  :: forall m req (res :: ResponseState -> Type) c store session (state :: ResponseState)
+  :: forall m req (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res state { | SESSION_COOKIE_ROWS store c })
-     (Conn req res state { | SESSION_COOKIE_ROWS store c })
+     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
@@ -65,13 +65,13 @@ currentSessionID =
       # pure
 
 getSession
-  :: forall m req (res :: ResponseState -> Type) c store session (state :: ResponseState)
+  :: forall m req (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res state { | SESSION_COOKIE_ROWS store c })
-     (Conn req res state { | SESSION_COOKIE_ROWS store c })
+     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
      (Maybe session)
 getSession = do
   conn <- getConn

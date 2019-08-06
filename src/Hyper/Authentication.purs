@@ -2,9 +2,9 @@ module Hyper.Authentication where
 
 import Hyper.Conn (Conn, kind ResponseState)
 
-setAuthentication :: forall a b req (res :: ResponseState -> Type) c (state :: ResponseState).
+setAuthentication :: forall a b req (res :: ResponseState -> Type) c (resState :: ResponseState).
                      b
-                  -> Conn req res state { authentication :: a | c }
-                  -> Conn req res state { authentication :: b | c }
+                  -> Conn req res resState { authentication :: a | c }
+                  -> Conn req res resState { authentication :: b | c }
 setAuthentication auth conn =
   conn { components { authentication = auth }}

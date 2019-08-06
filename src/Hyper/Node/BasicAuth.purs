@@ -31,14 +31,14 @@ decodeBase64 encoded =
 
 
 withAuthentication
-  :: forall m req (res :: ResponseState -> Type) c t (state :: ResponseState)
+  :: forall m req (res :: ResponseState -> Type) c t (resState :: ResponseState)
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn req res state { authentication :: Unit | c })
-     (Conn req res state { authentication :: Maybe t | c })
+     (Conn req res resState { authentication :: Unit | c })
+     (Conn req res resState { authentication :: Maybe t | c })
      Unit
 withAuthentication mapper = do
   auth <- getAuth

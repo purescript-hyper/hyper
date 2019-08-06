@@ -58,14 +58,14 @@ parseContentMediaType = split (Pattern ";")
                         >>> head
                         >>> map MediaType
 
-parseForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: ResponseState)
+parseForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: ResponseState)
   .  Monad m
   => Request req m
   => ReadableBody req m String
   => Middleware
       m
-      (Conn req res state comp)
-      (Conn req res state comp)
+      (Conn req res resState comp)
+      (Conn req res resState comp)
       (Either String Form)
 parseForm = do
   conn <- getConn
@@ -89,15 +89,15 @@ class FromForm a where
   fromForm ∷ Form → Either String a
 
 
-parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: ResponseState) a
+parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: ResponseState) a
   .  Monad m
   => Request req m
   => ReadableBody req m String
   => FromForm a
   => Middleware
      m
-     (Conn req res state comp)
-     (Conn req res state comp)
+     (Conn req res resState comp)
+     (Conn req res resState comp)
      (Either String a)
 parseFromForm =
   parseForm :>>=

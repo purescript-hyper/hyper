@@ -12,7 +12,7 @@ import Hyper.Header (Header)
 import Hyper.Middleware (Middleware)
 import Hyper.Status (Status, statusFound)
 
--- | A middleware transitioning from one `Response` state to another.
+-- | A middleware transitioning from one `Response` resState to another.
 type ResponseStateTransition m (res :: ResponseState -> Type) (from :: ResponseState) (to :: ResponseState) =
   forall req comp.
   Middleware

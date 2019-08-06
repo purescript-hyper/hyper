@@ -70,13 +70,13 @@ parseCookies s =
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
-cookies :: forall m req (res :: ResponseState -> Type) c (state :: ResponseState)
+cookies :: forall m req (res :: ResponseState -> Type) c (resState :: ResponseState)
   .  Monad m
   => Request req m
   => Middleware
      m
-     (Conn req res state { cookies :: Unit | c})
-     (Conn req res state { cookies :: Either String (Object Values) | c})
+     (Conn req res resState { cookies :: Unit | c})
+     (Conn req res resState { cookies :: Either String (Object Values) | c})
      Unit
 cookies = do
   conn <- getConn
