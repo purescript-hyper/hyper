@@ -1,7 +1,7 @@
 module Hyper.Conn where
 
--- | Defines the states of an HTTP request stream. It tracks whether or not
--- | some content has already been written to an HTTP request stream.
+-- | Defines the states of an HTTP response stream. It tracks whether or not
+-- | some content has already been written to an HTTP response stream.
 -- |
 -- | Proper order of computations. Items marked with an asterisk indicate that
 -- | transitioning back to the same state is valid:
