@@ -143,7 +143,7 @@ data HttpResponse (state :: ResponseState) = HttpResponse HTTP.Response
 newtype WriterResponse rw r (state :: ResponseState) =
   WriterResponse { writer :: rw | r }
 
-getWriter :: forall req (res :: ResponseState -> Type) c m rw r (state :: ResponseState).
+getWriter :: forall req c m rw r (state :: ResponseState).
             Monad m =>
             Middleware
             m
