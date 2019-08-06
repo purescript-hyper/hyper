@@ -17,8 +17,8 @@ type ResponseStateTransition m (res :: ResponseState -> Type) (from :: ResponseS
   forall req comp.
   Middleware
   m
-  (Conn req res comp from)
-  (Conn req res comp to)
+  (Conn req res from comp)
+  (Conn req res to comp)
   Unit
 
 -- | The operations that a response writer, provided by the server backend,
@@ -46,8 +46,8 @@ headers
   => f Header
   -> Middleware
      m
-     (Conn req res comp HeadersOpen)
-     (Conn req res comp BodyOpen)
+     (Conn req res HeadersOpen comp)
+     (Conn req res BodyOpen comp)
      Unit
 headers hs =
   traverse_ writeHeader hs
@@ -60,8 +60,8 @@ contentType
    => MediaType
    -> Middleware
        m
-       (Conn req res comp HeadersOpen)
-       (Conn req res comp HeadersOpen)
+       (Conn req res HeadersOpen comp)
+       (Conn req res HeadersOpen comp)
        Unit
 contentType mediaType =
   writeHeader (Tuple "Content-Type" (unwrap mediaType))
@@ -73,8 +73,8 @@ redirect
   => String
   -> Middleware
      m
-     (Conn req res comp StatusLineOpen)
-     (Conn req res comp HeadersOpen)
+     (Conn req res StatusLineOpen comp)
+     (Conn req res HeadersOpen comp)
      Unit
 redirect uri =
   writeStatus statusFound
@@ -91,7 +91,7 @@ respond
   => r
   -> Middleware
      m
-     (Conn req res comp BodyOpen)
-     (Conn req res comp ResponseEnded)
+     (Conn req res BodyOpen comp)
+     (Conn req res ResponseEnded comp)
      Unit
 respond r = (toResponse r :>>= send) :*> end

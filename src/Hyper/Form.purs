@@ -64,8 +64,8 @@ parseForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: Respons
   => ReadableBody req m String
   => Middleware
       m
-      (Conn req res comp state)
-      (Conn req res comp state)
+      (Conn req res state comp)
+      (Conn req res state comp)
       (Either String Form)
 parseForm = do
   conn <- getConn
@@ -96,8 +96,8 @@ parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: Res
   => FromForm a
   => Middleware
      m
-     (Conn req res comp state)
-     (Conn req res comp state)
+     (Conn req res state comp)
+     (Conn req res state comp)
      (Either String a)
 parseFromForm =
   parseForm :>>=

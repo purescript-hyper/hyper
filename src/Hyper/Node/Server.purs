@@ -146,8 +146,8 @@ getWriter :: forall req c m rw r (state :: ResponseState).
             Monad m =>
             Middleware
             m
-            (Conn req (WriterResponse rw r) c state)
-            (Conn req (WriterResponse rw r) c state)
+            (Conn req (WriterResponse rw r) state c)
+            (Conn req (WriterResponse rw r) state c)
             rw
 getWriter = getConn <#> \{ response: WriterResponse rec } -> rec.writer
 
@@ -174,8 +174,8 @@ unsafeSetStatus :: forall req (res :: ResponseState -> Type) c m
                 => Status
                 -> HTTP.Response
                 -> Middleware m
-                      (Conn req res c StatusLineOpen)
-                      (Conn req res c StatusLineOpen)
+                      (Conn req res StatusLineOpen c)
+                      (Conn req res StatusLineOpen c)
                       Unit
 unsafeSetStatus (Status { code, reasonPhrase }) r = liftEffect do
   HTTP.setStatusCode r code
@@ -185,7 +185,7 @@ writeHeader' :: forall req res c m.
                MonadEffect m
              => (Tuple String String)
              -> HTTP.Response
-             -> Middleware m (Conn req res c HeadersOpen) (Conn req res c HeadersOpen) Unit
+             -> Middleware m (Conn req res HeadersOpen c) (Conn req res HeadersOpen c) Unit
 writeHeader' (Tuple name value) r =
   liftEffect $ HTTP.setHeader r name value
 
@@ -193,7 +193,7 @@ writeResponse :: forall req res c m.
                 MonadAff m
              => HTTP.Response
              -> NodeResponse m
-             -> Middleware m (Conn req res c BodyOpen) (Conn req res c BodyOpen) Unit
+             -> Middleware m (Conn req res BodyOpen c) (Conn req res BodyOpen c) Unit
 writeResponse r (NodeResponse f) =
   lift' (f (HTTP.responseAsStream r))
 
@@ -203,7 +203,7 @@ writeResponse r (NodeResponse f) =
 unsafeEndResponse :: forall req res c m.
               MonadEffect m
             => HTTP.Response
-            -> Middleware m (Conn req res c BodyOpen) (Conn req res c BodyOpen) Unit
+            -> Middleware m (Conn req res BodyOpen c) (Conn req res BodyOpen c) Unit
 unsafeEndResponse r =
   liftEffect (Stream.end (HTTP.responseAsStream r) (pure unit))
 
@@ -257,8 +257,8 @@ runServer'
   -> (forall a. m a -> Aff a)
   -> Middleware
      m
-     (Conn HttpRequest HttpResponse c StatusLineOpen)
-     (Conn HttpRequest HttpResponse c' ResponseEnded)
+     (Conn HttpRequest HttpResponse StatusLineOpen c)
+     (Conn HttpRequest HttpResponse ResponseEnded c')
      Unit
   -> Effect Unit
 runServer' options components runM middleware = do
@@ -290,8 +290,8 @@ runServer
   -> c
   -> Middleware
      Aff
-     (Conn HttpRequest HttpResponse c StatusLineOpen)
-     (Conn HttpRequest HttpResponse c' ResponseEnded)
+     (Conn HttpRequest HttpResponse StatusLineOpen c)
+     (Conn HttpRequest HttpResponse ResponseEnded c')
      Unit
   -> Effect Unit
 runServer options components middleware =

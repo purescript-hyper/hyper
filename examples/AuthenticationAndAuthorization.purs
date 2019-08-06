@@ -42,8 +42,8 @@ htmlWithStatus
   -> Markup Unit
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
 htmlWithStatus status x =
   writeStatus status
@@ -73,8 +73,8 @@ profileHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req res { authentication :: Maybe User | c } StatusLineOpen)
-     (Conn req res { authentication :: Maybe User | c } ResponseEnded)
+     (Conn req res StatusLineOpen { authentication :: Maybe User | c })
+     (Conn req res ResponseEnded { authentication :: Maybe User | c })
      Unit
 profileHandler =
   getConn :>>= \conn →
@@ -107,8 +107,8 @@ adminHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req res { authorization :: Admin, authentication :: User | c } StatusLineOpen)
-     (Conn req res { authorization :: Admin, authentication :: User | c } ResponseEnded)
+     (Conn req res StatusLineOpen { authorization :: Admin, authentication :: User | c })
+     (Conn req res ResponseEnded { authorization :: Admin, authentication :: User | c })
      Unit
 adminHandler =
   getConn :>>= \conn →
@@ -142,8 +142,8 @@ getAdminRole :: forall m req res c (state :: ResponseState).
                 Conn
                 req
                 res
-                { authentication :: User , authorization :: Unit | c }
                 state
+                { authentication :: User , authorization :: Unit | c }
              -> m (Maybe Admin)
 getAdminRole conn =
   case conn.components.authentication of
@@ -158,18 +158,16 @@ app :: forall m req res b c
     => ResponseWritable b m String
     => Middleware
        m
-       (Conn req res
+       (Conn req res StatusLineOpen
              { authentication :: Unit
              , authorization :: Unit
              | c
-             }
-             StatusLineOpen)
-       (Conn req res
+             })
+       (Conn req res ResponseEnded
              { authentication :: Maybe User
              , authorization :: Unit
              | c
-             }
-             ResponseEnded)
+             })
        Unit
 app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
     where

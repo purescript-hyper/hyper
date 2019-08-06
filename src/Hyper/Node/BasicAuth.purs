@@ -37,8 +37,8 @@ withAuthentication
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn req res { authentication :: Unit | c } state)
-     (Conn req res { authentication :: Maybe t | c } state)
+     (Conn req res state { authentication :: Unit | c })
+     (Conn req res state { authentication :: Maybe t | c })
      Unit
 withAuthentication mapper = do
   auth <- getAuth
@@ -70,13 +70,13 @@ authenticated
   => Realm
   -> Middleware
       m
-      (Conn req res { authentication :: t | c } StatusLineOpen)
-      (Conn req res { authentication :: t | c } ResponseEnded)
+      (Conn req res StatusLineOpen { authentication :: t | c })
+      (Conn req res ResponseEnded { authentication :: t | c })
       Unit
   -> Middleware
      m
-     (Conn req res { authentication :: Maybe t | c } StatusLineOpen)
-     (Conn req res { authentication :: Maybe t | c } ResponseEnded)
+     (Conn req res StatusLineOpen { authentication :: Maybe t | c })
+     (Conn req res ResponseEnded { authentication :: Maybe t | c })
      Unit
 authenticated realm mw = do
   conn ← getConn

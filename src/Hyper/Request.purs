@@ -55,8 +55,8 @@ class Request req m where
     :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res comp state)
-       (Conn req res comp state)
+       (Conn req res state comp)
+       (Conn req res state comp)
        RequestData
 
 class Request req m <= BaseRequest req m
@@ -69,8 +69,8 @@ class ReadableBody req m b where
     :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res comp state)
-       (Conn req res comp state)
+       (Conn req res state comp)
+       (Conn req res state comp)
        b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
@@ -81,6 +81,6 @@ class StreamableBody req m stream | req -> stream where
     :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res comp state)
-       (Conn req res comp state)
+       (Conn req res state comp)
+       (Conn req res state comp)
        stream

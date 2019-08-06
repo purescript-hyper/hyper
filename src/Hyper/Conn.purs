@@ -27,7 +27,7 @@ foreign import data ResponseEnded :: ResponseState
 
 -- | A `Conn` models the entirety of an HTTP connection, containing the fields
 -- | `request`, `response`, and the extensibility point `components`.
-type Conn request response components (responseState :: ResponseState) =
+type Conn request response (responseState :: ResponseState) components =
   { request :: request
   , response :: response responseState
   , components :: components

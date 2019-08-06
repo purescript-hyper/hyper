@@ -51,8 +51,8 @@ currentSessionID
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
-     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
+     (Conn req res state { | SESSION_COOKIE_ROWS store c })
+     (Conn req res state { | SESSION_COOKIE_ROWS store c })
      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
@@ -70,8 +70,8 @@ getSession
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
-     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
+     (Conn req res state { | SESSION_COOKIE_ROWS store c })
+     (Conn req res state { | SESSION_COOKIE_ROWS store c })
      (Maybe session)
 getSession = do
   conn <- getConn
@@ -89,8 +89,8 @@ saveSession
   => session
   -> Middleware
      m
-      (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
-      (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
+      (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+      (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
      Unit
 saveSession session = do
   conn <- getConn
@@ -116,8 +116,8 @@ deleteSession
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
-     (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
+     (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+     (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
      Unit
 deleteSession = do
   conn <- getConn

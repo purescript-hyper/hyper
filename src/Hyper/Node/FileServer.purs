@@ -121,8 +121,8 @@ serveFile
   => FilePath
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
 serveFile = serveFile' htaccess
 
@@ -136,8 +136,8 @@ serveFile'
   -> FilePath
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
 serveFile' htaccessMap path = do
   let
@@ -164,13 +164,13 @@ fileServer
   => FilePath
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
 fileServer = fileServer' htaccess
 
@@ -186,13 +186,13 @@ fileServer'
   -> FilePath
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
   -> Middleware
      m
-     (Conn req res c StatusLineOpen)
-     (Conn req res c ResponseEnded)
+     (Conn req res StatusLineOpen c)
+     (Conn req res ResponseEnded c)
      Unit
 fileServer' htaccessMap dir on404 = do
   conn ← getConn

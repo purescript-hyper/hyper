@@ -75,8 +75,8 @@ cookies :: forall m req (res :: ResponseState -> Type) c (state :: ResponseState
   => Request req m
   => Middleware
      m
-     (Conn req res { cookies :: Unit | c} state)
-     (Conn req res { cookies :: Either String (Object Values) | c} state)
+     (Conn req res state { cookies :: Unit | c})
+     (Conn req res state { cookies :: Either String (Object Values) | c})
      Unit
 cookies = do
   conn <- getConn
@@ -146,8 +146,8 @@ setCookie :: forall m req (res :: ResponseState -> Type) c b
   -> CookieAttributes
   -> Middleware
      m
-     (Conn req res c HeadersOpen)
-     (Conn req res c HeadersOpen)
+     (Conn req res HeadersOpen c)
+     (Conn req res HeadersOpen c)
      Unit
 setCookie key value attrs =
   writeHeader (Tuple "Set-Cookie" (setCookieHeaderValue key value attrs))

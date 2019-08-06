@@ -12,8 +12,8 @@ import Hyper.Status (statusForbidden)
 
 withAuthorization :: forall a b req (res :: ResponseState -> Type) c (state :: ResponseState).
                      b
-                  -> Conn req res { authorization :: a | c } state
-                  -> Conn req res { authorization :: b | c } state
+                  -> Conn req res state { authorization :: a | c }
+                  -> Conn req res state { authorization :: b | c }
 withAuthorization a conn =
   conn { components = (conn.components { authorization = a }) }
 
@@ -22,16 +22,16 @@ authorized :: forall a m req (res :: ResponseState -> Type) b c
   .  Monad m
   => ResponseWritable b m String
   => Response res m b
-  => (Conn req res { authorization :: Unit | c } StatusLineOpen -> m (Maybe a))
+  => (Conn req res StatusLineOpen { authorization :: Unit | c } -> m (Maybe a))
   -> Middleware
      m
-     (Conn req res { authorization :: a | c } StatusLineOpen)
-     (Conn req res { authorization :: a | c } ResponseEnded)
+     (Conn req res StatusLineOpen { authorization :: a | c })
+     (Conn req res ResponseEnded { authorization :: a | c })
      Unit
   -> Middleware
      m
-     (Conn req res { authorization :: Unit | c } StatusLineOpen)
-     (Conn req res { authorization :: Unit | c } ResponseEnded)
+     (Conn req res StatusLineOpen { authorization :: Unit | c })
+     (Conn req res ResponseEnded { authorization :: Unit | c })
      Unit
 authorized authorizer mw = do
   conn ← getConn

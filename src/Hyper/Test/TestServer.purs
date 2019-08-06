@@ -119,8 +119,8 @@ testServer = execWriterT <<< void
 
 resetResponse
   :: forall req c body fromResponse toResponse
-   . Conn req (TestResponse body) c fromResponse
-  -> Conn req (TestResponse body) c toResponse
+   . Conn req (TestResponse body) fromResponse c
+  -> Conn req (TestResponse body) toResponse c
 resetResponse conn@{ response: TestResponse status headers body } =
   conn { response = TestResponse status headers body }
 
