@@ -18,13 +18,13 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Authorization (authorized)
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.BasicAuth as BasicAuth
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, contentType, respond, writeStatus)
+import Hyper.Response (class Response, class ResponseWritable, closeHeaders, contentType, respond, writeStatus)
 import Hyper.Status (Status, statusNotFound, statusOK)
 import Text.Smolder.HTML (a, h1, li, p, section, ul)
 import Text.Smolder.HTML.Attributes as A
@@ -42,8 +42,8 @@ htmlWithStatus
   -> Markup Unit
   -> Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
      Unit
 htmlWithStatus status x =
   writeStatus status
@@ -73,8 +73,8 @@ profileHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req (res StatusLineOpen) { authentication :: Maybe User | c })
-     (Conn req (res ResponseEnded) { authentication :: Maybe User | c })
+     (Conn req res { authentication :: Maybe User | c } StatusLineOpen)
+     (Conn req res { authentication :: Maybe User | c } ResponseEnded)
      Unit
 profileHandler =
   getConn :>>= \conn →
@@ -107,8 +107,8 @@ adminHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req (res StatusLineOpen) { authorization :: Admin, authentication :: User | c })
-     (Conn req (res ResponseEnded) { authorization :: Admin, authentication :: User | c })
+     (Conn req res { authorization :: Admin, authentication :: User | c } StatusLineOpen)
+     (Conn req res { authorization :: Admin, authentication :: User | c } ResponseEnded)
      Unit
 adminHandler =
   getConn :>>= \conn →
@@ -137,12 +137,13 @@ userFromBasicAuth =
 
 -- This could be a function checking a database, or some session store, if the
 -- authenticated user has role `Admin`.
-getAdminRole :: forall m req res c.
+getAdminRole :: forall m req res c (state :: ResponseState).
                 Monad m =>
                 Conn
                 req
                 res
                 { authentication :: User , authorization :: Unit | c }
+                state
              -> m (Maybe Admin)
 getAdminRole conn =
   case conn.components.authentication of
@@ -157,18 +158,18 @@ app :: forall m req res b c
     => ResponseWritable b m String
     => Middleware
        m
-       (Conn req
-             (res StatusLineOpen)
+       (Conn req res
              { authentication :: Unit
              , authorization :: Unit
              | c
-             })
-       (Conn req
-             (res ResponseEnded)
+             }
+             StatusLineOpen)
+       (Conn req res
              { authentication :: Maybe User
              , authorization :: Unit
              | c
-             })
+             }
+             ResponseEnded)
        Unit
 app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
     where
