@@ -124,10 +124,25 @@ serveFile
      (Conn req res c StatusLineOpen)
      (Conn req res c ResponseEnded)
      Unit
-serveFile path = do
+serveFile = serveFile' htaccess
+
+serveFile'
+  :: forall m req (res :: ResponseState -> Type) c b
+  .  Monad m
+  => MonadAff m
+  => ResponseWritable b m Buffer
+  => Response res m b
+  => Map String String
+  -> FilePath
+  -> Middleware
+     m
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
+     Unit
+serveFile' htaccessMap path = do
   let
     ext = last $ split (Pattern ".") path
-    contentType = maybe "*/*" identity (ext >>= flip lookup htaccess)
+    contentType = maybe "*/*" identity (ext >>= flip lookup htaccessMap)
   buf <- lift' (liftAff (readFile path))
   contentLength <- liftEffect (Buffer.size buf)
   _ <- writeStatus statusOK
@@ -139,7 +154,6 @@ serveFile path = do
   end
   where bind = ibind
 
--- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
   :: forall m req (res :: ResponseState -> Type) c b
   .  Monad m
@@ -158,13 +172,35 @@ fileServer
      (Conn req res c StatusLineOpen)
      (Conn req res c ResponseEnded)
      Unit
-fileServer dir on404 = do
+fileServer = fileServer' htaccess
+
+-- | Extremly basic implementation of static file serving. Needs more love.
+fileServer'
+  :: forall m req (res :: ResponseState -> Type) c b
+  .  Monad m
+  => MonadAff m
+  => Request req m
+  => ResponseWritable b m Buffer
+  => Response res m b
+  => Map String String
+  -> FilePath
+  -> Middleware
+     m
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
+     Unit
+  -> Middleware
+     m
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
+     Unit
+fileServer' htaccessMap dir on404 = do
   conn ← getConn
   { url } <- getRequestData
   serve (Path.concat [dir, url])
   where
     serveStats absolutePath stats
-      | isFile stats = serveFile absolutePath
+      | isFile stats = serveFile' htaccessMap absolutePath
       | isDirectory stats = serve (Path.concat [absolutePath, "index.html"])
       | otherwise = on404
 
