@@ -19,11 +19,11 @@ import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, kind ResponseState, HeadersOpen)
 import Hyper.Cookies (defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
-import Hyper.Response (class Response, HeadersOpen)
+import Hyper.Response (class Response)
 
 newtype SessionID = SessionID String
 
@@ -39,26 +39,20 @@ class SessionStore store m session | store -> m, store -> session where
 
 type Sessions s = { key :: String, store :: s }
 
+type SESSION_COOKIE_ROWS store compRows =
+    ( sessions :: Sessions store
+    , cookies :: Either String (Object Cookies.Values)
+    | compRows
+    )
+
 currentSessionID
-  :: forall m req res c store session
+  :: forall m req (res :: ResponseState -> Type) c store session (state :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn
-      req
-      res
-      { sessions :: Sessions store
-      , cookies :: Either String (Object Cookies.Values)
-      | c
-      })
-     (Conn
-      req
-      res
-      { sessions :: Sessions store
-      , cookies :: Either String (Object Cookies.Values)
-      | c
-      })
+     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
+     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
@@ -71,25 +65,13 @@ currentSessionID =
       # pure
 
 getSession
-  :: forall m req res c store session
+  :: forall m req (res :: ResponseState -> Type) c store session (state :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn
-      req
-      res
-      { sessions :: Sessions store
-      , cookies :: Either String (Object Cookies.Values)
-      | c
-      })
-     (Conn
-      req
-      res
-      { sessions :: Sessions store
-      , cookies :: Either String (Object Cookies.Values)
-      | c
-      })
+     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
+     (Conn req res { | SESSION_COOKIE_ROWS store c } state)
      (Maybe session)
 getSession = do
   conn <- getConn
@@ -100,21 +82,15 @@ getSession = do
   where bind = ibind
 
 saveSession
-  :: forall m req res c b store session
+  :: forall m req (res :: ResponseState -> Type) c b store session
   .  Monad m
   => Response res m b
   => SessionStore store m session
   => session
   -> Middleware
      m
-     (Conn
-      req
-      (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
-     (Conn
-      req
-      (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
+      (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
+      (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
      Unit
 saveSession session = do
   conn <- getConn
@@ -134,20 +110,14 @@ saveSession session = do
     bind = ibind
 
 deleteSession
-  :: forall m req res c b store session
+  :: forall m req (res :: ResponseState -> Type) c b store session
   .  Monad m
   => Response res m b
   => SessionStore store m session
   => Middleware
      m
-     (Conn
-      req
-      (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
-     (Conn
-      req
-      (res HeadersOpen)
-      { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
+     (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
+     (Conn req res { | SESSION_COOKIE_ROWS store c } HeadersOpen)
      Unit
 deleteSession = do
   conn <- getConn

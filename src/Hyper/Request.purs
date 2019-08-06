@@ -12,16 +12,17 @@ module Hyper.Request
   ) where
 
 import Prelude
+
 import Data.Array as Array
-import Data.String as String
 import Data.Bifunctor (lmap)
 import Data.Either (Either)
 import Data.HTTP.Method (CustomMethod, Method)
 import Data.Lazy (Lazy)
 import Data.Maybe (Maybe, fromMaybe)
-import Foreign.Object (Object)
+import Data.String as String
 import Data.Tuple (Tuple)
-import Hyper.Conn (Conn)
+import Foreign.Object (Object)
+import Hyper.Conn (Conn, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 
@@ -51,11 +52,11 @@ parseUrl url =
 
 class Request req m where
   getRequestData
-    :: forall res c
+    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res c)
-       (Conn req res c)
+       (Conn req res comp state)
+       (Conn req res comp state)
        RequestData
 
 class Request req m <= BaseRequest req m
@@ -65,11 +66,11 @@ class Request req m <= BaseRequest req m
 -- | [StreamableBody](#streamablebody) class.
 class ReadableBody req m b where
   readBody
-    :: forall res c
+    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res c)
-       (Conn req res c)
+       (Conn req res comp state)
+       (Conn req res comp state)
        b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
@@ -77,9 +78,9 @@ class ReadableBody req m b where
 -- | streaming, see the [ReadableBody](#readablebody) class.
 class StreamableBody req m stream | req -> stream where
   streamBody
-    :: forall res c
+    :: forall (res :: ResponseState -> Type) comp (state :: ResponseState)
      . Middleware
        m
-       (Conn req res c)
-       (Conn req res c)
+       (Conn req res comp state)
+       (Conn req res comp state)
        stream

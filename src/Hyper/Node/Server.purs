@@ -11,14 +11,8 @@ module Hyper.Node.Server
 
 import Prelude
 
-import Control.Monad.Indexed (ipure, (:*>), (:>>=))
-import Effect.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
-import Effect.Aff.AVar (empty, new, put, take)
-import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect (Effect)
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Exception (catchException)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Indexed (ipure, (:*>), (:>>=))
 import Data.Either (Either(..), either)
 import Data.HTTP.Method as Method
 import Data.Int as Int
@@ -26,20 +20,20 @@ import Data.Lazy (defer)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.Tuple (Tuple(..))
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
+import Effect.Aff.AVar (empty, new, put, take)
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Exception (catchException)
 import Foreign.Object as Object
-import Hyper.Conn (Conn)
+import Hyper.Conn (BodyOpen, Conn, HeadersOpen, ResponseEnded, StatusLineOpen, kind ResponseState)
 import Hyper.Middleware (Middleware, evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
+import Hyper.Node.Server.Options (Hostname(..), Options, Port(..), defaultOptions, defaultOptionsWithLogging) as Hyper.Node.Server.Options
 import Hyper.Node.Server.Options (Options)
-import Hyper.Node.Server.Options
-  ( Hostname(..)
-  , Options
-  , Port(..)
-  , defaultOptions
-  , defaultOptionsWithLogging
-  ) as Hyper.Node.Server.Options
 import Hyper.Request (class ReadableBody, class Request, class StreamableBody, RequestData, parseUrl, readBody)
-import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen)
+import Hyper.Response (class ResponseWritable, class Response)
 import Hyper.Status (Status(..))
 import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
@@ -144,23 +138,47 @@ instance streamableBodyHttpRequestReadable :: MonadAff m
       HttpRequest request _ -> ipure (HTTP.requestAsStream request)
 
 -- TODO: Make a newtype
-data HttpResponse state = HttpResponse HTTP.Response
+data HttpResponse (state :: ResponseState) = HttpResponse HTTP.Response
 
-getWriter :: forall req res c m rw.
+newtype WriterResponse rw r (state :: ResponseState) =
+  WriterResponse { writer :: rw | r }
+
+getWriter :: forall req (res :: ResponseState -> Type) c m rw r (state :: ResponseState).
             Monad m =>
             Middleware
             m
-            (Conn req { writer :: rw | res } c)
-            (Conn req { writer :: rw | res } c)
+            (Conn req (WriterResponse rw r) c state)
+            (Conn req (WriterResponse rw r) c state)
             rw
-getWriter = _.response.writer <$> getConn
+getWriter = getConn <#> \{ response: WriterResponse rec } -> rec.writer
 
-setStatus :: forall req res c m.
-            MonadEffect m
-          => Status
-          -> HTTP.Response
-          -> Middleware m (Conn req res c) (Conn req res c) Unit
-setStatus (Status { code, reasonPhrase }) r = liftEffect do
+-- | Note: this `ResponseState` transition is technically illegal. It is
+-- | only safe to use as part of the implementation of
+-- | the Node server's implementation of the `Response`
+-- | type class' function: `writeStatus`.
+-- |
+-- | The ending response state should be `HeadersOpen`. However,
+-- | if the second ResponseState is not StatusLineOpen,
+-- | then we are forced to define the Middleware's instance
+-- | of `MonadEffect` as
+-- | ```
+-- | (Monad m) => MonadEffect (Middleware m input output)`
+-- | ```
+-- | which erroneously allows one to change the ResponseState of `Conn`
+-- | via `liftEffect`. Thus, we must define the instance as...
+-- | ```
+-- | (Monad m) => MonadEffect (Middleware m same same)
+-- | ```
+-- | which does NOT allow one to change the ResponseState.
+unsafeSetStatus :: forall req (res :: ResponseState -> Type) c m
+                 . MonadEffect m
+                => Status
+                -> HTTP.Response
+                -> Middleware m
+                      (Conn req res c StatusLineOpen)
+                      (Conn req res c StatusLineOpen)
+                      Unit
+unsafeSetStatus (Status { code, reasonPhrase }) r = liftEffect do
   HTTP.setStatusCode r code
   HTTP.setStatusMessage r reasonPhrase
 
@@ -168,7 +186,7 @@ writeHeader' :: forall req res c m.
                MonadEffect m
              => (Tuple String String)
              -> HTTP.Response
-             -> Middleware m (Conn req res c) (Conn req res c) Unit
+             -> Middleware m (Conn req res c HeadersOpen) (Conn req res c HeadersOpen) Unit
 writeHeader' (Tuple name value) r =
   liftEffect $ HTTP.setHeader r name value
 
@@ -176,22 +194,25 @@ writeResponse :: forall req res c m.
                 MonadAff m
              => HTTP.Response
              -> NodeResponse m
-             -> Middleware m (Conn req res c) (Conn req res c) Unit
+             -> Middleware m (Conn req res c BodyOpen) (Conn req res c BodyOpen) Unit
 writeResponse r (NodeResponse f) =
   lift' (f (HTTP.responseAsStream r))
 
-endResponse :: forall req res c m.
+-- Similar to the 'unsafeSetStatus' function, this is technically illegal.
+-- It is only safe to use as part of the implementation of the Node server's
+-- implementation of the `Response` type class
+unsafeEndResponse :: forall req res c m.
               MonadEffect m
             => HTTP.Response
-            -> Middleware m (Conn req res c) (Conn req res c) Unit
-endResponse r =
+            -> Middleware m (Conn req res c BodyOpen) (Conn req res c BodyOpen) Unit
+unsafeEndResponse r =
   liftEffect (Stream.end (HTTP.responseAsStream r) (pure unit))
 
 instance responseWriterHttpResponse :: MonadAff m
                                     => Response HttpResponse m (NodeResponse m) where
   writeStatus status =
     getConn :>>= \{ response: HttpResponse r } ->
-      setStatus status r
+      unsafeSetStatus status r
       :*> modifyConn (_ { response = HttpResponse r })
 
   writeHeader header =
@@ -210,7 +231,7 @@ instance responseWriterHttpResponse :: MonadAff m
 
   end =
     getConn :>>= \{ response: HttpResponse r } ->
-      endResponse r
+      unsafeEndResponse r
       :*> modifyConn (_ { response = HttpResponse r })
 
 
@@ -237,8 +258,8 @@ runServer'
   -> (forall a. m a -> Aff a)
   -> Middleware
      m
-     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
-     (Conn HttpRequest (HttpResponse ResponseEnded) c')
+     (Conn HttpRequest HttpResponse c StatusLineOpen)
+     (Conn HttpRequest HttpResponse c' ResponseEnded)
      Unit
   -> Effect Unit
 runServer' options components runM middleware = do
@@ -270,8 +291,8 @@ runServer
   -> c
   -> Middleware
      Aff
-     (Conn HttpRequest (HttpResponse StatusLineOpen) c)
-     (Conn HttpRequest (HttpResponse ResponseEnded) c')
+     (Conn HttpRequest HttpResponse c StatusLineOpen)
+     (Conn HttpRequest HttpResponse c' ResponseEnded)
      Unit
   -> Effect Unit
 runServer options components middleware =

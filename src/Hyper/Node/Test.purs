@@ -6,6 +6,7 @@ import Data.Array (singleton)
 import Data.Function ((<<<))
 import Data.Monoid (class Monoid)
 import Data.Semigroup ((<>), class Semigroup)
+import Hyper.Conn (kind ResponseState)
 import Hyper.Response (class ResponseWritable)
 import Node.Buffer (Buffer)
 

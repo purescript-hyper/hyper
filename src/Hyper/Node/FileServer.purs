@@ -10,11 +10,11 @@ import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (maybe)
 import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
+import Hyper.Response (class ResponseWritable, class Response, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
 import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
@@ -113,7 +113,7 @@ htaccess = fromFoldable $
   ]
 
 serveFile
-  :: forall m req res c b
+  :: forall m req (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => ResponseWritable b m Buffer
@@ -121,8 +121,8 @@ serveFile
   => FilePath
   -> Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
      Unit
 serveFile path = do
   let
@@ -141,7 +141,7 @@ serveFile path = do
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
-  :: forall m req res c b
+  :: forall m req (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => Request req m
@@ -150,13 +150,13 @@ fileServer
   => FilePath
   -> Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
      Unit
   -> Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req res c StatusLineOpen)
+     (Conn req res c ResponseEnded)
      Unit
 fileServer dir on404 = do
   conn ← getConn

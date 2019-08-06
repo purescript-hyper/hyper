@@ -14,8 +14,8 @@ module Hyper.Cookies
 
 import Prelude
 
-import Control.Monad.Indexed (ibind)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Indexed (ibind)
 import Data.Array (catMaybes, cons, filter, foldMap, uncons, (:))
 import Data.Either (Either)
 import Data.JSDate (JSDate, toUTCString)
@@ -29,11 +29,11 @@ import Data.Tuple (Tuple(..), uncurry)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Global.Unsafe (unsafeEncodeURIComponent, unsafeDecodeURIComponent)
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, HeadersOpen, kind ResponseState)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class Response, HeadersOpen, writeHeader)
+import Hyper.Response (class Response, writeHeader)
 
 type Name = String
 type Value = String
@@ -70,13 +70,13 @@ parseCookies s =
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
-cookies :: forall m req res c
+cookies :: forall m req (res :: ResponseState -> Type) c (state :: ResponseState)
   .  Monad m
   => Request req m
   => Middleware
      m
-     (Conn req res { cookies :: Unit | c})
-     (Conn req res { cookies :: Either String (Object Values) | c})
+     (Conn req res { cookies :: Unit | c} state)
+     (Conn req res { cookies :: Either String (Object Values) | c} state)
      Unit
 cookies = do
   conn <- getConn
@@ -138,7 +138,7 @@ setCookieHeaderValue key value { comment, expires, path, maxAge: m, domain, secu
   sameSiteSer Strict = "Strict"
   sameSiteSer Lax = "Lax"
 
-setCookie :: forall m req res c b
+setCookie :: forall m req (res :: ResponseState -> Type) c b
   .  Monad m
   => Response res m b
   => Name
@@ -146,8 +146,8 @@ setCookie :: forall m req res c b
   -> CookieAttributes
   -> Middleware
      m
-     (Conn req (res HeadersOpen) c)
-     (Conn req (res HeadersOpen) c)
+     (Conn req res c HeadersOpen)
+     (Conn req res c HeadersOpen)
      Unit
 setCookie key value attrs =
   writeHeader (Tuple "Set-Cookie" (setCookieHeaderValue key value attrs))

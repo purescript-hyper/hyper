@@ -11,9 +11,9 @@ module Hyper.Form
        ) where
 
 import Prelude
-import Data.Tuple as Tuple
-import Control.Monad.Indexed (ibind, ipure, (:>>=))
+
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Array (head)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Just, Nothing), maybe)
@@ -22,8 +22,9 @@ import Data.MediaType.Common (applicationFormURLEncoded)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple)
+import Data.Tuple as Tuple
 import Foreign.Object (lookup)
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
@@ -57,14 +58,14 @@ parseContentMediaType = split (Pattern ";")
                         >>> head
                         >>> map MediaType
 
-parseForm ∷ forall m req res c
+parseForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: ResponseState)
   .  Monad m
   => Request req m
   => ReadableBody req m String
   => Middleware
       m
-      (Conn req res c)
-      (Conn req res c)
+      (Conn req res comp state)
+      (Conn req res comp state)
       (Either String Form)
 parseForm = do
   conn <- getConn
@@ -88,15 +89,15 @@ class FromForm a where
   fromForm ∷ Form → Either String a
 
 
-parseFromForm ∷ forall m req res c a
+parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (state :: ResponseState) a
   .  Monad m
   => Request req m
   => ReadableBody req m String
   => FromForm a
   => Middleware
      m
-     (Conn req res c)
-     (Conn req res c)
+     (Conn req res comp state)
+     (Conn req res comp state)
      (Either String a)
 parseFromForm =
   parseForm :>>=

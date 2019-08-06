@@ -12,11 +12,11 @@ import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
 import Foreign.Object as Object
 import Hyper.Authentication (setAuthentication)
-import Hyper.Conn (Conn)
+import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
-import Hyper.Response (class ResponseWritable, respond, class Response, ResponseEnded, StatusLineOpen, closeHeaders, writeHeader, writeStatus)
+import Hyper.Response (class ResponseWritable, respond, class Response, closeHeaders, writeHeader, writeStatus)
 import Hyper.Status (statusUnauthorized)
 import Node.Encoding (Encoding(ASCII, Base64))
 
@@ -31,14 +31,14 @@ decodeBase64 encoded =
 
 
 withAuthentication
-  :: forall m req res c t
+  :: forall m req (res :: ResponseState -> Type) c t (state :: ResponseState)
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn req res { authentication :: Unit | c })
-     (Conn req res { authentication :: Maybe t | c })
+     (Conn req res { authentication :: Unit | c } state)
+     (Conn req res { authentication :: Maybe t | c } state)
      Unit
 withAuthentication mapper = do
   auth <- getAuth
@@ -63,20 +63,20 @@ withAuthentication mapper = do
     bind = ibind
 
 authenticated
-  :: forall m req res c b t
+  :: forall m req (res :: ResponseState -> Type) c b t
   .  Monad m
   => ResponseWritable b m String
   => Response res m b
   => Realm
   -> Middleware
       m
-      (Conn req (res StatusLineOpen) { authentication :: t | c })
-      (Conn req (res ResponseEnded) { authentication :: t | c })
+      (Conn req res { authentication :: t | c } StatusLineOpen)
+      (Conn req res { authentication :: t | c } ResponseEnded)
       Unit
   -> Middleware
      m
-     (Conn req (res StatusLineOpen) { authentication :: Maybe t | c })
-     (Conn req (res ResponseEnded) { authentication :: Maybe t | c })
+     (Conn req res { authentication :: Maybe t | c } StatusLineOpen)
+     (Conn req res { authentication :: Maybe t | c } ResponseEnded)
      Unit
 authenticated realm mw = do
   conn ← getConn

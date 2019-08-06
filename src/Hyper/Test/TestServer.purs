@@ -1,10 +1,9 @@
 module Hyper.Test.TestServer where
 
-import Data.String as String
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
-import Control.Monad.Indexed (ipure, (:*>), (:>>=))
 import Control.Monad (class Monad, void)
+import Control.Monad.Indexed (ipure, (:*>), (:>>=))
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
 import Data.Either (Either(..))
@@ -17,9 +16,10 @@ import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid (mempty, class Monoid)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Semigroup (class Semigroup, (<>))
-import Foreign.Object as Object
+import Data.String as String
 import Foreign.Object (Object)
-import Hyper.Conn (Conn)
+import Foreign.Object as Object
+import Hyper.Conn (Conn, kind ResponseState)
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
@@ -80,7 +80,7 @@ instance monoidStringBody :: Monoid StringBody where
 
 -- RESPONSE
 
-data TestResponse b state
+data TestResponse b (state :: ResponseState)
   = TestResponse (Maybe Status) (Array Header) (Array b)
 
 testStatus :: forall b state. TestResponse b state → Maybe Status
@@ -118,9 +118,9 @@ testServer = execWriterT <<< void
 
 
 resetResponse
-  :: forall req c body a b
-   . Conn req (TestResponse body a) c
-  -> Conn req (TestResponse body b) c
+  :: forall req c body fromResponse toResponse
+   . Conn req (TestResponse body) c fromResponse
+  -> Conn req (TestResponse body) c toResponse
 resetResponse conn@{ response: TestResponse status headers body } =
   conn { response = TestResponse status headers body }
 
