@@ -3,14 +3,14 @@ module Hyper.Node.FileServer (fileServer) where
 import Prelude
 
 import Control.Monad.Indexed (ibind, (:>>=))
-import Effect.Aff.Class (liftAff, class MonadAff)
-import Effect.Class (liftEffect)
 import Data.Array (last)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (maybe)
 import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(Tuple))
-import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
+import Effect.Aff.Class (liftAff, class MonadAff)
+import Effect.Class (liftEffect)
+import Hyper.Conn (Conn, StatusLineOpen, ResponseEnded, kind RequestState, kind ResponseState)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
@@ -113,7 +113,7 @@ htaccess = fromFoldable $
   ]
 
 serveFile
-  :: forall m req (res :: ResponseState -> Type) c b
+  :: forall m req reqState (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => ResponseWritable b m Buffer
@@ -121,13 +121,13 @@ serveFile
   => FilePath
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
 serveFile = serveFile' htaccess
 
 serveFile'
-  :: forall m req (res :: ResponseState -> Type) c b
+  :: forall m req reqState (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => ResponseWritable b m Buffer
@@ -136,8 +136,8 @@ serveFile'
   -> FilePath
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
 serveFile' htaccessMap path = do
   let
@@ -155,7 +155,7 @@ serveFile' htaccessMap path = do
   where bind = ibind
 
 fileServer
-  :: forall m req (res :: ResponseState -> Type) c b
+  :: forall m req reqState (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => Request req m
@@ -164,19 +164,19 @@ fileServer
   => FilePath
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
 fileServer = fileServer' htaccess
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer'
-  :: forall m req (res :: ResponseState -> Type) c b
+  :: forall m req reqState (res :: ResponseState -> Type) c b
   .  Monad m
   => MonadAff m
   => Request req m
@@ -186,13 +186,13 @@ fileServer'
   -> FilePath
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
 fileServer' htaccessMap dir on404 = do
   conn ← getConn

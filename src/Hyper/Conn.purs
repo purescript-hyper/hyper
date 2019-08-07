@@ -1,5 +1,7 @@
 module Hyper.Conn where
 
+import Hyper.Middleware (Middleware(..))
+
 -- | Defines the resStates of an HTTP request stream. It tracks whether or not
 -- | some content has already been read from an HTTP request stream.
 -- |
@@ -7,13 +9,8 @@ module Hyper.Conn where
 -- | BodyReadable -> BodyRead
 foreign import kind RequestState
 
--- | Indicates that the request has been received but neither its
--- | headers nor body have been read yet.
-foreign import data RequestReceived :: RequestState
-
--- | Indicatess the request's headers have been read, but
--- | it's body hasn't been read yet.
-foreign import data HeadersRead :: RequestState
+-- | Indicatess the request's body hasn't been read yet.
+foreign import data BodyUnread :: RequestState
 
 -- | Indicatess the request's body has already been read
 -- | and can no longer be read again.
@@ -54,3 +51,10 @@ type Conn (request :: RequestState -> Type) (requestState :: RequestState)
   , response :: response responseState
   , components :: components
   }
+
+type NoTransition m (req :: RequestState -> Type) (reqState :: RequestState) (res :: ResponseState -> Type) (resState :: ResponseState) comp a =
+  Middleware
+    m
+    (Conn req reqState res resState comp)
+    (Conn req reqState res resState comp)
+    a

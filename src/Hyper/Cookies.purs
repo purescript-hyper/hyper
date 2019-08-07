@@ -70,13 +70,13 @@ parseCookies s =
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
-cookies :: forall m req (res :: ResponseState -> Type) c (resState :: ResponseState)
+cookies :: forall m req reqState (res :: ResponseState -> Type) c (resState :: ResponseState)
   .  Monad m
   => Request req m
   => Middleware
      m
-     (Conn req res resState { cookies :: Unit | c})
-     (Conn req res resState { cookies :: Either String (Object Values) | c})
+     (Conn req reqState res resState { cookies :: Unit | c})
+     (Conn req reqState res resState { cookies :: Either String (Object Values) | c})
      Unit
 cookies = do
   conn <- getConn
@@ -138,7 +138,7 @@ setCookieHeaderValue key value { comment, expires, path, maxAge: m, domain, secu
   sameSiteSer Strict = "Strict"
   sameSiteSer Lax = "Lax"
 
-setCookie :: forall m req (res :: ResponseState -> Type) c b
+setCookie :: forall m req reqState (res :: ResponseState -> Type) c b
   .  Monad m
   => Response res m b
   => Name
@@ -146,8 +146,8 @@ setCookie :: forall m req (res :: ResponseState -> Type) c b
   -> CookieAttributes
   -> Middleware
      m
-     (Conn req res HeadersOpen c)
-     (Conn req res HeadersOpen c)
+     (Conn req reqState res HeadersOpen c)
+     (Conn req reqState res HeadersOpen c)
      Unit
 setCookie key value attrs =
   writeHeader (Tuple "Set-Cookie" (setCookieHeaderValue key value attrs))

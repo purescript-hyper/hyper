@@ -10,28 +10,28 @@ import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Response (class ResponseWritable, respond, headers, writeStatus, class Response)
 import Hyper.Status (statusForbidden)
 
-withAuthorization :: forall a b req (res :: ResponseState -> Type) c (resState :: ResponseState).
+withAuthorization :: forall a b req reqState (res :: ResponseState -> Type) (resState :: ResponseState) c.
                      b
-                  -> Conn req res resState { authorization :: a | c }
-                  -> Conn req res resState { authorization :: b | c }
+                  -> Conn req reqState res resState { authorization :: a | c }
+                  -> Conn req reqState res resState { authorization :: b | c }
 withAuthorization a conn =
   conn { components = (conn.components { authorization = a }) }
 
 
-authorized :: forall a m req (res :: ResponseState -> Type) b c
+authorized :: forall a m req reqState (res :: ResponseState -> Type) b c
   .  Monad m
   => ResponseWritable b m String
   => Response res m b
-  => (Conn req res StatusLineOpen { authorization :: Unit | c } -> m (Maybe a))
+  => (Conn req reqState res StatusLineOpen { authorization :: Unit | c } -> m (Maybe a))
   -> Middleware
      m
-     (Conn req res StatusLineOpen { authorization :: a | c })
-     (Conn req res ResponseEnded { authorization :: a | c })
+     (Conn req reqState res StatusLineOpen { authorization :: a | c })
+     (Conn req reqState res ResponseEnded { authorization :: a | c })
      Unit
   -> Middleware
      m
-     (Conn req res StatusLineOpen { authorization :: Unit | c })
-     (Conn req res ResponseEnded { authorization :: Unit | c })
+     (Conn req reqState res StatusLineOpen { authorization :: Unit | c })
+     (Conn req reqState res ResponseEnded { authorization :: Unit | c })
      Unit
 authorized authorizer mw = do
   conn ← getConn

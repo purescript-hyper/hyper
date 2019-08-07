@@ -10,15 +10,15 @@ module Examples.AuthenticationAndAuthorization where
 import Prelude
 
 import Control.Monad.Indexed ((:>>=), (:*>))
-import Effect.Aff.Class (class MonadAff)
-import Effect (Effect)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(GET))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
+import Effect (Effect)
+import Effect.Aff.Class (class MonadAff)
 import Hyper.Authorization (authorized)
-import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
+import Hyper.Conn (Conn, ResponseEnded, StatusLineOpen, kind ResponseState)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.BasicAuth as BasicAuth
@@ -34,7 +34,7 @@ import Text.Smolder.Renderer.String (render)
 
 -- Helper for responding with HTML.
 htmlWithStatus
-  :: forall m req res b c
+  :: forall m req reqState res b c
   .  Monad m
   => Response res m b
   => ResponseWritable b m String
@@ -42,8 +42,8 @@ htmlWithStatus
   -> Markup Unit
   -> Middleware
      m
-     (Conn req res StatusLineOpen c)
-     (Conn req res ResponseEnded c)
+     (Conn req reqState res StatusLineOpen c)
+     (Conn req reqState res ResponseEnded c)
      Unit
 htmlWithStatus status x =
   writeStatus status
@@ -67,14 +67,14 @@ data Admin = Admin
 -- A handler that does not require an authenticated user, but displays the
 -- name if the user _is_ authenticated.
 profileHandler
-  :: forall m req res b c
+  :: forall m req reqState res b c
   .  Monad m
   => Response res m b
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req res StatusLineOpen { authentication :: Maybe User | c })
-     (Conn req res ResponseEnded { authentication :: Maybe User | c })
+     (Conn req reqState res StatusLineOpen { authentication :: Maybe User | c })
+     (Conn req reqState res ResponseEnded { authentication :: Maybe User | c })
      Unit
 profileHandler =
   getConn :>>= \conn →
@@ -101,14 +101,14 @@ profileHandler =
 -- place . You simply mark the requirement in the type signature,
 -- as seen below.
 adminHandler
-  :: forall m req res b c
+  :: forall m req reqState res b c
   .  Monad m
   => Response res m b
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req res StatusLineOpen { authorization :: Admin, authentication :: User | c })
-     (Conn req res ResponseEnded { authorization :: Admin, authentication :: User | c })
+     (Conn req reqState res StatusLineOpen { authorization :: Admin, authentication :: User | c })
+     (Conn req reqState res ResponseEnded { authorization :: Admin, authentication :: User | c })
      Unit
 adminHandler =
   getConn :>>= \conn →
@@ -137,13 +137,12 @@ userFromBasicAuth =
 
 -- This could be a function checking a database, or some session store, if the
 -- authenticated user has role `Admin`.
-getAdminRole :: forall m req res c (state :: ResponseState).
+getAdminRole :: forall m req reqState res c (resState :: ResponseState).
                 Monad m =>
-                Conn
-                req
-                res
-                state
-                { authentication :: User , authorization :: Unit | c }
+                Conn req reqState res resState { authentication :: User
+                                               , authorization :: Unit
+                                               | c
+                                               }
              -> m (Maybe Admin)
 getAdminRole conn =
   case conn.components.authentication of
@@ -151,23 +150,21 @@ getAdminRole conn =
     _ -> pure Nothing
 
 
-app :: forall m req res b c
+app :: forall m req reqState res b c
     .  MonadAff m
     => Request req m
     => Response res m b
     => ResponseWritable b m String
     => Middleware
        m
-       (Conn req res StatusLineOpen
-             { authentication :: Unit
-             , authorization :: Unit
-             | c
-             })
-       (Conn req res ResponseEnded
-             { authentication :: Maybe User
-             , authorization :: Unit
-             | c
-             })
+       (Conn req reqState res StatusLineOpen { authentication :: Unit
+                                             , authorization :: Unit
+                                             | c
+                                             })
+       (Conn req reqState res ResponseEnded  { authentication :: Maybe User
+                                             , authorization :: Unit
+                                             | c
+                                             })
        Unit
 app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
     where

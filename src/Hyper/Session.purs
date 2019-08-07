@@ -46,13 +46,13 @@ type SESSION_COOKIE_ROWS store compRows =
     )
 
 currentSessionID
-  :: forall m req (res :: ResponseState -> Type) c store session (resState :: ResponseState)
+  :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
-     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
@@ -65,13 +65,13 @@ currentSessionID =
       # pure
 
 getSession
-  :: forall m req (res :: ResponseState -> Type) c store session (resState :: ResponseState)
+  :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
-     (Conn req res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
      (Maybe session)
 getSession = do
   conn <- getConn
@@ -82,15 +82,15 @@ getSession = do
   where bind = ibind
 
 saveSession
-  :: forall m req (res :: ResponseState -> Type) c b store session
+  :: forall m req reqState (res :: ResponseState -> Type) c b store session
   .  Monad m
   => Response res m b
   => SessionStore store m session
   => session
   -> Middleware
      m
-      (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
-      (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+      (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+      (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
      Unit
 saveSession session = do
   conn <- getConn
@@ -110,14 +110,14 @@ saveSession session = do
     bind = ibind
 
 deleteSession
-  :: forall m req (res :: ResponseState -> Type) c b store session
+  :: forall m req reqState (res :: ResponseState -> Type) c b store session
   .  Monad m
   => Response res m b
   => SessionStore store m session
   => Middleware
      m
-     (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
-     (Conn req res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
      Unit
 deleteSession = do
   conn <- getConn

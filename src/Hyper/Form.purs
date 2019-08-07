@@ -24,7 +24,7 @@ import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple)
 import Data.Tuple as Tuple
 import Foreign.Object (lookup)
-import Hyper.Conn (Conn, kind ResponseState)
+import Hyper.Conn (BodyRead, BodyUnread, Conn, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
@@ -64,8 +64,8 @@ parseForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: Resp
   => ReadableBody req m String
   => Middleware
       m
-      (Conn req res resState comp)
-      (Conn req res resState comp)
+      (Conn req BodyUnread res resState comp)
+      (Conn req BodyRead res resState comp)
       (Either String Form)
 parseForm = do
   conn <- getConn
@@ -96,8 +96,8 @@ parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: 
   => FromForm a
   => Middleware
      m
-     (Conn req res resState comp)
-     (Conn req res resState comp)
+     (Conn req BodyUnread res resState comp)
+     (Conn req BodyRead res resState comp)
      (Either String a)
 parseFromForm =
   parseForm :>>=

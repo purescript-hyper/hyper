@@ -31,14 +31,14 @@ decodeBase64 encoded =
 
 
 withAuthentication
-  :: forall m req (res :: ResponseState -> Type) c t (resState :: ResponseState)
+  :: forall m req reqState (res :: ResponseState -> Type) c t (resState :: ResponseState)
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn req res resState { authentication :: Unit | c })
-     (Conn req res resState { authentication :: Maybe t | c })
+     (Conn req reqState res resState { authentication :: Unit | c })
+     (Conn req reqState res resState { authentication :: Maybe t | c })
      Unit
 withAuthentication mapper = do
   auth <- getAuth
@@ -63,20 +63,20 @@ withAuthentication mapper = do
     bind = ibind
 
 authenticated
-  :: forall m req (res :: ResponseState -> Type) c b t
+  :: forall m req reqState (res :: ResponseState -> Type) c b t
   .  Monad m
   => ResponseWritable b m String
   => Response res m b
   => Realm
   -> Middleware
       m
-      (Conn req res StatusLineOpen { authentication :: t | c })
-      (Conn req res ResponseEnded { authentication :: t | c })
+      (Conn req reqState res StatusLineOpen { authentication :: t | c })
+      (Conn req reqState res ResponseEnded { authentication :: t | c })
       Unit
   -> Middleware
      m
-     (Conn req res StatusLineOpen { authentication :: Maybe t | c })
-     (Conn req res ResponseEnded { authentication :: Maybe t | c })
+     (Conn req reqState res StatusLineOpen { authentication :: Maybe t | c })
+     (Conn req reqState res ResponseEnded { authentication :: Maybe t | c })
      Unit
 authenticated realm mw = do
   conn ← getConn

@@ -2,8 +2,9 @@ module Hyper.Test.TestServer where
 
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
+import Control.Bind.Indexed (ibind)
 import Control.Monad (class Monad, void)
-import Control.Monad.Indexed (ipure, (:*>), (:>>=))
+import Control.Monad.Indexed (ipure, (:*>))
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
 import Data.Either (Either(..))
@@ -19,17 +20,17 @@ import Data.Semigroup (class Semigroup, (<>))
 import Data.String as String
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import Hyper.Conn (Conn, kind ResponseState)
+import Hyper.Conn (Conn, kind RequestState, kind ResponseState)
 import Hyper.Header (Header)
 import Hyper.Middleware (lift')
-import Hyper.Middleware.Class (getConn, modifyConn)
+import Hyper.Middleware.Class (getConn, modifyConn, putConn)
 import Hyper.Request (class ReadableBody, class Request, parseUrl)
 import Hyper.Response (class ResponseWritable, class Response)
 import Hyper.Status (Status)
 
 -- REQUEST
 
-newtype TestRequest
+newtype TestRequest (reqState :: RequestState)
   = TestRequest { url :: String
                 , method :: Either Method CustomMethod
                 , body :: String
@@ -50,11 +51,17 @@ defaultRequest =
 
 instance readableBodyStringBody :: Monad m
                                 => ReadableBody TestRequest m String where
-  readBody = getConn :>>= \{ request: TestRequest { body }} -> pure body
+  readBody = let bind = ibind in do
+    conn <- getConn
+    let TestRequest rec = conn.request
+    _ <- putConn (conn { request = TestRequest rec })
+    ipure rec.body
 
 instance requestTestRequest :: Monad m => Request TestRequest m where
-  getRequestData =
-    getConn :>>= \{ request: TestRequest r } ->
+  getRequestData = let bind = ibind in do
+    conn <- getConn
+    let TestRequest r = conn.request
+    _ <- putConn (conn { request = TestRequest r })
     ipure { url: r.url
           , parsedUrl: defer \_ -> parseUrl r.url
           , contentLength: Just (String.length r.body)
@@ -118,9 +125,9 @@ testServer = execWriterT <<< void
 
 
 resetResponse
-  :: forall req c body fromResponse toResponse
-   . Conn req (TestResponse body) fromResponse c
-  -> Conn req (TestResponse body) toResponse c
+  :: forall req c body reqState fromResponse toResponse
+   . Conn req reqState (TestResponse body) fromResponse c
+  -> Conn req reqState (TestResponse body) toResponse c
 resetResponse conn@{ response: TestResponse status headers body } =
   conn { response = TestResponse status headers body }
 

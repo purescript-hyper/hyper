@@ -14,11 +14,11 @@ import Hyper.Status (Status, statusFound)
 
 -- | A middleware transitioning from one `Response` resState to another.
 type ResponseStateTransition m (res :: ResponseState -> Type) (from :: ResponseState) (to :: ResponseState) =
-  forall req comp.
+  forall req reqState comp.
   Middleware
   m
-  (Conn req res from comp)
-  (Conn req res to comp)
+  (Conn req reqState res from comp)
+  (Conn req reqState res to comp)
   Unit
 
 -- | The operations that a response writer, provided by the server backend,
@@ -39,42 +39,42 @@ class Response (res :: ResponseState -> Type) m b | res -> b where
     :: ResponseStateTransition m res BodyOpen ResponseEnded
 
 headers
-  :: forall f m req (res :: ResponseState -> Type) b comp
+  :: forall f m req reqState (res :: ResponseState -> Type) b comp
   .  Foldable f
   => Monad m
   => Response res m b
   => f Header
   -> Middleware
      m
-     (Conn req res HeadersOpen comp)
-     (Conn req res BodyOpen comp)
+     (Conn req reqState res HeadersOpen comp)
+     (Conn req reqState res BodyOpen comp)
      Unit
 headers hs =
   traverse_ writeHeader hs
   :*> closeHeaders
 
 contentType
-  :: forall m req (res :: ResponseState -> Type) b comp
+  :: forall m req reqState (res :: ResponseState -> Type) b comp
   .  Monad m
   => Response res m b
    => MediaType
    -> Middleware
        m
-       (Conn req res HeadersOpen comp)
-       (Conn req res HeadersOpen comp)
+       (Conn req reqState res HeadersOpen comp)
+       (Conn req reqState res HeadersOpen comp)
        Unit
 contentType mediaType =
   writeHeader (Tuple "Content-Type" (unwrap mediaType))
 
 redirect
-  :: forall m req (res :: ResponseState -> Type) b comp
+  :: forall m req reqState (res :: ResponseState -> Type) b comp
   .  Monad m
   => Response res m b
   => String
   -> Middleware
      m
-     (Conn req res StatusLineOpen comp)
-     (Conn req res HeadersOpen comp)
+     (Conn req reqState res StatusLineOpen comp)
+     (Conn req reqState res HeadersOpen comp)
      Unit
 redirect uri =
   writeStatus statusFound
@@ -84,14 +84,14 @@ class ResponseWritable b m r where
   toResponse :: forall i. r -> Middleware m i i b
 
 respond
-  :: forall m r b req (res :: ResponseState -> Type) comp
+  :: forall m r b req reqState (res :: ResponseState -> Type) comp
   .  Monad m
   => ResponseWritable b m r
   => Response res m b
   => r
   -> Middleware
      m
-     (Conn req res BodyOpen comp)
-     (Conn req res ResponseEnded comp)
+     (Conn req reqState res BodyOpen comp)
+     (Conn req reqState res ResponseEnded comp)
      Unit
 respond r = (toResponse r :>>= send) :*> end

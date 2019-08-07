@@ -12,19 +12,20 @@
 module Examples.NodeStreamRequest where
 
 import Prelude
-import Node.Buffer as Buffer
-import Node.Stream as Stream
+
 import Control.Monad.Indexed (ibind, (:>>=))
+import Data.Either (Either(..), either)
+import Data.HTTP.Method (Method(..))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
 import Effect.Exception (catchException, message)
-import Data.Either (Either(..), either)
-import Data.HTTP.Method (Method(..))
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
-import Hyper.Request (getRequestData, streamBody)
+import Hyper.Request (getRequestData, ignoreBody, streamBody)
 import Hyper.Response (closeHeaders, respond, writeStatus)
 import Hyper.Status (statusMethodNotAllowed, statusOK)
+import Node.Buffer as Buffer
+import Node.Stream as Stream
 
 logRequestBodyChunks
   :: forall m
@@ -45,14 +46,14 @@ main =
 
         -- Only handle POST requests:
         { method: Left POST } -> do
-            body <- streamBody
-            logRequestBodyChunks body
+            streamBody \body -> logRequestBodyChunks body
             writeStatus statusOK
             closeHeaders
             respond "OK"
 
         -- Non-POST requests are not allowed:
         { method } -> do
+          ignoreBody
           writeStatus statusMethodNotAllowed
           closeHeaders
           respond ("Method not allowed: " <> either show show method)
