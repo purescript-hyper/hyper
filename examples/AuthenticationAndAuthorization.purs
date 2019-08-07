@@ -17,7 +17,8 @@ import Data.MediaType.Common (textHTML)
 import Data.Tuple (Tuple(Tuple))
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Hyper.Authorization (authorized)
+import Hyper.Authentication (AUTHENTICATION_ROWS)
+import Hyper.Authorization (AUTHORIZATION_ROWS, authorized)
 import Hyper.Conn (Conn, ResponseEnded, StatusLineOpen, kind ResponseState)
 import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
@@ -30,6 +31,7 @@ import Text.Smolder.HTML (a, h1, li, p, section, ul)
 import Text.Smolder.HTML.Attributes as A
 import Text.Smolder.Markup (Markup, text, (!))
 import Text.Smolder.Renderer.String (render)
+import Type.Row (type (+))
 
 
 -- Helper for responding with HTML.
@@ -73,8 +75,8 @@ profileHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req reqState res StatusLineOpen { authentication :: Maybe User | c })
-     (Conn req reqState res ResponseEnded { authentication :: Maybe User | c })
+     (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS (Maybe User) c })
+     (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS (Maybe User) c })
      Unit
 profileHandler =
   getConn :>>= \conn →
@@ -107,8 +109,8 @@ adminHandler
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req reqState res StatusLineOpen { authorization :: Admin, authentication :: User | c })
-     (Conn req reqState res ResponseEnded { authorization :: Admin, authentication :: User | c })
+     (Conn req reqState res StatusLineOpen { | AUTHORIZATION_ROWS Admin + AUTHENTICATION_ROWS User c })
+     (Conn req reqState res ResponseEnded { | AUTHORIZATION_ROWS Admin + AUTHENTICATION_ROWS User c })
      Unit
 adminHandler =
   getConn :>>= \conn →
@@ -139,9 +141,8 @@ userFromBasicAuth =
 -- authenticated user has role `Admin`.
 getAdminRole :: forall m req reqState res c (resState :: ResponseState).
                 Monad m =>
-                Conn req reqState res resState { authentication :: User
-                                               , authorization :: Unit
-                                               | c
+                Conn req reqState res resState { | AUTHORIZATION_ROWS Unit
+                                                + AUTHENTICATION_ROWS User c
                                                }
              -> m (Maybe Admin)
 getAdminRole conn =
@@ -157,13 +158,11 @@ app :: forall m req reqState res b c
     => ResponseWritable b m String
     => Middleware
        m
-       (Conn req reqState res StatusLineOpen { authentication :: Unit
-                                             , authorization :: Unit
-                                             | c
+       (Conn req reqState res StatusLineOpen { | AUTHORIZATION_ROWS Unit
+                                             + AUTHENTICATION_ROWS Unit c
                                              })
-       (Conn req reqState res ResponseEnded  { authentication :: Maybe User
-                                             , authorization :: Unit
-                                             | c
+       (Conn req reqState res ResponseEnded  { | AUTHORIZATION_ROWS Unit
+                                             + AUTHENTICATION_ROWS (Maybe User) c
                                              })
        Unit
 app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
