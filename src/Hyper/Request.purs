@@ -1,16 +1,4 @@
-module Hyper.Request
-  ( class Request
-  , RequestData
-  , ParsedUrl
-  , parseUrl
-  , getRequestData
-  , class BaseRequest
-  , ignoreBody
-  , class ReadableBody
-  , readBody
-  , class StreamableBody
-  , streamBody
-  ) where
+module Hyper.Request where
 
 import Prelude
 
@@ -65,11 +53,7 @@ type RequestStateTransition m (req :: RequestState -> Type) (from :: RequestStat
 class Request req m where
   getRequestData
     :: forall (reqState :: RequestState) (res :: ResponseState -> Type) (resState :: ResponseState) comp
-     . Middleware
-       m
-       (Conn req reqState res resState comp)
-       (Conn req reqState res resState comp)
-       RequestData
+     . NoTransition m req reqState res resState comp RequestData
 
 class Request req m <= BaseRequest req m
 
@@ -96,11 +80,7 @@ class Request req m <= BaseRequest req m
 -- | change a `BodyUnread` RequestState to `BodyRead`.
 ignoreBody :: forall m req res resState comp
             . Monad m
-           => Middleware
-               m
-               (Conn req BodyUnread res resState comp)
-               (Conn req BodyRead res resState comp)
-               Unit
+           => RequestStateTransition m req BodyUnread BodyRead res resState comp Unit
 ignoreBody =
   {-
     The only thing we're doing here is changing the phantome type,
@@ -128,11 +108,7 @@ ignoreBody =
 class ReadableBody req m b where
   readBody
     :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
-     . Middleware
-        m
-        (Conn req BodyUnread res resState comp)
-        (Conn req BodyRead res resState comp)
-        b
+     . RequestStateTransition m req BodyUnread BodyRead res resState comp b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
 -- | of type `stream`. To read the whole body as a value, without
@@ -141,8 +117,4 @@ class StreamableBody req m stream | req -> stream where
   streamBody
     :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
      . (stream -> m Unit)
-     -> Middleware
-        m
-        (Conn req BodyUnread res resState comp)
-        (Conn req BodyRead res resState comp)
-        Unit
+     -> RequestStateTransition m req BodyUnread BodyRead res resState comp Unit
