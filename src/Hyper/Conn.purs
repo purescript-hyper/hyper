@@ -4,14 +4,20 @@ module Hyper.Conn where
 -- | some content has already been read from an HTTP request stream.
 -- |
 -- | Proper order of computations:
--- | HeadersReadable -> BodyReadable -> RequestEnded
+-- | BodyReadable -> BodyRead
 foreign import kind RequestState
 
-foreign import data HeadersReadable :: RequestState
+-- | Indicates that the request has been received but neither its
+-- | headers nor body have been read yet.
+foreign import data RequestReceived :: RequestState
 
-foreign import data BodyReadable :: RequestState
+-- | Indicatess the request's headers have been read, but
+-- | it's body hasn't been read yet.
+foreign import data HeadersRead :: RequestState
 
-foreign import data RequestRead :: RequestState
+-- | Indicatess the request's body has already been read
+-- | and can no longer be read again.
+foreign import data BodyRead :: RequestState
 
 
 -- | Defines the resStates of an HTTP response stream. It tracks whether or not

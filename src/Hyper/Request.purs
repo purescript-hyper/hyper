@@ -22,7 +22,7 @@ import Data.Maybe (Maybe, fromMaybe)
 import Data.String as String
 import Data.Tuple (Tuple)
 import Foreign.Object (Object)
-import Hyper.Conn (Conn, kind ResponseState)
+import Hyper.Conn (BodyRead, Conn, RequestReceived, HeadersRead, kind RequestState, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
 import Hyper.Middleware (Middleware)
 
@@ -50,14 +50,21 @@ parseUrl url =
   in
     {path, query}
 
+-- | Alias for the `Conn`'s `reqState` phantom type transitioning
+-- | from the `from` RequestState to the `to` RequestState.
+type RequestStateTransition
+  m (req :: RequestState -> Type) (from :: RequestState) (to :: RequestState)
+    (res :: ResponseState -> Type) (resState :: ResponseState) comp a =
+  Middleware
+    m
+    (Conn req from res resState comp)
+    (Conn req to   res resState comp)
+    a
+
 class Request req m where
   getRequestData
-    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
-     . Middleware
-       m
-       (Conn req res resState comp)
-       (Conn req res resState comp)
-       RequestData
+    :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
+     . RequestStateTransition m req RequestReceived HeadersRead res resState comp RequestData
 
 class Request req m <= BaseRequest req m
 
@@ -66,21 +73,14 @@ class Request req m <= BaseRequest req m
 -- | [StreamableBody](#streamablebody) class.
 class ReadableBody req m b where
   readBody
-    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
-     . Middleware
-       m
-       (Conn req res resState comp)
-       (Conn req res resState comp)
-       b
+    :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
+     . RequestStateTransition m req HeadersRead BodyRead res resState comp b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
 -- | of type `stream`. To read the whole body as a value, without
 -- | streaming, see the [ReadableBody](#readablebody) class.
 class StreamableBody req m stream | req -> stream where
   streamBody
-    :: forall (res :: ResponseState -> Type) comp (resState :: ResponseState)
-     . Middleware
-       m
-       (Conn req res resState comp)
-       (Conn req res resState comp)
-       stream
+    :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
+     . (stream -> m Unit)
+    -> RequestStateTransition m req HeadersRead BodyRead res resState comp stream
