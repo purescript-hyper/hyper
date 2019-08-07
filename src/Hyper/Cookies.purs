@@ -1,5 +1,7 @@
 module Hyper.Cookies
-       ( cookies
+       ( COOKIES_ROWS
+       , COOKIES_ROWS'
+       , cookies
        , CookieAttributes
        , SameSite(..)
        , Name
@@ -70,13 +72,16 @@ parseCookies s =
     combineCookies xs xs' =
       NonEmpty.head xs :| NonEmpty.head xs' : NonEmpty.tail xs <> NonEmpty.tail xs'
 
+type COOKIES_ROWS cookieType r = ( cookies :: cookieType | r)
+type COOKIES_ROWS' r = COOKIES_ROWS (Either String (Object Values)) r
+
 cookies :: forall m req reqState (res :: ResponseState -> Type) c (resState :: ResponseState)
   .  Monad m
   => Request req m
   => Middleware
      m
-     (Conn req reqState res resState { cookies :: Unit | c})
-     (Conn req reqState res resState { cookies :: Either String (Object Values) | c})
+     (Conn req reqState res resState { | COOKIES_ROWS Unit c })
+     (Conn req reqState res resState { | COOKIES_ROWS' c })
      Unit
 cookies = do
   conn <- getConn

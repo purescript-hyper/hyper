@@ -1,23 +1,23 @@
 module Hyper.Node.BasicAuth where
 
-import Node.Buffer as Buffer
-import Control.Monad.Indexed (ibind, ipure)
 import Control.Monad (class Monad, (>>=))
-import Effect.Class (liftEffect, class MonadEffect)
+import Control.Monad.Indexed (ibind, ipure)
 import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Monoid ((<>))
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
 import Data.Unit (Unit)
+import Effect.Class (liftEffect, class MonadEffect)
 import Foreign.Object as Object
-import Hyper.Authentication (setAuthentication)
+import Hyper.Authentication (AUTHENTICATION_ROWS, setAuthentication)
 import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWritable, respond, class Response, closeHeaders, writeHeader, writeStatus)
 import Hyper.Status (statusUnauthorized)
+import Node.Buffer as Buffer
 import Node.Encoding (Encoding(ASCII, Base64))
 
 type Realm = String
@@ -37,8 +37,8 @@ withAuthentication
   => (Tuple String String -> m (Maybe t))
   -> Middleware
      m
-     (Conn req reqState res resState { authentication :: Unit | c })
-     (Conn req reqState res resState { authentication :: Maybe t | c })
+     (Conn req reqState res resState { | AUTHENTICATION_ROWS Unit c })
+     (Conn req reqState res resState { | AUTHENTICATION_ROWS (Maybe t) c })
      Unit
 withAuthentication mapper = do
   auth <- getAuth
@@ -70,13 +70,13 @@ authenticated
   => Realm
   -> Middleware
       m
-      (Conn req reqState res StatusLineOpen { authentication :: t | c })
-      (Conn req reqState res ResponseEnded { authentication :: t | c })
+      (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS t c })
+      (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS t c })
       Unit
   -> Middleware
      m
-     (Conn req reqState res StatusLineOpen { authentication :: Maybe t | c })
-     (Conn req reqState res ResponseEnded { authentication :: Maybe t | c })
+     (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS (Maybe t) c })
+     (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS (Maybe t) c })
      Unit
 authenticated realm mw = do
   conn ← getConn

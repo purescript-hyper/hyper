@@ -13,17 +13,16 @@ module Hyper.Session
 import Prelude
 import Data.NonEmpty as NonEmpty
 import Foreign.Object as Object
-import Foreign.Object (Object)
-import Hyper.Cookies as Cookies
 import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
 import Hyper.Conn (Conn, kind ResponseState, HeadersOpen)
-import Hyper.Cookies (defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
+import Hyper.Cookies (COOKIES_ROWS', defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response)
+import Type.Row (type (+))
 
 newtype SessionID = SessionID String
 
@@ -39,11 +38,7 @@ class SessionStore store m session | store -> m, store -> session where
 
 type Sessions s = { key :: String, store :: s }
 
-type SESSION_COOKIE_ROWS store compRows =
-    ( sessions :: Sessions store
-    , cookies :: Either String (Object Cookies.Values)
-    | compRows
-    )
+type SESSION_ROWS store r = ( sessions :: Sessions store | r)
 
 currentSessionID
   :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
@@ -51,8 +46,8 @@ currentSessionID
   => SessionStore store m session
   => Middleware
      m
-     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
-     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
+     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
@@ -70,8 +65,8 @@ getSession
   => SessionStore store m session
   => Middleware
      m
-     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
-     (Conn req reqState res resState { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
+     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
      (Maybe session)
 getSession = do
   conn <- getConn
@@ -89,8 +84,8 @@ saveSession
   => session
   -> Middleware
      m
-      (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
-      (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+      (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
+      (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
      Unit
 saveSession session = do
   conn <- getConn
@@ -116,8 +111,8 @@ deleteSession
   => SessionStore store m session
   => Middleware
      m
-     (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
-     (Conn req reqState res HeadersOpen { | SESSION_COOKIE_ROWS store c })
+     (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
+     (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
      Unit
 deleteSession = do
   conn <- getConn
