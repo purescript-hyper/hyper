@@ -1,22 +1,23 @@
 module FormSerialization where
 
 import Prelude
-import Data.Int as Int
-import Control.Monad.Indexed ((:>>=), (:*>))
-import Effect (Effect)
+
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.Indexed ((:>>=), (:*>))
 import Data.Either (Either(..))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Eq (genericEq)
 import Data.Generic.Rep.Show (genericShow)
 import Data.HTTP.Method (Method(..))
+import Data.Int as Int
 import Data.Maybe (maybe)
-import Hyper.Conn (Conn)
+import Effect (Effect)
+import Hyper.Conn (BodyRead, BodyUnread, Conn, ResponseEnded, StatusLineOpen)
 import Hyper.Form (class FromForm, parseFromForm, required)
 import Hyper.Middleware (Middleware)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
-import Hyper.Request (class ReadableBody, class Request, getRequestData)
-import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
+import Hyper.Request (class ReadableBody, class Request, getRequestData, ignoreBody)
+import Hyper.Response (class Response, class ResponseWritable, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
 
 -- start snippet datatypes
@@ -61,8 +62,8 @@ onPost
   => FromForm Order
   => Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req BodyUnread res StatusLineOpen c)
+     (Conn req BodyRead res ResponseEnded c)
      Unit
 -- start snippet onPost
 onPost =
@@ -92,11 +93,13 @@ main =
       case _ of
         Left POST -> onPost
         Left method ->
-          writeStatus statusMethodNotAllowed
+          ignoreBody
+          :*> writeStatus statusMethodNotAllowed
           :*> closeHeaders
           :*> respond ("Method not supported: " <> show method)
         Right customMethod ->
-          writeStatus statusMethodNotAllowed
+          ignoreBody
+          :*> writeStatus statusMethodNotAllowed
           :*> closeHeaders
           :*> respond ("Custom method not supported: " <> show customMethod)
 

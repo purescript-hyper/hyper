@@ -1,15 +1,16 @@
 module ReadBody where
 
 import Prelude
+
 import Control.Monad.Indexed ((:>>=), (:*>))
-import Effect (Effect)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Hyper.Conn (Conn)
+import Effect (Effect)
+import Hyper.Conn (BodyRead, BodyUnread, Conn, ResponseEnded, StatusLineOpen)
 import Hyper.Middleware (Middleware)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
-import Hyper.Request (class ReadableBody, getRequestData, readBody)
-import Hyper.Response (class Response, class ResponseWritable, ResponseEnded, StatusLineOpen, closeHeaders, respond, writeStatus)
+import Hyper.Request (class ReadableBody, getRequestData, ignoreBody, readBody)
+import Hyper.Response (class Response, class ResponseWritable, closeHeaders, respond, writeStatus)
 import Hyper.Status (statusBadRequest, statusMethodNotAllowed)
 
 onPost
@@ -20,8 +21,8 @@ onPost
   => ResponseWritable b m String
   => Middleware
      m
-     (Conn req (res StatusLineOpen) c)
-     (Conn req (res ResponseEnded) c)
+     (Conn req BodyUnread res StatusLineOpen c)
+     (Conn req BodyRead res ResponseEnded c)
      Unit
 -- start snippet onPost
 onPost =
@@ -45,11 +46,13 @@ main =
       case _ of
         Left POST -> onPost
         Left method ->
-          writeStatus statusMethodNotAllowed
+          ignoreBody
+          :*> writeStatus statusMethodNotAllowed
           :*> closeHeaders
           :*> respond ("Method not supported: " <> show method)
         Right customMethod ->
-          writeStatus statusMethodNotAllowed
+          ignoreBody
+          :*> writeStatus statusMethodNotAllowed
           :*> closeHeaders
           :*> respond ("Custom method not supported: " <> show customMethod)
 
