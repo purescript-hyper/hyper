@@ -15,6 +15,7 @@
     , "http-methods"
     , "indexed-monad"
     , "media-types"
+    , "node-buffer"
     , "node-fs-aff"
     , "node-http"
     , "ordered-collections"

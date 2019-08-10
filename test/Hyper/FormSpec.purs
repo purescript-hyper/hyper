@@ -13,7 +13,7 @@ import Hyper.Form (Form(Form), parseForm)
 import Hyper.Middleware (runMiddleware)
 import Hyper.Test.TestServer (TestRequest(TestRequest))
 import Test.Spec (Spec, it, describe)
-import Test.Spec.Assertions (shouldEqual, expectError)
+import Test.Spec.Assertions (expectError, shouldEqual)
 
 liftEither ∷ ∀ a. Either String a → Aff a
 liftEither e =
