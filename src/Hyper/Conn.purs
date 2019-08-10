@@ -2,11 +2,11 @@ module Hyper.Conn where
 
 import Hyper.Middleware (Middleware(..))
 
--- | Defines the resStates of an HTTP request stream. It tracks whether or not
+-- | Defines the state of an HTTP request stream. It tracks whether or not
 -- | some content has already been read from an HTTP request stream.
 -- |
 -- | Proper order of computations:
--- | BodyReadable -> BodyRead
+-- | BodyUnread -> BodyRead
 foreign import kind RequestState
 
 -- | Indicatess the request's body hasn't been read yet.
@@ -17,11 +17,11 @@ foreign import data BodyUnread :: RequestState
 foreign import data BodyRead :: RequestState
 
 
--- | Defines the resStates of an HTTP response stream. It tracks whether or not
+-- | Defines the state of an HTTP response stream. It tracks whether or not
 -- | some content has already been written to an HTTP response stream.
 -- |
 -- | Proper order of computations. Items marked with an asterisk indicate that
--- | transitioning back to the same resState is valid:
+-- | transitioning back to the same state is valid:
 -- | StatusLineOpen -> HeadersOpen* -> BodyOpen* -> ResponseEnded
 foreign import kind ResponseState
 
