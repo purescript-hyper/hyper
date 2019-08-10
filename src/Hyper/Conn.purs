@@ -1,6 +1,6 @@
 module Hyper.Conn where
 
-import Hyper.Middleware (Middleware(..))
+import Hyper.Middleware (Middleware)
 
 -- | Defines the state of an HTTP request stream. It tracks whether or not
 -- | some content has already been read from an HTTP request stream.
