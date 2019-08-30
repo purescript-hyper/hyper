@@ -11,9 +11,8 @@ import Data.Maybe (Maybe, fromMaybe)
 import Data.String as String
 import Data.Tuple (Tuple)
 import Foreign.Object (Object)
-import Hyper.Conn (BodyRead, BodyUnread, Conn, NoTransition, kind RequestState, kind ResponseState)
+import Hyper.Conn (BodyRead, BodyUnread, NoTransition, RequestTransition, kind RequestState, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
-import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (modifyConn)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -40,15 +39,6 @@ parseUrl url =
     query = lmap (const rawQuery) $ parseUrlencoded rawQuery
   in
     {path, query}
-
--- | Alias for the `Conn`'s `reqState` phantom type transitioning
--- | from the `from` RequestState to the `to` RequestState.
-type RequestStateTransition m (req :: RequestState -> Type) (from :: RequestState) (to :: RequestState) (res :: ResponseState -> Type) (resState :: ResponseState) comp a =
-  Middleware
-    m
-    (Conn req from res resState comp)
-    (Conn req to   res resState comp)
-    a
 
 class Request req m where
   getRequestData
@@ -80,7 +70,7 @@ class Request req m <= BaseRequest req m
 -- | change a `BodyUnread` RequestState to `BodyRead`.
 ignoreBody :: forall m req res resState comp
             . Monad m
-           => RequestStateTransition m req BodyUnread BodyRead res resState comp Unit
+           => RequestTransition m req BodyUnread BodyRead res resState comp Unit
 ignoreBody =
   {-
     The only thing we're doing here is changing the phantome type,
@@ -108,7 +98,7 @@ ignoreBody =
 class ReadableBody req m b where
   readBody
     :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
-     . RequestStateTransition m req BodyUnread BodyRead res resState comp b
+     . RequestTransition m req BodyUnread BodyRead res resState comp b
 
 -- | A `StreamableBody` instance returns a stream of the request body,
 -- | of type `stream`. To read the whole body as a value, without
@@ -117,4 +107,4 @@ class StreamableBody req m stream | req -> stream where
   streamBody
     :: forall (res :: ResponseState -> Type) (resState :: ResponseState) comp
      . (stream -> m Unit)
-     -> RequestStateTransition m req BodyUnread BodyRead res resState comp Unit
+     -> RequestTransition m req BodyUnread BodyRead res resState comp Unit

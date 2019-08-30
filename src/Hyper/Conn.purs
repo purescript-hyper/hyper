@@ -52,9 +52,161 @@ type Conn (request :: RequestState -> Type) (requestState :: RequestState)
   , components :: components
   }
 
-type NoTransition m (req :: RequestState -> Type) (reqState :: RequestState) (res :: ResponseState -> Type) (resState :: ResponseState) comp a =
-  Middleware
-    m
-    (Conn req reqState res resState comp)
-    (Conn req reqState res resState comp)
-    a
+-- | Alias for easily defining all possible transitions allowed
+-- | in a middleware's `Conn`'s state transition, including
+-- | all or some of the following:
+-- | - a request state transition
+-- | - a response state transition
+-- | - a component type change
+type ConnTransition
+      m
+      (request :: RequestState -> Type)
+      (fromRequestState :: RequestState)
+      (toRequestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (fromResponseState :: ResponseState)
+      (toResponseState :: ResponseState)
+      fromComp
+      toComp
+      a
+  = Middleware
+      m
+      (Conn request fromRequestState response fromResponseState fromComp)
+      (Conn request toRequestState   response toResponseState   toComp)
+      a
+
+-- | Defines a Request state transition.
+type RequestTransition
+      m
+      (request :: RequestState -> Type)
+      (fromRequestState :: RequestState)
+      (toRequestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (responseState :: ResponseState)
+      comp
+      a
+  = ConnTransition
+      m
+      request
+      fromRequestState
+      toRequestState
+      response
+      responseState
+      responseState
+      comp
+      comp
+      a
+
+-- | Defines a Request state transition and allows one to change the type
+-- | of the components.
+type RequestTransition'
+      m
+      (request :: RequestState -> Type)
+      (fromRequestState :: RequestState)
+      (toRequestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (responseState :: ResponseState)
+      fromComp
+      toComp
+      a
+  = ConnTransition
+      m
+      request
+      fromRequestState
+      toRequestState
+      response
+      responseState
+      responseState
+      fromComp
+      toComp
+      a
+
+-- | Defines a Response state transition.
+type ResponseTransition
+      m
+      (request :: RequestState -> Type)
+      (requestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (fromResponseState :: ResponseState)
+      (toResponseState :: ResponseState)
+      comp
+      a
+  = ConnTransition
+      m
+      request
+      requestState
+      requestState
+      response
+      fromResponseState
+      toResponseState
+      comp
+      comp
+      a
+
+-- | Defines a Response state transition and allows one to change the type
+-- | of the components.
+type ResponseTransition'
+      m
+      (request :: RequestState -> Type)
+      (requestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (fromResponseState :: ResponseState)
+      (toResponseState :: ResponseState)
+      fromComp
+      toComp
+      a
+  = ConnTransition
+      m
+      request
+      requestState
+      requestState
+      response
+      fromResponseState
+      toResponseState
+      fromComp
+      toComp
+      a
+
+-- | Indicates that no state transition occurs in either the request
+-- | or the response.
+type NoTransition
+      m
+      (request :: RequestState -> Type)
+      (requestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (responseState :: ResponseState)
+      comp
+      a
+  = ConnTransition
+      m
+      request
+      requestState
+      requestState
+      response
+      responseState
+      responseState
+      comp
+      comp
+      a
+
+-- | Changes the component's type in the Conn Middleware
+type ComponentChange
+      m
+      (request :: RequestState -> Type)
+      (requestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (responseState :: ResponseState)
+      fromComp
+      toComp
+      a
+  = ConnTransition
+      m
+      request
+      requestState
+      requestState
+      response
+      responseState
+      responseState
+      fromComp
+      toComp
+      a
