@@ -13,9 +13,8 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
-import Hyper.Conn (BodyRead, BodyUnread, Conn, ResponseEnded, StatusLineOpen)
+import Hyper.Conn (BodyRead, BodyUnread, ConnTransition, ResponseEnded, ResponseTransition, StatusLineOpen)
 import Hyper.Form (parseForm, required)
-import Hyper.Middleware (Middleware)
 import Hyper.Node.Server (HttpRequest, HttpResponse, defaultOptionsWithLogging, runServer)
 import Hyper.Request (getRequestData, ignoreBody)
 import Hyper.Response (closeHeaders, contentType, respond, writeStatus)
@@ -47,10 +46,9 @@ main =
     htmlWithStatus :: forall reqState comp
                     . Status
                    -> Markup _
-                   -> Middleware
-                        Aff
-                        (Conn HttpRequest reqState HttpResponse StatusLineOpen comp)
-                        (Conn HttpRequest reqState HttpResponse ResponseEnded comp)
+                   -> ResponseTransition Aff HttpRequest reqState
+                        HttpResponse StatusLineOpen ResponseEnded
+                        comp
                         Unit
     htmlWithStatus status x =
       writeStatus status
@@ -59,11 +57,12 @@ main =
       :*> respond (render x)
 
     handlePost :: forall comp
-                . Middleware
-                   Aff
-                   (Conn HttpRequest BodyUnread HttpResponse StatusLineOpen comp)
-                   (Conn HttpRequest BodyRead HttpResponse ResponseEnded comp)
-                   Unit
+                . ConnTransition
+                    Aff
+                    HttpRequest BodyUnread BodyRead
+                    HttpResponse StatusLineOpen ResponseEnded
+                    comp
+                    Unit
     handlePost =
       parseForm :>>=
       case _ of
@@ -84,11 +83,12 @@ main =
 
     -- Our (rather primitive) router.
     router :: forall comp
-                . Middleware
-                   Aff
-                   (Conn HttpRequest BodyUnread HttpResponse StatusLineOpen comp)
-                   (Conn HttpRequest BodyRead HttpResponse ResponseEnded comp)
-                   Unit
+                . ConnTransition
+                    Aff
+                    HttpRequest BodyUnread BodyRead
+                    HttpResponse StatusLineOpen ResponseEnded
+                    comp
+                    Unit
     router = let bind = ibind in do
       reqData <- getRequestData
       case reqData.method of
