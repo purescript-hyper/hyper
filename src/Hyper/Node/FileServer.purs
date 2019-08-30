@@ -10,8 +10,8 @@ import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(Tuple))
 import Effect.Aff.Class (liftAff, class MonadAff)
 import Effect.Class (liftEffect)
-import Hyper.Conn (Conn, StatusLineOpen, ResponseEnded, kind RequestState, kind ResponseState)
-import Hyper.Middleware (Middleware, lift')
+import Hyper.Conn (ResponseEnded, ResponseTransition, StatusLineOpen, kind ResponseState)
+import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWritable, class Response, end, headers, send, toResponse, writeStatus)
@@ -119,11 +119,7 @@ serveFile
   => ResponseWritable b m Buffer
   => Response res m b
   => FilePath
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
 serveFile = serveFile' htaccess
 
 serveFile'
@@ -134,11 +130,7 @@ serveFile'
   => Response res m b
   => Map String String
   -> FilePath
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
 serveFile' htaccessMap path = do
   let
     ext = last $ split (Pattern ".") path
@@ -162,16 +154,8 @@ fileServer
   => ResponseWritable b m Buffer
   => Response res m b
   => FilePath
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
 fileServer = fileServer' htaccess
 
 -- | Extremly basic implementation of static file serving. Needs more love.
@@ -184,16 +168,8 @@ fileServer'
   => Response res m b
   => Map String String
   -> FilePath
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
 fileServer' htaccessMap dir on404 = do
   conn ← getConn
   { url } <- getRequestData

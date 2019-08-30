@@ -24,9 +24,8 @@ import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple)
 import Data.Tuple as Tuple
 import Foreign.Object (lookup)
-import Hyper.Conn (BodyRead, BodyUnread, Conn, kind ResponseState)
+import Hyper.Conn (BodyRead, BodyUnread, RequestTransition, kind ResponseState)
 import Hyper.Form.Urlencoded (parseUrlencoded)
-import Hyper.Middleware (Middleware)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, class ReadableBody, getRequestData, readBody)
 
@@ -62,11 +61,7 @@ parseForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: Resp
   .  Monad m
   => Request req m
   => ReadableBody req m String
-  => Middleware
-      m
-      (Conn req BodyUnread res resState comp)
-      (Conn req BodyRead res resState comp)
-      (Either String Form)
+  => RequestTransition m req BodyUnread BodyRead res resState comp (Either String Form)
 parseForm = do
   conn <- getConn
   { headers } <- getRequestData
@@ -94,11 +89,7 @@ parseFromForm ∷ forall m req (res :: ResponseState -> Type) comp (resState :: 
   => Request req m
   => ReadableBody req m String
   => FromForm a
-  => Middleware
-     m
-     (Conn req BodyUnread res resState comp)
-     (Conn req BodyRead res resState comp)
-     (Either String a)
+  => RequestTransition m req BodyUnread BodyRead res resState comp (Either String a)
 parseFromForm =
   parseForm :>>=
   case _ of

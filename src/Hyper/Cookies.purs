@@ -31,8 +31,7 @@ import Data.Tuple (Tuple(..), uncurry)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Global.Unsafe (unsafeEncodeURIComponent, unsafeDecodeURIComponent)
-import Hyper.Conn (Conn, HeadersOpen, kind ResponseState)
-import Hyper.Middleware (Middleware)
+import Hyper.Conn (ComponentChange, HeadersOpen, NoTransition, kind ResponseState)
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class Response, writeHeader)
@@ -78,11 +77,10 @@ type COOKIES_ROWS' r = COOKIES_ROWS (Either String (Object Values)) r
 cookies :: forall m req reqState (res :: ResponseState -> Type) c (resState :: ResponseState)
   .  Monad m
   => Request req m
-  => Middleware
-     m
-     (Conn req reqState res resState { | COOKIES_ROWS Unit c })
-     (Conn req reqState res resState { | COOKIES_ROWS' c })
-     Unit
+  => ComponentChange m req reqState res resState
+      { | COOKIES_ROWS Unit c }
+      { | COOKIES_ROWS' c }
+      Unit
 cookies = do
   conn <- getConn
   { headers } <- getRequestData
@@ -149,10 +147,6 @@ setCookie :: forall m req reqState (res :: ResponseState -> Type) c b
   => Name
   -> Value
   -> CookieAttributes
-  -> Middleware
-     m
-     (Conn req reqState res HeadersOpen c)
-     (Conn req reqState res HeadersOpen c)
-     Unit
+  -> NoTransition m req reqState res HeadersOpen c Unit
 setCookie key value attrs =
   writeHeader (Tuple "Set-Cookie" (setCookieHeaderValue key value attrs))

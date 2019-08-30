@@ -11,7 +11,7 @@ import Data.Unit (Unit)
 import Effect.Class (liftEffect, class MonadEffect)
 import Foreign.Object as Object
 import Hyper.Authentication (AUTHENTICATION_ROWS, setAuthentication)
-import Hyper.Conn (Conn, kind ResponseState, ResponseEnded, StatusLineOpen)
+import Hyper.Conn (ComponentChange, ResponseEnded, ResponseTransition, StatusLineOpen, kind ResponseState)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
@@ -35,11 +35,10 @@ withAuthentication
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
-  -> Middleware
-     m
-     (Conn req reqState res resState { | AUTHENTICATION_ROWS Unit c })
-     (Conn req reqState res resState { | AUTHENTICATION_ROWS (Maybe t) c })
-     Unit
+  -> ComponentChange m req reqState res resState
+      { | AUTHENTICATION_ROWS Unit c }
+      { | AUTHENTICATION_ROWS (Maybe t) c }
+      Unit
 withAuthentication mapper = do
   auth <- getAuth
   modifyConn (setAuthentication auth)
@@ -68,15 +67,11 @@ authenticated
   => ResponseWritable b m String
   => Response res m b
   => Realm
-  -> Middleware
-      m
-      (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS t c })
-      (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS t c })
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded
+      { | AUTHENTICATION_ROWS t c }
       Unit
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS (Maybe t) c })
-     (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS (Maybe t) c })
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded
+     { | AUTHENTICATION_ROWS (Maybe t) c }
      Unit
 authenticated realm mw = do
   conn ← getConn

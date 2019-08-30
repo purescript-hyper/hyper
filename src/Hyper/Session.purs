@@ -17,9 +17,9 @@ import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Hyper.Conn (Conn, kind ResponseState, HeadersOpen)
+import Hyper.Conn (ComponentChange, HeadersOpen, kind ResponseState)
 import Hyper.Cookies (COOKIES_ROWS', defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
-import Hyper.Middleware (Middleware, lift')
+import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response)
 import Type.Row (type (+))
@@ -44,11 +44,10 @@ currentSessionID
   :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
-  => Middleware
-     m
-     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
-     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
-     (Maybe SessionID)
+  => ComponentChange m req reqState res resState
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      (Maybe SessionID)
 currentSessionID =
   getConn :>>= \conn ->
   case conn.components.cookies of
@@ -63,11 +62,10 @@ getSession
   :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
-  => Middleware
-     m
-     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
-     (Conn req reqState res resState { | SESSION_ROWS store + COOKIES_ROWS' c })
-     (Maybe session)
+  => ComponentChange m req reqState res resState
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      (Maybe session)
 getSession = do
   conn <- getConn
   sessionId <- currentSessionID
@@ -82,11 +80,10 @@ saveSession
   => Response res m b
   => SessionStore store m session
   => session
-  -> Middleware
-     m
-      (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
-      (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
-     Unit
+  -> ComponentChange m req reqState res HeadersOpen
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      Unit
 saveSession session = do
   conn <- getConn
   sessionId <-
@@ -109,11 +106,10 @@ deleteSession
   .  Monad m
   => Response res m b
   => SessionStore store m session
-  => Middleware
-     m
-     (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
-     (Conn req reqState res HeadersOpen { | SESSION_ROWS store + COOKIES_ROWS' c })
-     Unit
+  => ComponentChange m req reqState res HeadersOpen
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      { | SESSION_ROWS store + COOKIES_ROWS' c }
+      Unit
 deleteSession = do
   conn <- getConn
   _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID

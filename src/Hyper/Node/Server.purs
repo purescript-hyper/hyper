@@ -28,8 +28,8 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (catchException)
 import Foreign.Object as Object
-import Hyper.Conn (BodyOpen, BodyUnread, Conn, HeadersOpen, NoTransition, ResponseEnded, StatusLineOpen, kind RequestState, kind ResponseState)
-import Hyper.Middleware (Middleware, evalMiddleware, lift')
+import Hyper.Conn (BodyOpen, BodyUnread, ConnTransition, HeadersOpen, NoTransition, ResponseEnded, StatusLineOpen, kind RequestState, kind ResponseState)
+import Hyper.Middleware (evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Node.Server.Options (Hostname(..), Options, Port(..), defaultOptions, defaultOptionsWithLogging) as Hyper.Node.Server.Options
 import Hyper.Node.Server.Options (Options)
@@ -149,11 +149,7 @@ newtype WriterResponse rw r (resState :: ResponseState) =
 
 getWriter :: forall req c m rw r reqState (resState :: ResponseState).
             Monad m =>
-            Middleware
-            m
-            (Conn req reqState (WriterResponse rw r) resState c)
-            (Conn req reqState (WriterResponse rw r) resState c)
-            rw
+            NoTransition m req reqState (WriterResponse rw r) resState c rw
 getWriter = getConn <#> \{ response: WriterResponse rec } -> rec.writer
 
 -- | Note: this `ResponseState` transition is technically illegal. It is
@@ -262,11 +258,11 @@ runServer'
   => Options
   -> c
   -> (forall a. m a -> Aff a)
-  -> Middleware
-     m
-     (Conn HttpRequest BodyUnread HttpResponse StatusLineOpen c)
-     (Conn HttpRequest endingReqState HttpResponse ResponseEnded c')
-     Unit
+  -> ConnTransition m
+      HttpRequest BodyUnread endingReqState
+      HttpResponse StatusLineOpen ResponseEnded
+      c c'
+      Unit
   -> Effect Unit
 runServer' options components runM middleware = do
   server <- HTTP.createServer onRequest
@@ -295,11 +291,11 @@ runServer
   :: forall (endingReqState :: RequestState) c c'.
      Options
   -> c
-  -> Middleware
-     Aff
-     (Conn HttpRequest BodyUnread HttpResponse StatusLineOpen c)
-     (Conn HttpRequest endingReqState HttpResponse ResponseEnded c')
-     Unit
+  -> ConnTransition Aff
+      HttpRequest BodyUnread endingReqState
+      HttpResponse StatusLineOpen ResponseEnded
+      c c'
+      Unit
   -> Effect Unit
 runServer options components middleware =
   runServer' options components identity middleware
