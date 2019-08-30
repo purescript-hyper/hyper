@@ -19,8 +19,7 @@ import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Hyper.Authentication (AUTHENTICATION_ROWS)
 import Hyper.Authorization (AUTHORIZATION_ROWS, authorized)
-import Hyper.Conn (Conn, ResponseEnded, StatusLineOpen, kind ResponseState)
-import Hyper.Middleware (Middleware)
+import Hyper.Conn (Conn, ResponseEnded, ResponseTransition, StatusLineOpen, ResponseTransition', kind ResponseState)
 import Hyper.Middleware.Class (getConn)
 import Hyper.Node.BasicAuth as BasicAuth
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
@@ -42,11 +41,7 @@ htmlWithStatus
   => ResponseWritable b m String
   => Status
   -> Markup Unit
-  -> Middleware
-     m
-     (Conn req reqState res StatusLineOpen c)
-     (Conn req reqState res ResponseEnded c)
-     Unit
+  -> ResponseTransition m req reqState res StatusLineOpen ResponseEnded c Unit
 htmlWithStatus status x =
   writeStatus status
   :*> contentType textHTML
@@ -73,11 +68,10 @@ profileHandler
   .  Monad m
   => Response res m b
   => ResponseWritable b m String
-  => Middleware
-     m
-     (Conn req reqState res StatusLineOpen { | AUTHENTICATION_ROWS (Maybe User) c })
-     (Conn req reqState res ResponseEnded { | AUTHENTICATION_ROWS (Maybe User) c })
-     Unit
+  => ResponseTransition m req reqState res
+      StatusLineOpen ResponseEnded
+      { | AUTHENTICATION_ROWS (Maybe User) c }
+      Unit
 profileHandler =
   getConn :>>= \conn →
   htmlWithStatus
@@ -107,11 +101,10 @@ adminHandler
   .  Monad m
   => Response res m b
   => ResponseWritable b m String
-  => Middleware
-     m
-     (Conn req reqState res StatusLineOpen { | AUTHORIZATION_ROWS Admin + AUTHENTICATION_ROWS User c })
-     (Conn req reqState res ResponseEnded { | AUTHORIZATION_ROWS Admin + AUTHENTICATION_ROWS User c })
-     Unit
+  => ResponseTransition m req reqState res
+      StatusLineOpen ResponseEnded
+      { | AUTHORIZATION_ROWS Admin + AUTHENTICATION_ROWS User c }
+      Unit
 adminHandler =
   getConn :>>= \conn →
   htmlWithStatus
@@ -156,14 +149,11 @@ app :: forall m req reqState res b c
     => Request req m
     => Response res m b
     => ResponseWritable b m String
-    => Middleware
-       m
-       (Conn req reqState res StatusLineOpen { | AUTHORIZATION_ROWS Unit
-                                             + AUTHENTICATION_ROWS Unit c
-                                             })
-       (Conn req reqState res ResponseEnded  { | AUTHORIZATION_ROWS Unit
-                                             + AUTHENTICATION_ROWS (Maybe User) c
-                                             })
+    => ResponseTransition' m req reqState res
+        StatusLineOpen
+        ResponseEnded
+        { | AUTHORIZATION_ROWS Unit + AUTHENTICATION_ROWS Unit c }
+        { | AUTHORIZATION_ROWS Unit + AUTHENTICATION_ROWS (Maybe User) c }
        Unit
 app = BasicAuth.withAuthentication userFromBasicAuth :>>= \_ → router
     where
