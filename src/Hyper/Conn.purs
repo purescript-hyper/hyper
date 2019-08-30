@@ -52,13 +52,34 @@ type Conn (request :: RequestState -> Type) (requestState :: RequestState)
   , components :: components
   }
 
--- | Alias for easily defining all possible transitions allowed
--- | in a middleware's `Conn`'s state transition, including
--- | all or some of the following:
--- | - a request state transition
--- | - a response state transition
--- | - a component type change
+-- | Alias for easily defining both the request and response state transitions,
+-- | excluding a change in the component type (to do that, use
+-- | `ConnTransition'` instead)
 type ConnTransition
+      m
+      (request :: RequestState -> Type)
+      (fromRequestState :: RequestState)
+      (toRequestState :: RequestState)
+      (response :: ResponseState -> Type)
+      (fromResponseState :: ResponseState)
+      (toResponseState :: ResponseState)
+      comp
+      a
+  = ConnTransition'
+        m
+        request
+        fromRequestState
+        toRequestState
+        response
+        fromResponseState
+        toResponseState
+        comp
+        comp
+        a
+
+-- | Alias for easily defining both the request and response state transitions,
+-- | including a change in the component type.
+type ConnTransition'
       m
       (request :: RequestState -> Type)
       (fromRequestState :: RequestState)
@@ -75,7 +96,8 @@ type ConnTransition
       (Conn request toRequestState   response toResponseState   toComp)
       a
 
--- | Defines a Request state transition.
+-- | Defines a Request state transition,
+-- | excluding a change in the component type.
 type RequestTransition
       m
       (request :: RequestState -> Type)
@@ -85,20 +107,19 @@ type RequestTransition
       (responseState :: ResponseState)
       comp
       a
-  = ConnTransition
+  = RequestTransition'
       m
       request
       fromRequestState
       toRequestState
       response
       responseState
-      responseState
       comp
       comp
       a
 
--- | Defines a Request state transition and allows one to change the type
--- | of the components.
+-- | Defines a Request state transition,
+-- | including a change in the component type.
 type RequestTransition'
       m
       (request :: RequestState -> Type)
@@ -109,7 +130,7 @@ type RequestTransition'
       fromComp
       toComp
       a
-  = ConnTransition
+  = ConnTransition'
       m
       request
       fromRequestState
@@ -121,7 +142,8 @@ type RequestTransition'
       toComp
       a
 
--- | Defines a Response state transition.
+-- | Defines a Response state transition,
+-- | excluding a change in the component type.
 type ResponseTransition
       m
       (request :: RequestState -> Type)
@@ -131,10 +153,9 @@ type ResponseTransition
       (toResponseState :: ResponseState)
       comp
       a
-  = ConnTransition
+  = ResponseTransition'
       m
       request
-      requestState
       requestState
       response
       fromResponseState
@@ -143,8 +164,8 @@ type ResponseTransition
       comp
       a
 
--- | Defines a Response state transition and allows one to change the type
--- | of the components.
+-- | Defines a Response state transition,
+-- | including a change in the component type.
 type ResponseTransition'
       m
       (request :: RequestState -> Type)
@@ -155,7 +176,7 @@ type ResponseTransition'
       fromComp
       toComp
       a
-  = ConnTransition
+  = ConnTransition'
       m
       request
       requestState
@@ -168,7 +189,7 @@ type ResponseTransition'
       a
 
 -- | Indicates that no state transition occurs in either the request
--- | or the response.
+-- | or the response. Moreover, the component type does not change.
 type NoTransition
       m
       (request :: RequestState -> Type)
@@ -177,20 +198,19 @@ type NoTransition
       (responseState :: ResponseState)
       comp
       a
-  = ConnTransition
+  = NoTransition'
       m
       request
       requestState
-      requestState
       response
-      responseState
       responseState
       comp
       comp
       a
 
--- | Changes the component's type in the Conn Middleware
-type ComponentChange
+-- | Indicates that no state transition occurs in either the request
+-- | or the response. However, the component type does change.
+type NoTransition'
       m
       (request :: RequestState -> Type)
       (requestState :: RequestState)
@@ -199,7 +219,7 @@ type ComponentChange
       fromComp
       toComp
       a
-  = ConnTransition
+  = ConnTransition'
       m
       request
       requestState
