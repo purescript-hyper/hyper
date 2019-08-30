@@ -11,13 +11,14 @@ module Hyper.Session
        ) where
 
 import Prelude
-import Data.NonEmpty as NonEmpty
-import Foreign.Object as Object
+
 import Control.Monad.Indexed (ibind, ipure, (:>>=))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(Nothing, Just), maybe)
 import Data.Newtype (class Newtype, unwrap)
-import Hyper.Conn (ComponentChange, HeadersOpen, kind ResponseState)
+import Data.NonEmpty as NonEmpty
+import Foreign.Object as Object
+import Hyper.Conn (HeadersOpen, NoTransition', kind ResponseState)
 import Hyper.Cookies (COOKIES_ROWS', defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
 import Hyper.Middleware (lift')
 import Hyper.Middleware.Class (getConn)
@@ -44,7 +45,7 @@ currentSessionID
   :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
-  => ComponentChange m req reqState res resState
+  => NoTransition' m req reqState res resState
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       (Maybe SessionID)
@@ -62,7 +63,7 @@ getSession
   :: forall m req reqState (res :: ResponseState -> Type) c store session (resState :: ResponseState)
   .  Monad m
   => SessionStore store m session
-  => ComponentChange m req reqState res resState
+  => NoTransition' m req reqState res resState
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       (Maybe session)
@@ -80,7 +81,7 @@ saveSession
   => Response res m b
   => SessionStore store m session
   => session
-  -> ComponentChange m req reqState res HeadersOpen
+  -> NoTransition' m req reqState res HeadersOpen
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       Unit
@@ -106,7 +107,7 @@ deleteSession
   .  Monad m
   => Response res m b
   => SessionStore store m session
-  => ComponentChange m req reqState res HeadersOpen
+  => NoTransition' m req reqState res HeadersOpen
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       { | SESSION_ROWS store + COOKIES_ROWS' c }
       Unit

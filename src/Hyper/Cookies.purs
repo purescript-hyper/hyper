@@ -31,7 +31,7 @@ import Data.Tuple (Tuple(..), uncurry)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import Global.Unsafe (unsafeEncodeURIComponent, unsafeDecodeURIComponent)
-import Hyper.Conn (ComponentChange, HeadersOpen, NoTransition, kind ResponseState)
+import Hyper.Conn (HeadersOpen, NoTransition, NoTransition', kind ResponseState)
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class Response, writeHeader)
@@ -77,7 +77,7 @@ type COOKIES_ROWS' r = COOKIES_ROWS (Either String (Object Values)) r
 cookies :: forall m req reqState (res :: ResponseState -> Type) c (resState :: ResponseState)
   .  Monad m
   => Request req m
-  => ComponentChange m req reqState res resState
+  => NoTransition' m req reqState res resState
       { | COOKIES_ROWS Unit c }
       { | COOKIES_ROWS' c }
       Unit

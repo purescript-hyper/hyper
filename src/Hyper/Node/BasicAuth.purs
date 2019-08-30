@@ -11,7 +11,7 @@ import Data.Unit (Unit)
 import Effect.Class (liftEffect, class MonadEffect)
 import Foreign.Object as Object
 import Hyper.Authentication (AUTHENTICATION_ROWS, setAuthentication)
-import Hyper.Conn (ComponentChange, ResponseEnded, ResponseTransition, StatusLineOpen, kind ResponseState)
+import Hyper.Conn (NoTransition', ResponseEnded, ResponseTransition, StatusLineOpen, kind ResponseState)
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn, modifyConn)
 import Hyper.Request (class Request, getRequestData)
@@ -35,7 +35,7 @@ withAuthentication
   .  MonadEffect m
   => Request req m
   => (Tuple String String -> m (Maybe t))
-  -> ComponentChange m req reqState res resState
+  -> NoTransition' m req reqState res resState
       { | AUTHENTICATION_ROWS Unit c }
       { | AUTHENTICATION_ROWS (Maybe t) c }
       Unit

@@ -28,7 +28,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (catchException)
 import Foreign.Object as Object
-import Hyper.Conn (BodyOpen, BodyUnread, ConnTransition, HeadersOpen, NoTransition, ResponseEnded, StatusLineOpen, kind RequestState, kind ResponseState)
+import Hyper.Conn (BodyOpen, BodyUnread, ConnTransition', HeadersOpen, NoTransition, ResponseEnded, StatusLineOpen, kind RequestState, kind ResponseState)
 import Hyper.Middleware (evalMiddleware, lift')
 import Hyper.Middleware.Class (getConn, putConn)
 import Hyper.Node.Server.Options (Hostname(..), Options, Port(..), defaultOptions, defaultOptionsWithLogging) as Hyper.Node.Server.Options
@@ -258,7 +258,7 @@ runServer'
   => Options
   -> c
   -> (forall a. m a -> Aff a)
-  -> ConnTransition m
+  -> ConnTransition' m
       HttpRequest BodyUnread endingReqState
       HttpResponse StatusLineOpen ResponseEnded
       c c'
@@ -291,7 +291,7 @@ runServer
   :: forall (endingReqState :: RequestState) c c'.
      Options
   -> c
-  -> ConnTransition Aff
+  -> ConnTransition' Aff
       HttpRequest BodyUnread endingReqState
       HttpResponse StatusLineOpen ResponseEnded
       c c'
