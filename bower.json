@@ -22,7 +22,7 @@
     "purescript-foldable-traversable": "^4.1.1",
     "purescript-generics-rep": "^6.1.1",
     "purescript-http-methods": "^4.0.2",
-    "purescript-indexed-monad": "^1.0.0",
+    "purescript-indexed-monad": "^1.1.0",
     "purescript-media-types": "^4.0.1",
     "purescript-node-buffer": "^5.0.0",
     "purescript-node-fs-aff": "^6.0.0",
