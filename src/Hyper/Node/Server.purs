@@ -11,7 +11,8 @@ module Hyper.Node.Server
 
 import Prelude
 
-import Control.Monad.Indexed (ipure, (:*>), (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed (ipure, (:>>=))
 import Effect.Aff (Aff, launchAff, launchAff_, makeAff, nonCanceler, runAff_)
 import Effect.Aff.AVar (empty, new, put, take)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -189,29 +190,29 @@ endResponse r =
 
 instance responseWriterHttpResponse :: MonadAff m
                                     => Response HttpResponse m (NodeResponse m) where
-  writeStatus status =
-    getConn :>>= \{ response: HttpResponse r } ->
-      setStatus status r
-      :*> modifyConn (_ { response = HttpResponse r })
+  writeStatus status = Ix.do
+    { response: HttpResponse r } <- getConn
+    setStatus status r
+    modifyConn (_ { response = HttpResponse r })
 
-  writeHeader header =
-    getConn :>>= \{ response: HttpResponse r } ->
-      writeHeader' header r
-      :*> modifyConn (_ { response = HttpResponse r })
+  writeHeader header = Ix.do
+    { response: HttpResponse r } <- getConn
+    writeHeader' header r
+    modifyConn (_ { response = HttpResponse r })
 
-  closeHeaders =
-    getConn :>>= \{ response: HttpResponse r } ->
-      modifyConn (_ { response = HttpResponse r })
+  closeHeaders = Ix.do
+    { response: HttpResponse r } <- getConn
+    modifyConn (_ { response = HttpResponse r })
 
-  send f =
-    getConn :>>= \{ response: HttpResponse r } ->
-      writeResponse r f
-      :*> modifyConn (_ { response = HttpResponse r })
+  send f = Ix.do
+    { response: HttpResponse r } <- getConn
+    writeResponse r f
+    modifyConn (_ { response = HttpResponse r })
 
-  end =
-    getConn :>>= \{ response: HttpResponse r } ->
-      endResponse r
-      :*> modifyConn (_ { response = HttpResponse r })
+  end = Ix.do
+    { response: HttpResponse r } <- getConn
+    endResponse r
+    modifyConn (_ { response = HttpResponse r })
 
 
 mkHttpRequest :: HTTP.Request -> HttpRequest

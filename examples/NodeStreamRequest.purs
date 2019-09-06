@@ -14,7 +14,8 @@ module Examples.NodeStreamRequest where
 import Prelude
 import Node.Buffer as Buffer
 import Node.Stream as Stream
-import Control.Monad.Indexed (ibind, (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed ((:>>=))
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (log)
@@ -44,7 +45,7 @@ main =
       case _ of
 
         -- Only handle POST requests:
-        { method: Left POST } -> do
+        { method: Left POST } -> Ix.do
             body <- streamBody
             logRequestBodyChunks body
             writeStatus statusOK
@@ -52,12 +53,9 @@ main =
             respond "OK"
 
         -- Non-POST requests are not allowed:
-        { method } -> do
+        { method } -> Ix.do
           writeStatus statusMethodNotAllowed
           closeHeaders
           respond ("Method not allowed: " <> either show show method)
 
-        where
-            bind = ibind
-            discard = ibind
   in runServer defaultOptionsWithLogging {} app

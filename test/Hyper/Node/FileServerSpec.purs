@@ -2,7 +2,7 @@ module Hyper.Node.FileServerSpec where
 
 import Prelude
 import Node.Buffer as Buffer
-import Control.Monad.Indexed (ibind)
+import Control.Monad.Indexed.Qualified as Ix
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Data.Maybe (Maybe(..))
@@ -33,12 +33,11 @@ serveFilesAndGet path =
   where
     app = fileServer "test/Hyper/Node/FileServerSpec" on404
 
-    on404 = do
+    on404 = Ix.do
       body <- liftEffect (Buffer.fromString "Not Found" UTF8)
-      _ <- writeStatus statusNotFound
-      _ <- headers []
+      writeStatus statusNotFound
+      headers []
       respond body
-      where bind = ibind
 
 spec :: Spec Unit
 spec =

@@ -1,7 +1,7 @@
 module Examples.StateT where
 
 import Prelude
-import Control.Monad.Indexed (ibind, (:*>))
+import Control.Monad.Indexed.Qualified as Ix
 import Effect.Aff (Aff)
 import Effect (Effect)
 import Control.Monad.State (evalStateT, get, modify)
@@ -22,16 +22,14 @@ main =
   let
       -- Our application just appends to the state in between
       -- some operations, then responds with the built up state...
-      app = do
-        _ <- lift' (modify (flip append ["I"]))
-          :*> writeStatus statusOK
-          :*> lift' (modify (flip append ["have"]))
-          :*> closeHeaders
-          :*> lift' (modify (flip append ["state."]))
+      app = Ix.do
+        void $ lift' (modify (flip append ["I"]))
+        writeStatus statusOK
+        void $ lift' (modify (flip append ["have"]))
+        closeHeaders
+        void $ lift' (modify (flip append ["state."]))
 
         msgs ← lift' get
         respond (joinWith " " msgs)
-
-        where bind = ibind
 
   in runServer' defaultOptionsWithLogging {} runAppM app

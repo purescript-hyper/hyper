@@ -3,7 +3,8 @@ module Hyper.Test.TestServer where
 import Data.String as String
 import Control.Alt ((<|>))
 import Control.Applicative (pure)
-import Control.Monad.Indexed (ipure, (:*>), (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed (ipure, (:>>=))
 import Control.Monad (class Monad, void)
 import Control.Monad.Writer (WriterT, execWriterT, tell)
 import Control.Monad.Writer.Class (class MonadTell)
@@ -131,9 +132,9 @@ instance responseWriterTestResponse :: ( Monad m
                                        (TestResponse b)
                                        m
                                        b where
-  writeStatus status = do
+  writeStatus status = Ix.do
     lift' (tell (TestResponse (Just status) [] []))
-    :*> modifyConn resetResponse
+    modifyConn resetResponse
 
   writeHeader header =
     lift' (tell (TestResponse Nothing [header] mempty))

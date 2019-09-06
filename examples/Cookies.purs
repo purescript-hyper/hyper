@@ -1,7 +1,7 @@
 module Examples.Cookies where
 
 import Prelude
-import Control.Monad.Indexed ((:*>))
+import Control.Monad.Indexed.Qualified as Ix
 import Effect (Effect)
 import Hyper.Cookies (cookies)
 import Hyper.Node.Server (defaultOptionsWithLogging, runServer)
@@ -10,8 +10,9 @@ import Hyper.Status (statusOK)
 
 main :: Effect Unit
 main =
-  let app = cookies
-            :*> writeStatus statusOK
-            :*> closeHeaders
-            :*> respond "Hello, Hyper!"
+  let app = Ix.do
+        cookies
+        writeStatus statusOK
+        closeHeaders
+        respond "Hello, Hyper!"
   in runServer defaultOptionsWithLogging { cookies: unit } app

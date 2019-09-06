@@ -2,6 +2,7 @@ module Examples.FormParser where
 
 import Prelude
 import Text.Smolder.HTML.Attributes as A
+import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Indexed ((:>>=), (:*>))
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -39,11 +40,11 @@ main =
             Just s -> p ! A.style "color: red;" $ text s
             Nothing -> pure unit
 
-    htmlWithStatus status x =
+    htmlWithStatus status x = Ix.do
       writeStatus status
-      :*> contentType textHTML
-      :*> closeHeaders
-      :*> respond (render x)
+      contentType textHTML
+      closeHeaders
+      respond (render x)
 
     handlePost =
       parseForm :>>=

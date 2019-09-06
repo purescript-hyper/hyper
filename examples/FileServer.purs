@@ -2,7 +2,7 @@ module Examples.FileServer where
 
 import Prelude
 
-import Control.Monad.Indexed ((:*>))
+import Control.Monad.Indexed.Qualified as Ix
 import Effect (Effect)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Node.FileServer (fileServer)
@@ -14,9 +14,9 @@ import Node.Encoding (Encoding(UTF8))
 main :: Effect Unit
 main =
   let
-    notFound =
+    notFound = Ix.do
       writeStatus statusNotFound
-      :*> headers []
-      :*> respond (Tuple "<h1>Not Found</h1>" UTF8)
+      headers []
+      respond (Tuple "<h1>Not Found</h1>" UTF8)
     app = fileServer "examples/FileServer" notFound
   in runServer defaultOptionsWithLogging {} app

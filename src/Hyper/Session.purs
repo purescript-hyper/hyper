@@ -11,16 +11,18 @@ module Hyper.Session
        ) where
 
 import Prelude
-import Data.NonEmpty as NonEmpty
-import Foreign.Object as Object
-import Foreign.Object (Object)
-import Hyper.Cookies as Cookies
-import Control.Monad.Indexed (ibind, ipure, (:>>=))
+
+import Control.Monad.Indexed (ipure, (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(Nothing, Just), maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
+import Data.NonEmpty as NonEmpty
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Hyper.Conn (Conn)
 import Hyper.Cookies (defaultCookieAttributes, maxAge, setCookie, SameSite(Lax))
+import Hyper.Cookies as Cookies
 import Hyper.Middleware (Middleware, lift')
 import Hyper.Middleware.Class (getConn)
 import Hyper.Response (class Response, HeadersOpen)
@@ -60,8 +62,8 @@ currentSessionID
       | c
       })
      (Maybe SessionID)
-currentSessionID =
-  getConn :>>= \conn ->
+currentSessionID = Ix.do
+  conn <- getConn
   case conn.components.cookies of
     Left err ->
       ipure Nothing
@@ -91,13 +93,12 @@ getSession
       | c
       })
      (Maybe session)
-getSession = do
+getSession = Ix.do
   conn <- getConn
   sessionId <- currentSessionID
   case sessionId of
     Just id' -> lift' (get conn.components.sessions.store id')
     Nothing -> ipure Nothing
-  where bind = ibind
 
 saveSession
   :: forall m req res c b store session
@@ -116,7 +117,7 @@ saveSession
       (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      Unit
-saveSession session = do
+saveSession session = Ix.do
   conn <- getConn
   sessionId <-
     currentSessionID :>>=
@@ -130,8 +131,6 @@ saveSession session = do
     conn.components.sessions.key
     (unwrap sessionId)
     (defaultCookieAttributes { sameSite=Just Lax, httpOnly=true })
-  where
-    bind = ibind
 
 deleteSession
   :: forall m req res c b store session
@@ -149,8 +148,8 @@ deleteSession
       (res HeadersOpen)
       { sessions :: Sessions store, cookies :: Either String (Object Cookies.Values) | c})
      Unit
-deleteSession = do
+deleteSession = Ix.do
   conn <- getConn
-  _ <- maybe (ipure unit) (lift' <<< delete conn.components.sessions.store) <$> currentSessionID
+  map (void $ map (lift' <<< delete conn.components.sessions.store)) currentSessionID
   -- TODO: Better delete?
   setCookie conn.components.sessions.key "" (defaultCookieAttributes { maxAge=maxAge 0 })
