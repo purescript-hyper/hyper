@@ -2,7 +2,7 @@ module Examples.Authentication where
 
 import Prelude
 
-import Control.Monad.Indexed ((:>>=), (:*>))
+import Control.Monad.Indexed.Qualified as Ix
 import Effect.Aff (Aff)
 import Effect (Effect)
 import Data.Maybe (Maybe(Just, Nothing))
@@ -29,17 +29,17 @@ userFromBasicAuth =
 main :: Effect Unit
 main =
   let
-    myProfilePage =
-      getConn :>>= \conn ->
+    myProfilePage = Ix.do
+      conn <- getConn
       case conn.components.authentication of
-        User name → do
+        User name → Ix.do
           writeStatus statusOK
-          :*> contentType textHTML
-          :*> closeHeaders
-          :*> respond (render (p (text ("You are authenticated as " <> name <> "."))))
+          contentType textHTML
+          closeHeaders
+          respond (render (p (text ("You are authenticated as " <> name <> "."))))
 
-    app = do
+    app = Ix.do
       BasicAuth.withAuthentication userFromBasicAuth
-      :*> BasicAuth.authenticated "Authentication Example" myProfilePage
+      BasicAuth.authenticated "Authentication Example" myProfilePage
     components = { authentication: unit }
   in runServer defaultOptionsWithLogging components app

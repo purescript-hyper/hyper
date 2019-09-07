@@ -1,6 +1,6 @@
 module Hyper.Authorization where
 
-import Control.Monad.Indexed (ibind)
+import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad (class Monad)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Unit (unit, Unit)
@@ -33,16 +33,15 @@ authorized :: forall a m req res b c
      (Conn req (res StatusLineOpen) { authorization :: Unit | c })
      (Conn req (res ResponseEnded) { authorization :: Unit | c })
      Unit
-authorized authorizer mw = do
+authorized authorizer mw = Ix.do
   conn ← getConn
   auth ← lift' (authorizer conn)
   case auth of
-    Just a -> do
-      _ <- modifyConn (withAuthorization a)
-      _ <- mw
+    Just a -> Ix.do
+      modifyConn (withAuthorization a)
+      mw
       modifyConn (withAuthorization unit)
-    Nothing -> do
-      _ <- writeStatus statusForbidden
-      _ <- headers []
+    Nothing -> Ix.do
+      writeStatus statusForbidden
+      headers []
       respond "You are not authorized."
-  where bind = ibind

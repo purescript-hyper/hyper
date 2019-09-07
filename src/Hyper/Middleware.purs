@@ -13,7 +13,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Data.Tuple (Tuple(..), snd)
 import Hyper.Middleware.Class (class IxMonadMiddleware)
-import Hyper.Middleware.QualifiedDo (bind, discard) as QualifiedDo
+import Control.Monad.Indexed.Qualified (bind, discard) as QualifiedDo
 
 newtype Middleware m i o a = Middleware (i -> m (Tuple a o))
 
@@ -26,7 +26,7 @@ evalMiddleware a s = map snd (runMiddleware a s)
 hoistMiddleware :: forall f g i o a. (f ~> g) -> Middleware f i o a -> Middleware g i o a
 hoistMiddleware f (Middleware k) = Middleware (f <<< k)
 
-instance ixMonadMiddlewareMiddleware :: Applicative m ⇒ IxMonadMiddleware (Middleware m) where
+instance ixMonadMiddlewareMiddleware :: Monad m ⇒ IxMonadMiddleware (Middleware m) where
   getConn = Middleware $ \c -> pure (Tuple c c)
   putConn c = Middleware $ \_ -> pure (Tuple unit c)
 

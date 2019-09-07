@@ -1,7 +1,8 @@
 module Hyper.Node.BasicAuth where
 
 import Node.Buffer as Buffer
-import Control.Monad.Indexed (ibind, ipure)
+import Control.Monad.Indexed (ipure)
+import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad (class Monad, (>>=))
 import Effect.Class (liftEffect, class MonadEffect)
 import Data.Functor ((<$>))
@@ -40,7 +41,7 @@ withAuthentication
      (Conn req res { authentication :: Unit | c })
      (Conn req res { authentication :: Maybe t | c })
      Unit
-withAuthentication mapper = do
+withAuthentication mapper = Ix.do
   auth <- getAuth
   modifyConn (setAuthentication auth)
   where
@@ -48,19 +49,18 @@ withAuthentication mapper = do
       case split (Pattern ":") s of
         [username, password] -> Just (Tuple username password)
         _ -> Nothing
-    getAuth = do
+    getAuth = Ix.do
       { headers } <- getRequestData
       case Object.lookup "authorization" headers of
         Nothing -> ipure Nothing
         Just header -> do
           case split (Pattern " ") header of
-            ["Basic", encoded] -> do
+            ["Basic", encoded] -> Ix.do
               decoded <- splitPair <$> decodeBase64 encoded
               case decoded of
                 Just auth -> lift' (mapper auth)
                 Nothing -> ipure Nothing
             parts -> ipure Nothing
-    bind = ibind
 
 authenticated
   :: forall m req res c b t
@@ -78,17 +78,15 @@ authenticated
      (Conn req (res StatusLineOpen) { authentication :: Maybe t | c })
      (Conn req (res ResponseEnded) { authentication :: Maybe t | c })
      Unit
-authenticated realm mw = do
+authenticated realm mw = Ix.do
   conn ← getConn
   case conn.components.authentication of
-    Nothing -> do
-      _ <- writeStatus statusUnauthorized
-      _ <- writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
-      _ <- closeHeaders
+    Nothing -> Ix.do
+      writeStatus statusUnauthorized
+      writeHeader (Tuple "WWW-Authenticate" ("Basic realm=\"" <> realm <> "\""))
+      closeHeaders
       respond "Please authenticate."
-    Just auth -> do
-      _ <- modifyConn (setAuthentication auth)
-      _ <- mw
+    Just auth -> Ix.do
+      modifyConn (setAuthentication auth)
+      mw
       modifyConn (setAuthentication (Just auth))
-  where
-    bind = ibind

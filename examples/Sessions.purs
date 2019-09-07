@@ -1,7 +1,8 @@
 module Examples.Sessions where
 
 import Prelude
-import Control.Monad.Indexed ((:*>), (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed ((:>>=))
 import Effect.Aff (launchAff)
 import Effect (Effect)
 import Effect.Class (liftEffect)
@@ -31,38 +32,38 @@ main = void $ launchAff do
       , cookies: unit
       }
 
-    home =
+    home = Ix.do
       writeStatus statusOK
-      :*> contentType textHTML
-      :*> closeHeaders
-      :*> getSession :>>=
+      contentType textHTML
+      closeHeaders
+      getSession :>>=
           case _ of
-            Just (MySession { userId }) ->
-              lift' (log "Session") :*>
+            Just (MySession { userId }) -> Ix.do
+              lift' (log "Session")
               respond ("You are logged in as user " <> show userId <> ". "
                       <> "<a href=\"/logout\">Logout</a> if you're anxious.")
-            Nothing ->
-              lift' (log "No Session") :*>
+            Nothing -> Ix.do
+              lift' (log "No Session")
               respond "<a href=\"/login\">Login</a> to start a session."
 
-    login =
+    login = Ix.do
       redirect "/"
-      :*> saveSession (MySession { userId: 1 })
-      :*> contentType textHTML
-      :*> closeHeaders
-      :*> end
+      saveSession (MySession { userId: 1 })
+      contentType textHTML
+      closeHeaders
+      end
 
-    logout =
+    logout = Ix.do
       redirect "/"
-      :*> deleteSession
-      :*> closeHeaders
-      :*> end
+      deleteSession
+      closeHeaders
+      end
 
-    notFound =
+    notFound = Ix.do
       writeStatus statusNotFound
-      :*> contentType textHTML
-      :*> closeHeaders
-      :*> respond "Not Found"
+      contentType textHTML
+      closeHeaders
+      respond "Not Found"
 
     -- Simple router for this example.
     router =
@@ -73,6 +74,6 @@ main = void $ launchAff do
         "/logout" -> logout
         _ -> notFound
 
-    app =
+    app = Ix.do
       cookies
-      :*> router
+      router

@@ -14,7 +14,7 @@ module Hyper.Cookies
 
 import Prelude
 
-import Control.Monad.Indexed (ibind)
+import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Error.Class (throwError)
 import Data.Array (catMaybes, cons, filter, foldMap, uncons, (:))
 import Data.Either (Either)
@@ -78,12 +78,11 @@ cookies :: forall m req res c
      (Conn req res { cookies :: Unit | c})
      (Conn req res { cookies :: Either String (Object Values) | c})
      Unit
-cookies = do
+cookies = Ix.do
   conn <- getConn
   { headers } <- getRequestData
   let cookies' = maybe (pure Object.empty) parseCookies (Object.lookup "cookie" headers)
   putConn conn { components { cookies = cookies' }}
-  where bind = ibind
 
 data SameSite = Strict | Lax
 newtype MaxAge = MaxAge Int

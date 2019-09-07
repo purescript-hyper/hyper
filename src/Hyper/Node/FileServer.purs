@@ -2,7 +2,8 @@ module Hyper.Node.FileServer (fileServer) where
 
 import Prelude
 
-import Control.Monad.Indexed (ibind, (:>>=))
+import Control.Monad.Indexed.Qualified as Ix
+import Control.Monad.Indexed ((:>>=))
 import Effect.Aff.Class (liftAff, class MonadAff)
 import Effect.Class (liftEffect)
 import Data.Array (last)
@@ -124,20 +125,19 @@ serveFile
      (Conn req (res StatusLineOpen) c)
      (Conn req (res ResponseEnded) c)
      Unit
-serveFile path = do
+serveFile path = Ix.do
   let
     ext = last $ split (Pattern ".") path
     contentType = maybe "*/*" identity (ext >>= flip lookup htaccess)
   buf <- lift' (liftAff (readFile path))
   contentLength <- liftEffect (Buffer.size buf)
-  _ <- writeStatus statusOK
-  _ <- headers [ Tuple "Content-Type" (contentType <> "; charset=utf-8")
+  writeStatus statusOK
+  headers [ Tuple "Content-Type" (contentType <> "; charset=utf-8")
           , Tuple "Content-Length" (show contentLength)
           ]
   response <- toResponse buf
-  _ <- send response
+  send response
   end
-  where bind = ibind
 
 -- | Extremly basic implementation of static file serving. Needs more love.
 fileServer
@@ -158,7 +158,7 @@ fileServer
      (Conn req (res StatusLineOpen) c)
      (Conn req (res ResponseEnded) c)
      Unit
-fileServer dir on404 = do
+fileServer dir on404 = Ix.do
   conn ← getConn
   { url } <- getRequestData
   serve (Path.concat [dir, url])
@@ -168,10 +168,8 @@ fileServer dir on404 = do
       | isDirectory stats = serve (Path.concat [absolutePath, "index.html"])
       | otherwise = on404
 
-    serve absolutePath = do
+    serve absolutePath = Ix.do
       fExists ← lift' (liftAff (exists absolutePath))
       if fExists
         then lift' (liftAff (stat absolutePath)) :>>= serveStats absolutePath
         else on404
-
-    bind = ibind

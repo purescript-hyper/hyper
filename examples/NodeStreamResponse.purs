@@ -5,6 +5,7 @@
 module Examples.NodeStreamResponse where
 
 import Prelude
+import Control.Monad.Indexed.Qualified as Ix
 import Control.Monad.Indexed ((:*>))
 import Effect.Aff as Aff
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -35,9 +36,9 @@ main =
       , Tuple 500 "Hyper\n"
       ]
 
-    app = do
+    app = Ix.do
       writeStatus statusOK
-      :*> closeHeaders
-      :*> streamMessages
-      :*> end
+      closeHeaders
+      streamMessages
+      end
   in runServer defaultOptions {} app
