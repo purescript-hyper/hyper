@@ -1,5 +1,8 @@
 # Changelog
 
+* 0.11.0
+  - Update qualified-do usages to use indexed-monad exports.
+  - Upgrade to node-buffer version 6.
 * 0.10.1
   - Add node-buffer as direct dependency to avoid incompatible upgrade
     to version 6.
