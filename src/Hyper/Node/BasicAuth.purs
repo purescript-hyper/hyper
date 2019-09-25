@@ -1,5 +1,7 @@
 module Hyper.Node.BasicAuth where
 
+import Prelude
+import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
 import Control.Monad.Indexed (ipure)
 import Control.Monad.Indexed.Qualified as Ix
@@ -27,8 +29,9 @@ decodeBase64 ∷ ∀ m c
   .  MonadEffect m
   => String
   → Middleware m c c String
-decodeBase64 encoded =
-  liftEffect (Buffer.fromString encoded Base64 >>= Buffer.toString ASCII)
+decodeBase64 encoded = liftEffect do
+  buffer :: Buffer <- Buffer.fromString encoded Base64
+  Buffer.toString ASCII buffer
 
 
 withAuthentication
