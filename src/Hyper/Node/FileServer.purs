@@ -159,7 +159,6 @@ fileServer
      (Conn req (res ResponseEnded) c)
      Unit
 fileServer dir on404 = Ix.do
-  conn ← getConn
   { url } <- getRequestData
   serve (Path.concat [dir, url])
   where
