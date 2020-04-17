@@ -1,7 +1,7 @@
 module Hyper.Node.Server
-       ( HttpRequest
-       , HttpResponse
-       , NodeResponse
+       ( HttpRequest(..)
+       , HttpResponse(..)
+       , NodeResponse(..)
        , writeString
        , write
        , module Hyper.Node.Server.Options
