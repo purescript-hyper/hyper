@@ -144,8 +144,7 @@ instance streamableBodyHttpRequestReadable :: MonadAff m
     case _ of
       HttpRequest request _ -> ipure (HTTP.requestAsStream request)
 
--- TODO: Make a newtype
-data HttpResponse state = HttpResponse HTTP.Response
+newtype HttpResponse state = HttpResponse HTTP.Response
 
 getWriter :: forall req res c m rw.
             Monad m =>
