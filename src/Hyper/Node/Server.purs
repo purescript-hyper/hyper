@@ -247,8 +247,11 @@ runServer' options components runM middleware = do
                       , hostname: unwrap options.hostname
                       , backlog: Nothing
                       }
-  HTTP.listen server listenOptions (options.onListening options.hostname options.port)
+  HTTP.listen server listenOptions (listenCallback server)
   where
+    listenCallback :: HTTP.Server -> Effect Unit
+    listenCallback server = HTTP.address server >>= options.onListening
+
     onRequest :: HTTP.Request -> HTTP.Response -> Effect Unit
     onRequest request response =
       let conn = { request: mkHttpRequest request
