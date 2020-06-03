@@ -3,7 +3,7 @@ let upstream =
 
 let overrides =
   { node-http =
-      upstream.node-http // { repo = "https://github.com/srghma/purescript-node-http.git", version = "703bb68" }
+      upstream.node-http // { repo = "https://github.com/srghma/purescript-node-http.git", version = "master" }
   }
 
 let additions = {=}
