@@ -5,14 +5,10 @@ import Node.Buffer (Buffer)
 import Node.Buffer as Buffer
 import Control.Monad.Indexed (ipure)
 import Control.Monad.Indexed.Qualified as Ix
-import Control.Monad (class Monad, (>>=))
 import Effect.Class (liftEffect, class MonadEffect)
-import Data.Functor ((<$>))
 import Data.Maybe (Maybe(Nothing, Just))
-import Data.Monoid ((<>))
 import Data.String (Pattern(Pattern), split)
 import Data.Tuple (Tuple(Tuple))
-import Data.Unit (Unit)
 import Foreign.Object as Object
 import Hyper.Authentication (setAuthentication)
 import Hyper.Conn (Conn)
