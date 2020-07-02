@@ -1,5 +1,7 @@
 # Changelog
 
+* 0.11.1
+  - Update for new Argonaut version.
 * 0.11.0
   - Update qualified-do usages to use indexed-monad exports.
   - Upgrade to node-buffer version 6.
