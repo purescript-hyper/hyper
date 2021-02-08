@@ -23,7 +23,7 @@ import Data.Array (uncons)
 import Data.Array as Array
 import Data.Either (Either)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.Int as Int
 import Data.List as List
 import Data.List.NonEmpty (NonEmptyList, toList, head)
