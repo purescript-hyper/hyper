@@ -1,7 +1,7 @@
 module Hyper.Node.Server
-       ( HttpRequest
-       , HttpResponse
-       , NodeResponse
+       ( HttpRequest(..)
+       , HttpResponse(..)
+       , NodeResponse(..)
        , writeString
        , write
        , module Hyper.Node.Server.Options
@@ -144,8 +144,7 @@ instance streamableBodyHttpRequestReadable :: MonadAff m
     case _ of
       HttpRequest request _ -> ipure (HTTP.requestAsStream request)
 
--- TODO: Make a newtype
-data HttpResponse state = HttpResponse HTTP.Response
+newtype HttpResponse state = HttpResponse HTTP.Response
 
 getWriter :: forall req res c m rw.
             Monad m =>
@@ -248,8 +247,11 @@ runServer' options components runM middleware = do
                       , hostname: unwrap options.hostname
                       , backlog: Nothing
                       }
-  HTTP.listen server listenOptions (options.onListening options.hostname options.port)
+  HTTP.listen server listenOptions (listenCallback server)
   where
+    listenCallback :: HTTP.Server -> Effect Unit
+    listenCallback server = HTTP.address server >>= options.onListening
+
     onRequest :: HTTP.Request -> HTTP.Response -> Effect Unit
     onRequest request response =
       let conn = { request: mkHttpRequest request

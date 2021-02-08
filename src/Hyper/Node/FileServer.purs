@@ -13,7 +13,6 @@ import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(Tuple))
 import Hyper.Conn (Conn)
 import Hyper.Middleware (Middleware, lift')
-import Hyper.Middleware.Class (getConn)
 import Hyper.Request (class Request, getRequestData)
 import Hyper.Response (class ResponseWritable, class Response, ResponseEnded, StatusLineOpen, end, headers, send, toResponse, writeStatus)
 import Hyper.Status (statusOK)
@@ -159,7 +158,6 @@ fileServer
      (Conn req (res ResponseEnded) c)
      Unit
 fileServer dir on404 = Ix.do
-  conn ← getConn
   { url } <- getRequestData
   serve (Path.concat [dir, url])
   where
