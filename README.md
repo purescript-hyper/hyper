@@ -11,9 +11,9 @@
 </p>
 
 <p align="center">
-<a href="https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-with-hyper.html">Getting Started</a>
+<a href="https://hyper.wickstrom.tech/docs/v0.10.0/tutorials/getting-started-with-hyper.html">Getting Started</a>
 | <a href="https://hyper.wickstrom.tech">Documentation</a>
-| <a href="https://hyper.wickstrom.tech/docs/v0.8.0/faq.html">FAQ</a>
+| <a href="https://hyper.wickstrom.tech/docs/v0.10.0/faq.html">FAQ</a>
 | <a href="examples/">Examples</a>
 </p>
 
@@ -24,7 +24,7 @@ Hyper is an experimental middleware architecture for HTTP servers written in Pur
 To learn
 more about Hyper, check out the [documentation](https://hyper.wickstrom.tech)
 and [the Getting Started
-tutorial](https://hyper.wickstrom.tech/docs/v0.8.0/tutorials/getting-started-with-hyper.html).
+tutorial](https://hyper.wickstrom.tech/docs/v0.10.0/tutorials/getting-started-with-hyper.html).
 
 <p align="center">
 <a href="https://travis-ci.org/owickstrom/hyper"><img alt="Build Status" src="https://travis-ci.org/owickstrom/hyper.svg?branch=master" /></a>
